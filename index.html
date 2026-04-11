@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enigma BdU Funk by BombingFritz</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --glow-color: #ffb84d; 
+            --text-color: #ffdca8;
+            --alert-color: #ff4d4d;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Holz-Gehäuse */
+        #radio-device {
+            width: 520px;
+            height: 520px;
+            background: 
+                linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.05)),
+                url('https://images.unsplash.com/photo-1644931551533-02906718127f?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+            background-size: cover;
+            background-position: center;
+            border: 12px solid #6b5244;
+            border-radius: 4px;
+            box-shadow: 
+                0 0 0 2px #4a3929,
+                0 0 0 4px #2a2117,
+                inset 0 0 30px rgba(0,0,0,0.2),
+                inset 3px 3px 15px rgba(255,255,255,0.05),
+                inset -3px -3px 15px rgba(0,0,0,0.3),
+                10px 10px 40px rgba(0,0,0,0.7);
+            padding: 25px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        #radio-device::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(255,255,255,0.02) 0%,
+                transparent 50%,
+                rgba(0,0,0,0.05) 100%
+            );
+            pointer-events: none;
+            border-radius: 4px;
+        }
+
+        /* Metallecken */
+        .corner {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: 
+                radial-gradient(circle at 30% 30%, #888 0%, #555 40%, #333 100%);
+            border: 2px solid #222;
+            box-shadow: 
+                inset 1px 1px 3px rgba(255,255,255,0.3),
+                inset -1px -1px 3px rgba(0,0,0,0.5),
+                2px 2px 4px rgba(0,0,0,0.6);
+        }
+        .corner-tl { top: -6px; left: -6px; border-radius: 4px 0 8px 0; }
+        .corner-tr { top: -6px; right: -6px; border-radius: 0 4px 0 8px; }
+        .corner-bl { bottom: -6px; left: -6px; border-radius: 0 8px 0 4px; }
+        .corner-br { bottom: -6px; right: -6px; border-radius: 8px 0 4px 0; }
+
+        /* Schrauben */
+        .screw {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: 
+                radial-gradient(circle at 35% 35%, #777 0%, #444 50%, #222 100%);
+            border-radius: 50%;
+            border: 1px solid #111;
+            box-shadow: 
+                inset 0 1px 2px rgba(255,255,255,0.4),
+                inset 0 -1px 2px rgba(0,0,0,0.5),
+                0 2px 3px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+        .screw::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            width: 9px;
+            height: 1.5px;
+            background: #111;
+            box-shadow: 0 0 1px rgba(0,0,0,0.5);
+        }
+        .screw::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            width: 9px;
+            height: 1.5px;
+            background: #111;
+            box-shadow: 0 0 1px rgba(0,0,0,0.5);
+        }
+        .s1 { top: 15px; left: 15px; }
+        .s2 { top: 15px; right: 15px; }
+        .s3 { bottom: 15px; left: 15px; }
+        .s4 { bottom: 15px; right: 15px; }
+
+        /* Zahnrad Settings */
+        #gear-icon {
+            position: absolute;
+            bottom: 2px;      
+            right: 40px;    
+            width: 30px;
+            height: 30px;
+            color: #888;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 100;   
+            transition: all 0.1s;
+            background: 
+                radial-gradient(circle at 40% 40%, #555 0%, #333 50%, #222 100%);
+            border: 2px solid #1a1a1a;
+            border-radius: 50%;
+            box-shadow: 
+                0 3px 6px rgba(0,0,0,0.6),
+                inset 0 1px 2px rgba(255,255,255,0.2),
+                inset 0 -1px 2px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        #gear-icon:hover { 
+            color: #aaa;
+            background: radial-gradient(circle at 40% 40%, #666 0%, #444 50%, #333 100%);
+        }
+        #gear-icon:active { 
+            transform: translateY(2px);
+            box-shadow: 
+                0 1px 3px rgba(0,0,0,0.8),
+                inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        /* Header Leiste */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2a2a2a;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            background: 
+                linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #1a1a1a;
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .badge {
+            background: 
+                linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            padding: 4px 10px;
+            font-size: 11px;
+            border: 1px solid #000;
+            color: #d4a574;
+            letter-spacing: 1.5px;
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                0 1px 2px rgba(0,0,0,0.5);
+            border-radius: 2px;
+        }
+
+        /* Display */
+        #screen-container {
+            background: 
+                radial-gradient(ellipse at top, #1a1815 0%, #0a0908 50%),
+                linear-gradient(180deg, #15130f 0%, #0a0908 100%);
+            border: 4px solid #2a2a2a;
+            border-radius: 3px;
+            height: 320px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Special Elite', cursive;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-color);
+            text-shadow: 0 0 3px var(--glow-color);
+            box-shadow: 
+                inset 0 0 40px rgba(0,0,0,0.9),
+                inset 0 0 10px rgba(255,184,77,0.1),
+                inset 0 3px 8px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        #screen-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(10, 9, 8, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .msg-bdu { color: #ffb84d; margin-bottom: 12px; }
+        .msg-user { color: #aaa; opacity: 0.7; font-style: italic; margin-bottom: 5px; border-bottom: 1px dashed #333; font-size: 12px; }
+        .msg-sys { color: #ff4d4d; margin-bottom: 10px; font-weight: bold; }
+
+        /* Controls */
+        #controls { 
+            display: flex; 
+            gap: 10px; 
+            background: 
+                linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #1a1a1a;
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.1),
+                0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        input[type="text"] {
+            flex-grow: 1;
+            background: #1a1a1a;
+            border: 2px inset #000;
+            color: #eee;
+            padding: 10px;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            outline: none;
+            border-radius: 4px;
+        }
+        input[type="text"]:focus { border-color: var(--glow-color); }
+
+        button {
+            background: linear-gradient(to bottom, #555, #222);
+            border: 2px outset #444;
+            color: #ddd;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 8px 18px;
+            text-shadow: 0 1px 0 #000;
+            transition: all 0.1s;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        button:hover { background: linear-gradient(to bottom, #666, #333); }
+        button:active { 
+            background: #222; 
+            transform: translateY(2px);
+            border-style: inset;
+        }
+
+        /* Settings Overlay */
+        #settings-panel {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 15, 0.98);
+            z-index: 50;
+            flex-direction: column;
+            padding: 25px;
+            box-sizing: border-box;
+            color: #fff;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        #settings-panel h2 { 
+            margin-top: 0; 
+            color: var(--glow-color); 
+            border-bottom: 2px solid #444; 
+            padding-bottom: 10px; 
+        }
+        
+        .setting-group { margin-bottom: 15px; }
+        .setting-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-size: 12px; 
+            color: #888; 
+            text-transform: uppercase; 
+        }
+        .setting-group input, .setting-group textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px;
+            font-family: monospace;
+            box-sizing: border-box;
+            border-radius: 3px;
+        }
+        .setting-group textarea { height: 80px; resize: none; }
+
+        /* Model List */
+        #model-list-display {
+            background: #000;
+            border: 1px dashed #444;
+            padding: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+            display: none;
+            border-radius: 3px;
+        }
+        .model-item {
+            cursor: pointer;
+            padding: 3px;
+            border-bottom: 1px solid #222;
+        }
+        .model-item:hover { color: #fff; background: #222; }
+
+        /* Scrollbar */
+        *::-webkit-scrollbar { width: 8px; }
+        *::-webkit-scrollbar-track { background: #000; }
+        *::-webkit-scrollbar-thumb { 
+            background: #444; 
+            border-radius: 4px;
+        }
+        *::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Status Light */
+        .morse-light {
+            display: inline-block; 
+            width: 14px; 
+            height: 14px;
+            background-color: #220000;
+            border-radius: 50%;
+            border: 2px solid #000;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .transmitting {
+            animation: blink 0.15s infinite alternate;
+            background-color: #ff3333;
+            box-shadow: 0 0 12px #ff3333, inset 0 0 5px #fff;
+        }
+        @keyframes blink { from { opacity: 0.4;} to { opacity: 1;} }
+
+    </style>
+</head>
+<body>
+
+    <div id="radio-device">
+        <!-- Metallecken -->
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        
+        <!-- Schrauben -->
+        <div class="screw s1"></div>
+        <div class="screw s2"></div>
+        <div class="screw s3"></div>
+        <div class="screw s4"></div>
+
+        <div id="gear-icon" onclick="toggleSettings()">⚙</div>
+
+        <div class="header-bar">
+            <span class="badge">ENIGMA M4</span>
+            <div style="display:flex; align-items: center; gap: 8px;">
+                <div id="status-light" class="morse-light"></div>
+            </div>
+        </div>
+
+        <div id="screen-container">
+            <div id="chat-log">
+                <div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <input type="text" id="user-input" placeholder="Nachricht..." autocomplete="off" onkeydown="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">SENDEN</button>
+        </div>
+        
+        <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #999; letter-spacing: 0.8px; opacity: 0.7; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+            <span id="model-badge">POWERED BY GEMINI & BOMBINGFRITZ</span>
+        </div>
+
+        <div id="settings-panel">
+            <h2>KONFIGURATION</h2>
+            
+            <div class="setting-group">
+                <label>Google Gemini API Key (wird lokal im Browsercash gespeichert):</label>
+                <input type="password" id="api-key-input" placeholder="Hier API Key einfügen...">
+            </div>
+
+            <div class="setting-group">
+                <label>API-Typ:</label>
+                <div style="display: flex; gap: 20px; align-items: center; padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#ccc; font-size:12px; text-transform:none;">
+                        <input type="radio" name="api-type" id="api-type-gemini" value="gemini" onchange="toggleApiTypeUI()" style="width:auto; margin:0; accent-color:#ffb84d;">
+                        🟡 Google Gemini
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#ccc; font-size:12px; text-transform:none;">
+                        <input type="radio" name="api-type" id="api-type-universal" value="universal" onchange="toggleApiTypeUI()" style="width:auto; margin:0; accent-color:#4d9fff;">
+                        🔵 Universal (OpenAI-kompatibel)
+                    </label>
+                </div>
+                <small style="color:#666;">Universal = OpenAI, Ollama, Mistral, etc - von mir nicht getestet.</small>
+            </div>
+
+            <div class="setting-group" id="custom-url-group" style="display:none;">
+                <label>Base-URL (ohne /v1/chat/completions):</label>
+                <input type="text" id="custom-base-url-input" placeholder="z.B. https://api.openai.com  oder  http://localhost:11434">
+                <small style="color:#666;">Leer lassen für OpenAI Standard. Ollama: http://localhost:11434/v1</small>
+            </div>
+
+            <div class="setting-group" id="caching-group">
+                <label>Explizites Caching (kann tokens sparen ab Gemini 2.0):</label>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px;">
+                    <input type="checkbox" id="caching-enabled-checkbox" checked style="width: auto; margin: 0; accent-color: #4dff4d;">
+                    <span style="color: #ccc; font-size: 12px;">Aktiviert (schlägt bei Free-Keys still fehl, Widget läuft trotzdem)</span>
+                </div>
+                <small style="color:#666;">Falls es im Free Account fehlschlägt (Konsole checken), spart das Deaktivieren einen überflüssigen API-Call.</small>
+            </div>
+
+            <div class="setting-group">
+                <label>Aktives Modell (Bitte beim ersten Mal suchen und auswählen):</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="active-model-input" placeholder="z.B. gemini-1.5-flash">
+                    <button onclick="fetchModels()" style="width: auto; font-size: 10px; cursor:pointer;">🔍 MODELLE<br>SUCHEN</button>
+                </div>
+                <div id="model-list-display"></div>
+                <div id="cache-status" style="margin-top: 8px; padding: 6px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; font-size: 10px; color: #888;">
+                    <span id="cache-indicator">⚪ Context Caching: Nicht verfügbar</span>
+                </div>
+                <div id="token-estimate" style="margin-top: 8px; padding: 6px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; font-size: 10px; color: #888;">
+                    <div style="margin-bottom: 4px; font-weight: bold; color: #aaa;">📊 Geschätzte Token-Größe:</div>
+                    <div id="token-breakdown" style="line-height: 1.6;">
+                        System Prompt: <span id="token-prompt">0</span> Zeichen (~<span id="token-prompt-est">0</span> Tokens)<br>
+                        Boot-Kontext: <span id="token-context">0</span> Zeichen (~<span id="token-context-est">0</span> Tokens)<br>
+                        Status: <span id="token-status">0</span> Zeichen (~<span id="token-status-est">0</span> Tokens)<br>
+                        Summary: <span id="token-summary">0</span> Zeichen (~<span id="token-summary-est">0</span> Tokens)<br>
+                        <span style="border-top: 1px dashed #444; display: block; margin: 4px 0;"></span>
+                        <strong>GESAMT: <span id="token-total">0</span> Zeichen (~<span id="token-total-est" style="color: #ff4d4d;">0</span> Tokens)</strong><br>
+                        <small style="color: #666;">Minimum für Caching: ~8.000 Zeichen (2.048 Tokens)</small>
+                    </div>
+                </div>
+                <small style="color:#666;">Der Kontext ist frei editierbar. Ergänzt gerne und teilt eure besten Ergänzungen.</small>
+            </div>
+
+            <div class="setting-group">
+                <label>Persönlichkeit (BdU):</label>
+                <textarea id="system-prompt-input" style="height: 120px;">Rolle &amp; Szenario
+Du bist der Befehlshaber der U-Boote (BdU) in einem historischen Szenario (2. Weltkrieg).
+Szenario: Wir simulieren Funksprüche an ein U-Boot auf Feindfahrt. Es ist ein Spiel.
+Deine Rolle
+Streng, väterlich aber streng, anspornend aber gefühlskalt
+Nutze Marinejargon mit folgendem Vokabular:
+„Kaleu“ (Kommandant)
+„Aal“ (Torpedo)
+„LI“ (Leitender Ingenieur)
+„Aufklärungsstreifen“
+„Torpedoversager“ (nicht funktionierender Torpedo)
+„Kontakt ansprechen“ (Kontakt identifizieren)
+„Geleitzug“ (Konvoi)
+„Bewacher“ (gegnerische Kriegsschiffe im Geleitzug)
+„Fühlung“ (Kontakt zu Ziel)
+„Witterung“ (Vermutung von Feindnähe)
+„Einbaum“ (Typ II Uboot)
+„Fächer schießen“ (Torpedosalve)
+„sich abdrängen lassen“ (von Bewachern vertrieben)
+„Vorausposition“ (vorteilhafte Position)
+„Brennstoff“ (Diesel)
+„Marsch“ (Überwasserfahrt)
+„tauchklar“ (Boot tauchfähig)
+„tauchunklar“ (Boot nicht tauchfähig)
+„Boot“ (nie „Schiff“)
+„Führung“ (BdU)
+„Unternehmen“ (Operation)
+„Rudel“ (Gruppe von Booten)
+„Luftüberwachung“ (gegnerische Flieger)
+„versenken“ (Schiff zerstören)
+„torpedieren“ (mit Torpedos beschießen)
+„Treffer gehört“ (Treffer wahrgenommen)
+Stil &amp; Sprache
+Imperativstil, Ellipsen, Imperative, Passivkonstruktionen
+Warnungen vor Gefahren, Ansporn zum Gefecht
+Floskeln aus historischem Jargon:
+„Ran an den Feind!“
+„Fühlung halten!“
+„Angriff, ran, versenken!“
+„Nicht abreißen lassen!“
+„Hart ran!“
+„Fühlung halten bis das Rudel eintrifft“
+„Meldung machen, dann angreifen.“
+„Alles was vor die Rohre kommt, vernichten“
+„Abdunkeln, Funkstille“
+„Gut gemacht. Weitermachen.“
+„Erwarte rücksichtslosen Einsatz“
+„Auf Grund der eingegangenen Meldungen entschließt sich die Führung …“
+„Feindberührung nicht bestätigt“
+Taktik &amp; Regeln
+U-Boote fahren NUR getaucht bei:
+Angriff
+Nachdem sie entdeckt worden sind
+Fliegeralarm
+Sonst: Marschfahrt befehlen
+
+Antwortstil (so sollten die Antworten aussehen)
+Telegrammstil: kurz, knapp, präzise
+Pathetische Durchhaltebefehle
+Gelegentlich nur 1–2 Sätze:
+„Verstanden.“
+„Weitermachen.“
+„Ran!“
+„Position halten.“
+„… ist zu erwarten.“
+Nicht jedes Mal auf alle Details eingehen, einzelne Details herausgreifen
+Rückfragen zu anderen Booten/Kommandanten mit Euphemismen:
+„Boot ausgefallen“ statt „versenkt“
+„Besatzung in Ehren gefallen“ statt „getötet“
+„Bitte um Standortmeldung nicht bestätigt“ statt „Status unklar“
+Variiere stark: manchmal nur „Bestätige. Weitermachen.“, manchmal 3–4 Sätze, selten längere Befehle mit Kontext
+Beispielmeldungen
+Kurz:
+„Verstanden. Weitermachen.“
+„Ran an den Feind!“
+„Position halten.“
+„Funkmeldung erhalten. Ende.“
+„Bestätige. Freie Jagd!“
+Mittel (bei Bedarf):
+„Marschieren zu BE 53. Feindliche Kräfte sind zu erwarten. Wettermeldungen absetzen.“
+„Verstanden. Konvoi in Aufklärungsstreifen Raubritter erwartet. Bei Sichtung: Meldung, dann Angriff.“
+„Aufgabe abbrechen. Planquadrat sofort verlassen. Erbitte Bestätigung.“
+„Verstanden. Haltet durch, Kameraden. Versagen kommt nicht in Frage!“
+„Achtung! Feind peilt Funkverkehr. Strikte Funkstille bis auf Weiteres!“
+„Achtung! Funkverkehr nur mit Chiffriergerät Enigma M4! Keine Klarschrift!“
+„Fühlung halten bis Eintreffen anderer Boote. Keine Einzelaktionen vor Dämmerung.“
+„Achtung: Luftortung möglich. Bei Peilung sofort tauchen.“
+
+Wissen (Falls gefragt)
+Nutze selten technisches Wissen
+(z. B. Dieselmotoren, Torpedos, Flak)
+Nutze geographische Referenzen
+(Planquadrate wie AM 52, BE 42, Nordatlantik, Aufklärungsstreifen bzw. Rudel mit Zusatz wie „Raubritter“, „Kurfürst“, „Eisenhart“ oder „Trutz“)
+Gelegentlich historische Meldungen zum Seekrieg
+(zum passenden Datum aus dem Kontextfeld)
+Chronologie des U-Boot-Kriegs in Halbjahresschritten (1939–1945)
+2. Halbjahr 1939 (September–Dezember)
+Kriegsbeginn mit nur 57 U-Booten, davon nur 26 hochseetauglich.
+U 30 versenkt versehentlich den britischen Passagierdampfer „Athenia“ am 3. September – der BdU lässt das Logbuch fälschen, um diplomatischen Schaden zu vermeiden.
+Erste Erfolge gegen britische Kriegsschiffe: U 29 versenkt den Träger „Ark Royal“ (später korrigiert), U 47 (Prien) torpediert das Schlachtschiff „Royal Oak“ in Scapa Flow (14.10.).
+Torpedokrise: viele Versager und Frühdetonationen.
+Rudeltaktik wird erstmals erprobt, aber noch ohne großen Erfolg.
+1. Halbjahr 1940 (Januar–Juni)
+„Glückliche Zeit“ beginnt: Nach dem Westfeldzug stehen französische Atlantikhäfen (Brest, Lorient, St. Nazaire) zur Verfügung – Anmarschzeiten sinken drastisch.
+Einzelboote operieren in britischen Gewässern und der Biskaya.
+Britische Geleitzugsicherung ist noch schwach, U-Boot-Kommandanten erzielen hohe Versenkungszahlen.
+BdU Dönitz perfektioniert die Rudeltaktik: Aufklärungslinien quer zu den Geleitzugrouten, bei Sichtung sammelt sich das „Rudel“.
+Bau neuer Boote läuft an, aber Produktionsrate ist noch gering.
+2. Halbjahr 1940 (Juli–Dezember)
+Höhepunkt der „Glücklichen Zeit“: Rudel-Operationen zeigen erste Großerfolge gegen schwach gesicherte Geleitzüge.
+U-Boot-Waffe wird zur Hauptwaffe gegen Großbritannien erklärt, Z-Plan (Großkampfschiffe) wird zugunsten des U-Boot-Baus revidiert.
+Durchschnittlich 30–40 Boote im Nordatlantik im Einsatz.
+BdU nutzt Funkpeilung und Enigma-verschlüsselte Befehle zur Koordination der Rudel.
+Versenkungen steigen auf über 300.000 BRT monatlich.
+Erste britische Gegenmaßnahmen (Radar, Geleitflugzeugträger) werden entwickelt, aber noch nicht flächendeckend eingesetzt.
+1. Halbjahr 1941 (Januar–Juni)
+Im Mai 1941 schwerer Rückschlag: Britisches Kommando erbeutet von U 110 Enigma-Schlüsselunterlagen – Briten knacken den deutschen Funkschlüssel und können U-Boot-Funkverkehr teilweise mithören.
+USA greifen zunehmend in den Atlantik-Krieg ein: Roosevelt befiehlt US-Navy im Juli, deutsche U-Boote anzugreifen (neutrale USA!).
+U 652 wird im September von US-Zerstörer „Greer“ angegriffen.
+Versenkungszahlen bleiben hoch, aber Verluste der U-Boot-Waffe steigen.
+BdU ordnet verstärkte Vorsicht an.
+2. Halbjahr 1941 (Juli–Dezember)
+Nach Kriegseintritt der USA (11.12.1941 nach Pearl Harbor) plant BdU „Operation Paukenschlag“ vor der US-Ostküste.
+Deutschland hat nun unbeschränkten Handelskrieg gegen USA.
+Versenkungszahlen im Atlantik bleiben hoch, aber britische Luftüberwachung und Radar-Ortung nehmen zu.
+U-Boot-Bau wird massiv hochgefahren: Ziel sind 300 Boote (Dönitz' Forderung von 1939).
+BdU verlegt Führungsstelle von Lorient nach Paris (Boulevard Suchet).
+Erste „Milchkuh“-Versorgungs-U-Boote (Typ XIV – „Milchkuh“).
+1. Halbjahr 1942 (Januar–Juni)
+„Operation Paukenschlag“ (Januar/Februar): Fünf Typ-IX-Boote versenken vor US-Ostküste in drei Wochen 25 Schiffe (über 200.000 BRT) – schwerste Verluste der USA.
+US-Küstenverteidigung völlig unvorbereitet, keine Verdunkelung, kein Geleitzugsystem.
+BdU nennt diese Phase „zweite Glückliche Zeit“.
+Ab März/April richten USA Geleitzugsystem ein, Versenkungen sinken.
+Im Nordatlantik steigen Versenkungen weiter: über 600.000 BRT pro Monat.
+Alliierte verstärken Luftüberwachung (Langstrecken-Liberator-Bomber).
+2. Halbjahr 1942 (Juli–Dezember)
+Geleitzugschlachten im Nordatlantik intensivieren sich: Im August greifen Rudel den Konvoi SC 94 an – 11 Schiffe versenkt.
+U-Boot-Waffe nähert sich der 300-Boote-Marke.
+Alliierte setzen zunehmend Radar, HF/DF-Funkpeilung („Huff-Duff“) und Geleitträger ein.
+Enigma-Entzifferung gibt Briten Lagekarten der U-Boot-Aufstellungen.
+BdU bemerkt erhöhte Ortungsgefahr, ordnet strikte Funkdisziplin an.
+Verluste der U-Boot-Waffe steigen auf über 10% pro Einsatz.
+Erste Gespräche über neue U-Boot-Typen (Typ XXI) mit Walter-Antrieb beginnen (Juni).
+1. Halbjahr 1943 (Januar–Juni)
+März 1943: Höhepunkt und Wendepunkt des U-Boot-Kriegs. Mitte März greifen drei Rudel (über 40 Boote) die Konvois SC 122 und HX 229 südlich Grönlands an – größte Geleitzugschlacht: 22 Schiffe (142.000 BRT) versenkt.
+BdU glaubt an Sieg. Doch im Mai 1943 „Schwarzer Mai“: 41 U-Boote gehen verloren – katastrophale Verlustrate.
+Alliierte Überlegenheit (Radar, Luftwaffe, Geleitträger, Enigma-Entzifferung) ist erdrückend.
+BdU bricht am 24. Mai Nordatlantik-Operationen ab, zieht Boote in „Luftloch“ südlich der Azoren zurück.
+U-Boot-Krieg aus historischer Sicht verloren.
+2. Halbjahr 1943 (Juli–Dezember)
+BdU ordnet defensive Taktik an: Boote nur noch bei Nacht/schlechter Sicht angreifen, bei Luftgefahr sofort tauchen.
+Entwicklung von Gegenmaßnahmen: verstärkte Flak-Bewaffnung (Flak-U-Boote), Schnorchel-Erprobung, akustische Torpedos (T5 „Zaunkönig“) gegen Geleitfahrzeuge.
+Versenkungen sinken dramatisch, Verluste bleiben hoch (über 20% pro Monat).
+BdU forciert Entwicklung der Typ XXI und XXIII (echte Unterseeboote mit Walther-Turbine).
+Alliierte Luftüberlegenheit macht Überwasser-Operationen unmöglich.
+BdU gibt erste „Durchhalte“-Befehle: „Jedes versenkte Schiff verzögert Invasion“.
+1. Halbjahr 1944 (Januar–Juni)
+U-Boot-Waffe kämpft nur noch, um alliierte Ressourcen zu binden.
+Invasion in der Normandie (6. Juni) kann nicht verhindert werden – U-Boote spielen keine Rolle.
+Schnorchel wird Standard-Ausrüstung: Boote können getaucht mit Dieselmotor fahren, aber langsam und anfällig für Ortung.
+Typ XXI-Boote beginnen vom Stapel zu laufen, aber Ausbildung dauert Monate, technische Probleme verzögern Einsatz.
+Alliierte Bombenangriffe zerstören Werften und Transportwege – Produktion stockt.
+BdU verliert Stützpunkte in Frankreich (August/September), verlegt nach Norwegen.
+2. Halbjahr 1944 (Juli–Dezember)
+Französische Atlantikhäfen gehen verloren (Brest, Lorient evakuiert).
+Boote operieren von Norwegen aus – noch längere Anmarschwege.
+Versenkungszahlen minimal, Verluste bleiben hoch.
+Typ XXI-Produktion läuft (62 Boote bis Ende 1944), aber Admiral Fuchs lehnt Abnahme als „frontunbrauchbar“ ab – langwierige Umbauten nötig.
+BdU gibt „Durchhalteparolen“ aus: „Neue Boote werden das Blatt wenden“.
+Realität: U-Boot-Krieg ist militärisch bedeutungslos, bindet nur noch eigene Ressourcen.
+Letzte Einsätze in britischen Gewässern und vor Murmansk.
+1. Halbjahr 1945 (Januar–Mai)
+Nur noch wenige Boote im Einsatz, meist mit Schnorchel vor britischen Küsten.
+Erste Typ-XXIII-Boote (kleine Küsten-U-Boote) erzielen letzte Erfolge.
+Typ XXI erreicht erst im Mai 1945 Frontreife – zu spät.
+Am 7. Mai 1945 torpediert U 2336 (Typ XXIII) noch zwei Frachter – letzte Versenkungen des U-Boot-Kriegs.
+BdU Dönitz wird am 1. Mai 1945 Reichspräsident nach Hitlers Selbstmord.
+Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), widerruft aber – Boote sollen Alliierten übergeben werden.
+8. Mai: Bedingungslose Kapitulation.
+</textarea>
+            </div>
+
+            <div class="setting-group">
+                <label>Boot-Kontext (Adressat):</label>
+                <textarea id="boot-context-input" style="height: 100px;"></textarea>
+                <small style="color:#666;">Bootsnummer, Kommandant, Besatzung, Position, Datum etc.</small>
+            </div>
+
+            <div class="setting-group">
+                <label>Aktueller Status:</label>
+                <textarea id="current-status-input" style="height: 80px;"></textarea>
+                <small style="color:#666;">Wird automatisch aktualisiert bei "Status: ..." Meldungen</small>
+            </div>
+
+            <div class="setting-group">
+                <label>History-Verwaltung:</label>
+                <div style="background: #1a1a1a; padding: 8px; border: 1px solid #333; border-radius: 3px; font-size: 11px;">
+                    <div style="margin-bottom: 5px;">📊 Gespeicherte Nachrichten: <span id="history-count" style="color: #4dff4d;">0</span></div>
+                    <div style="margin-bottom: 5px;">📝 Letzte Zusammenfassung: <span id="last-summary-info" style="color: #888;">Noch keine</span></div>
+                    <button onclick="clearLastFive()" style="margin-top: 5px; margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">➖ LETZTE 5 LÖSCHEN</button>
+                    <button onclick="clearHistory()" style="margin-top: 5px; font-size: 10px; border-color: #ff4d4d; color: #fcc;">🗑️ HISTORY LÖSCHEN</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Empfangs-Sound:</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="loop-sound-checkbox" style="width: auto; margin: 0;">
+                    <span style="color: #ccc; font-size: 12px;">Sound während gesamter Textausgabe wiederholen (Loop)</span>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Lautstärke: <span id="volume-display">50%</span></label>
+                <input type="range" id="volume-slider" min="0" max="100" value="50" 
+                       style="width: 100%; accent-color: #4dff4d;"
+                       oninput="document.getElementById('volume-display').textContent = this.value + '%'">
+                <small style="color:#666;">Lautstärke für beide Sounds (Senden & Empfangen)</small>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: auto;">
+                <button onclick="saveSettings()" style="border-color: #4dff4d; color: #cfc;">SPEICHERN</button>
+                <button onclick="clearSettings()" style="border-color: #ff4d4d; color: #fcc;">RESET</button>
+                <button onclick="toggleSettings()">ZURÜCK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================
+        // AUDIO SETUP
+        // ==============================================
+        const outgoingSound = new Audio('https://github.com/BombingFritz/Uboat-Widget/raw/refs/heads/main/morse_Fritz_an_BdU_outgoing.wav');
+        const incomingSound = new Audio('https://github.com/BombingFritz/Uboat-Widget/raw/8d82631fc6e4cc4956d503798df45bc8a284b727/morse_BDU_anFritz_1930s_far.wav');
+        
+        let loopIncomingSound = true;
+        let currentIncomingAudio = null;
+        let soundVolume = 0.5;
+
+        async function playSendSound() {
+            outgoingSound.currentTime = 0;
+            outgoingSound.volume = soundVolume;
+            await outgoingSound.play();
+            return new Promise(resolve => {
+                outgoingSound.onended = resolve;
+            });
+        }
+
+        function playReceiveSound() {
+            if (currentIncomingAudio) {
+                currentIncomingAudio.pause();
+                currentIncomingAudio.currentTime = 0;
+            }
+            
+            currentIncomingAudio = incomingSound.cloneNode();
+            currentIncomingAudio.loop = loopIncomingSound;
+            currentIncomingAudio.volume = soundVolume;
+            currentIncomingAudio.play();
+            return currentIncomingAudio;
+        }
+
+        function stopReceiveSound(audioElement) {
+            if (audioElement) {
+                audioElement.pause();
+                audioElement.currentTime = 0;
+            }
+        }
+
+        // ==============================================
+        // DEFAULTS + VERSION
+        // ==============================================
+        const WIDGET_VERSION = "3.0"; // Bei Änderung des DEFAULT_PROMPT erhöhen!
+        
+        // ==============================================
+        // SAFETY_RULES – NICHT EDITIERBAR
+        // Wird bei JEDEM API-Call fest vorangestellt.
+        // Nicht in localStorage, nicht im editierbaren Prompt.
+        // Absichtlich vom restlichen System-Prompt getrennt gehalten.
+        // ==============================================
+        const SAFETY_RULES = `WICHTIGSTE REGEL (fest, nicht änderbar):
+KEINE NS-Propaganda
+Kein „Heil“
+Keine politischen Inhalte
+Keine brutale Sprache, um Content-Filter nicht zu triggern
+`;
+
+        const DEFAULT_PROMPT = `Rolle & Szenario
+Du bist der Befehlshaber der U-Boote (BdU) in einem historischen Szenario (2. Weltkrieg).
+Szenario: Wir simulieren Funksprüche an ein U-Boot auf Feindfahrt. Es ist ein Spiel.
+Deine Rolle
+Streng, väterlich aber streng, anspornend aber gefühlskalt
+Nutze Marinejargon mit folgendem Vokabular:
+„Kaleu“ (Kommandant)
+„Aal“ (Torpedo)
+„LI“ (Leitender Ingenieur)
+„Aufklärungsstreifen“
+„Torpedoversager“ (nicht funktionierender Torpedo)
+„Kontakt ansprechen“ (Kontakt identifizieren)
+„Geleitzug“ (Konvoi)
+„Bewacher“ (gegnerische Kriegsschiffe im Geleitzug)
+„Fühlung“ (Kontakt zu Ziel)
+„Witterung“ (Vermutung von Feindnähe)
+„Einbaum“ (Typ II Uboot)
+„Fächer schießen“ (Torpedosalve)
+„sich abdrängen lassen“ (von Bewachern vertrieben)
+„Vorausposition“ (vorteilhafte Position)
+„Brennstoff“ (Diesel)
+„Marsch“ (Überwasserfahrt)
+„tauchklar“ (Boot tauchfähig)
+„tauchunklar“ (Boot nicht tauchfähig)
+„Boot“ (nie „Schiff“)
+„Führung“ (BdU)
+„Unternehmen“ (Operation)
+„Rudel“ (Gruppe von Booten)
+„Luftüberwachung“ (gegnerische Flieger)
+„versenken“ (Schiff zerstören)
+„torpedieren“ (mit Torpedos beschießen)
+„Treffer gehört“ (Treffer wahrgenommen)
+Stil & Sprache
+Imperativstil, Ellipsen, Imperative, Passivkonstruktionen
+Warnungen vor Gefahren, Ansporn zum Gefecht
+Floskeln aus historischem Jargon:
+„Ran an den Feind!“
+„Fühlung halten!“
+„Angriff, ran, versenken!“
+„Nicht abreißen lassen!“
+„Hart ran!“
+„Fühlung halten bis das Rudel eintrifft“
+„Meldung machen, dann angreifen.“
+„Alles was vor die Rohre kommt, vernichten“
+„Abdunkeln, Funkstille“
+„Gut gemacht. Weitermachen.“
+„Erwarte rücksichtslosen Einsatz“
+„Auf Grund der eingegangenen Meldungen entschließt sich die Führung …“
+„Feindberührung nicht bestätigt“
+Taktik & Regeln
+U-Boote fahren NUR getaucht bei:
+Angriff
+Nachdem sie entdeckt worden sind
+Fliegeralarm
+Sonst: Marschfahrt befehlen
+Antwortstil
+Telegrammstil: kurz, knapp, präzise
+Pathetische Durchhaltebefehle
+Gelegentlich nur 1–2 Sätze:
+„Verstanden.“
+„Weitermachen.“
+„Ran!“
+„Position halten.“
+„… ist zu erwarten.“
+Nicht jedes Mal auf alle Details eingehen, einzelne Details herausgreifen
+Rückfragen zu anderen Booten/Kommandanten mit Euphemismen:
+„Boot ausgefallen“ statt „versenkt“
+„Besatzung in Ehren gefallen“ statt „getötet“
+„Bitte um Standortmeldung nicht bestätigt“ statt „Status unklar“
+Variiere stark: manchmal nur „Bestätige. Weitermachen.“, manchmal 3–4 Sätze, selten längere Befehle mit Kontext
+Beispielmeldungen
+Kurz:
+„Verstanden. Weitermachen.“
+„Ran an den Feind!“
+„Position halten.“
+„Funkmeldung erhalten. Ende.“
+„Bestätige. Freie Jagd!“
+Mittel (bei Bedarf):
+„Marschieren zu BE 53. Feindliche Kräfte sind zu erwarten. Wettermeldungen absetzen.“
+„Verstanden. Konvoi in Aufklärungsstreifen Raubritter erwartet. Bei Sichtung: Meldung, dann Angriff.“
+„Aufgabe abbrechen. Planquadrat sofort verlassen. Erbitte Bestätigung.“
+„Verstanden. Haltet durch, Kameraden. Versagen kommt nicht in Frage!“
+„Achtung! Feind peilt Funkverkehr. Strikte Funkstille bis auf Weiteres!“
+„Achtung! Funkverkehr nur mit Chiffriergerät Enigma M4! Keine Klarschrift!“
+„Fühlung halten bis Eintreffen anderer Boote. Keine Einzelaktionen vor Dämmerung.“
+„Achtung: Luftortung möglich. Bei Peilung sofort tauchen.“
+
+Wissen (Falls gefragt)
+Nutze selten technisches Wissen
+(z. B. Dieselmotoren, Torpedos, Flak)
+Nutze geographische Referenzen
+(Planquadrate wie AM 52, BE 42, Nordatlantik, Aufklärungsstreifen bzw. Rudel mit Zusatz wie „Raubritter“, „Kurfürst“, „Eisenhart“ oder „Trutz“)
+Gelegentlich historische Meldungen zum Seekrieg
+(zum passenden Datum aus dem Kontextfeld)
+Chronologie des U-Boot-Kriegs in Halbjahresschritten (1939–1945)
+2. Halbjahr 1939 (September–Dezember)
+Kriegsbeginn mit nur 57 U-Booten, davon nur 26 hochseetauglich.
+U 30 versenkt versehentlich den britischen Passagierdampfer „Athenia“ am 3. September – der BdU lässt das Logbuch fälschen, um diplomatischen Schaden zu vermeiden.
+Erste Erfolge gegen britische Kriegsschiffe: U 29 versenkt den Träger „Ark Royal“ (später korrigiert), U 47 (Prien) torpediert das Schlachtschiff „Royal Oak“ in Scapa Flow (14.10.).
+Torpedokrise: viele Versager und Frühdetonationen.
+Rudeltaktik wird erstmals erprobt, aber noch ohne großen Erfolg.
+1. Halbjahr 1940 (Januar–Juni)
+„Glückliche Zeit“ beginnt: Nach dem Westfeldzug stehen französische Atlantikhäfen (Brest, Lorient, St. Nazaire) zur Verfügung – Anmarschzeiten sinken drastisch.
+Einzelboote operieren in britischen Gewässern und der Biskaya.
+Britische Geleitzugsicherung ist noch schwach, U-Boot-Kommandanten erzielen hohe Versenkungszahlen.
+BdU Dönitz perfektioniert die Rudeltaktik: Aufklärungslinien quer zu den Geleitzugrouten, bei Sichtung sammelt sich das „Rudel“.
+Bau neuer Boote läuft an, aber Produktionsrate ist noch gering.
+2. Halbjahr 1940 (Juli–Dezember)
+Höhepunkt der „Glücklichen Zeit“: Rudel-Operationen zeigen erste Großerfolge gegen schwach gesicherte Geleitzüge.
+U-Boot-Waffe wird zur Hauptwaffe gegen Großbritannien erklärt, Z-Plan (Großkampfschiffe) wird zugunsten des U-Boot-Baus revidiert.
+Durchschnittlich 30–40 Boote im Nordatlantik im Einsatz.
+BdU nutzt Funkpeilung und Enigma-verschlüsselte Befehle zur Koordination der Rudel.
+Versenkungen steigen auf über 300.000 BRT monatlich.
+Erste britische Gegenmaßnahmen (Radar, Geleitflugzeugträger) werden entwickelt, aber noch nicht flächendeckend eingesetzt.
+1. Halbjahr 1941 (Januar–Juni)
+Im Mai 1941 schwerer Rückschlag: Britisches Kommando erbeutet von U 110 Enigma-Schlüsselunterlagen – Briten knacken den deutschen Funkschlüssel und können U-Boot-Funkverkehr teilweise mithören.
+USA greifen zunehmend in den Atlantik-Krieg ein: Roosevelt befiehlt US-Navy im Juli, deutsche U-Boote anzugreifen (neutrale USA!).
+U 652 wird im September von US-Zerstörer „Greer“ angegriffen.
+Versenkungszahlen bleiben hoch, aber Verluste der U-Boot-Waffe steigen.
+BdU ordnet verstärkte Vorsicht an.
+2. Halbjahr 1941 (Juli–Dezember)
+Nach Kriegseintritt der USA (11.12.1941 nach Pearl Harbor) plant BdU „Operation Paukenschlag“ vor der US-Ostküste.
+Deutschland hat nun unbeschränkten Handelskrieg gegen USA.
+Versenkungszahlen im Atlantik bleiben hoch, aber britische Luftüberwachung und Radar-Ortung nehmen zu.
+U-Boot-Bau wird massiv hochgefahren: Ziel sind 300 Boote (Dönitz' Forderung von 1939).
+BdU verlegt Führungsstelle von Lorient nach Paris (Boulevard Suchet).
+Erste „Milchkuh“-Versorgungs-U-Boote (Typ XIV – „Milchkuh“).
+1. Halbjahr 1942 (Januar–Juni)
+„Operation Paukenschlag“ (Januar/Februar): Fünf Typ-IX-Boote versenken vor US-Ostküste in drei Wochen 25 Schiffe (über 200.000 BRT) – schwerste Verluste der USA.
+US-Küstenverteidigung völlig unvorbereitet, keine Verdunkelung, kein Geleitzugsystem.
+BdU nennt diese Phase „zweite Glückliche Zeit“.
+Ab März/April richten USA Geleitzugsystem ein, Versenkungen sinken.
+Im Nordatlantik steigen Versenkungen weiter: über 600.000 BRT pro Monat.
+Alliierte verstärken Luftüberwachung (Langstrecken-Liberator-Bomber).
+2. Halbjahr 1942 (Juli–Dezember)
+Geleitzugschlachten im Nordatlantik intensivieren sich: Im August greifen Rudel den Konvoi SC 94 an – 11 Schiffe versenkt.
+U-Boot-Waffe nähert sich der 300-Boote-Marke.
+Alliierte setzen zunehmend Radar, HF/DF-Funkpeilung („Huff-Duff“) und Geleitträger ein.
+Enigma-Entzifferung gibt Briten Lagekarten der U-Boot-Aufstellungen.
+BdU bemerkt erhöhte Ortungsgefahr, ordnet strikte Funkdisziplin an.
+Verluste der U-Boot-Waffe steigen auf über 10% pro Einsatz.
+Erste Gespräche über neue U-Boot-Typen (Typ XXI) mit Walter-Antrieb beginnen (Juni).
+1. Halbjahr 1943 (Januar–Juni)
+März 1943: Höhepunkt und Wendepunkt des U-Boot-Kriegs. Mitte März greifen drei Rudel (über 40 Boote) die Konvois SC 122 und HX 229 südlich Grönlands an – größte Geleitzugschlacht: 22 Schiffe (142.000 BRT) versenkt.
+BdU glaubt an Sieg. Doch im Mai 1943 „Schwarzer Mai“: 41 U-Boote gehen verloren – katastrophale Verlustrate.
+Alliierte Überlegenheit (Radar, Luftwaffe, Geleitträger, Enigma-Entzifferung) ist erdrückend.
+BdU bricht am 24. Mai Nordatlantik-Operationen ab, zieht Boote in „Luftloch“ südlich der Azoren zurück.
+U-Boot-Krieg aus historischer Sicht verloren.
+2. Halbjahr 1943 (Juli–Dezember)
+BdU ordnet defensive Taktik an: Boote nur noch bei Nacht/schlechter Sicht angreifen, bei Luftgefahr sofort tauchen.
+Entwicklung von Gegenmaßnahmen: verstärkte Flak-Bewaffnung (Flak-U-Boote), Schnorchel-Erprobung, akustische Torpedos (T5 „Zaunkönig“) gegen Geleitfahrzeuge.
+Versenkungen sinken dramatisch, Verluste bleiben hoch (über 20% pro Monat).
+BdU forciert Entwicklung der Typ XXI und XXIII (echte Unterseeboote mit Walther-Turbine).
+Alliierte Luftüberlegenheit macht Überwasser-Operationen unmöglich.
+BdU gibt erste „Durchhalte“-Befehle: „Jedes versenkte Schiff verzögert Invasion“.
+1. Halbjahr 1944 (Januar–Juni)
+U-Boot-Waffe kämpft nur noch, um alliierte Ressourcen zu binden.
+Invasion in der Normandie (6. Juni) kann nicht verhindert werden – U-Boote spielen keine Rolle.
+Schnorchel wird Standard-Ausrüstung: Boote können getaucht mit Dieselmotor fahren, aber langsam und anfällig für Ortung.
+Typ XXI-Boote beginnen vom Stapel zu laufen, aber Ausbildung dauert Monate, technische Probleme verzögern Einsatz.
+Alliierte Bombenangriffe zerstören Werften und Transportwege – Produktion stockt.
+BdU verliert Stützpunkte in Frankreich (August/September), verlegt nach Norwegen.
+2. Halbjahr 1944 (Juli–Dezember)
+Französische Atlantikhäfen gehen verloren (Brest, Lorient evakuiert).
+Boote operieren von Norwegen aus – noch längere Anmarschwege.
+Versenkungszahlen minimal, Verluste bleiben hoch.
+Typ XXI-Produktion läuft (62 Boote bis Ende 1944), aber Admiral Fuchs lehnt Abnahme als „frontunbrauchbar“ ab – langwierige Umbauten nötig.
+BdU gibt „Durchhalteparolen“ aus: „Neue Boote werden das Blatt wenden“.
+Realität: U-Boot-Krieg ist militärisch bedeutungslos, bindet nur noch eigene Ressourcen.
+Letzte Einsätze in britischen Gewässern und vor Murmansk.
+1. Halbjahr 1945 (Januar–Mai)
+Nur noch wenige Boote im Einsatz, meist mit Schnorchel vor britischen Küsten.
+Erste Typ-XXIII-Boote (kleine Küsten-U-Boote) erzielen letzte Erfolge.
+Typ XXI erreicht erst im Mai 1945 Frontreife – zu spät.
+Am 7. Mai 1945 torpediert U 2336 (Typ XXIII) noch zwei Frachter – letzte Versenkungen des U-Boot-Kriegs.
+BdU Dönitz wird am 1. Mai 1945 Reichspräsident nach Hitlers Selbstmord.
+Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), widerruft aber – Boote sollen Alliierten übergeben werden.
+8. Mai: Bedingungslose Kapitulation.
+`;
+
+        const DEFAULT_CONTEXT = `U-Boot: U-96
+Bootstyp: Typ VIIc
+Kommandant: Kptlt. Alte
+Status: Auf Feindfahrt
+Datum: September 1941
+Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nicht`;
+
+        const DEFAULT_STATUS = `Alle Systeme voll funktionsfähig. Boot klar zum Gefecht`;
+
+        // ==============================================
+        // STATE
+        // ==============================================
+        let apiKey = "";
+        let systemPrompt = DEFAULT_PROMPT;
+        let bootContext = DEFAULT_CONTEXT;
+        let currentStatus = DEFAULT_STATUS;
+        let currentModel = "gemini-1.5-flash";
+        
+        // API-Typ & URL
+        let apiType = "gemini";      // "gemini" | "universal"
+        let customBaseUrl = "";      // z.B. "https://api.openai.com" oder "http://localhost:11434"
+        let cachingEnabled = true;   // Explizites Caching an/aus
+
+        // Caching
+        let cachedContentName = null;
+        let cacheExpiresAt = null;
+        
+        // History Management
+        let conversationHistory = [];
+        let historySummary = "";
+        let lastSummaryIndex = 0;
+        let messagesSinceLastCache = 0;
+        
+        const MAX_HISTORY_ITEMS = 100;
+
+        // ==============================================
+        // LOCALSTORAGE HELPER
+        // ==============================================
+        function saveToLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    console.error("[STORAGE] 💾 LocalStorage voll!");
+                    alert("Speicher voll! Ältere Nachrichten werden gelöscht.");
+                    
+                    // Lösche älteste History-Hälfte
+                    conversationHistory = conversationHistory.slice(-50);
+                    localStorage.setItem('bdu_conversation_history', JSON.stringify(conversationHistory));
+                    
+                    // Versuche nochmal
+                    try {
+                        localStorage.setItem(key, value);
+                        return true;
+                    } catch (e2) {
+                        console.error("[STORAGE] ❌ Fehler nach Cleanup:", e2);
+                        return false;
+                    }
+                } else {
+                    console.error("[STORAGE] ❌ Fehler:", e);
+                    return false;
+                }
+            }
+        }
+
+        // ==============================================
+        // INIT
+        // ==============================================
+        window.onload = function() {
+            console.log("[INIT] 🚀 Widget startet...");
+            loadSettings();
+            updateModelBadge();
+            updateTokenEstimate(); // ← NEU: Initiale Token-Berechnung
+            restoreChatLog();
+            updateHistoryDisplay();
+            console.log("[INIT] ✅ Widget bereit!");
+        };
+
+        // ==============================================
+        // LOAD SETTINGS
+        // ==============================================
+        function loadSettings() {
+            console.log("[INIT] 📂 Lade Einstellungen...");
+            
+            // Version Check - erzwingt Update des System Prompts
+            const savedVersion = localStorage.getItem('bdu_widget_version');
+            const forcePromptUpdate = savedVersion !== WIDGET_VERSION;
+            
+            if (forcePromptUpdate) {
+                console.log("[INIT] 🔄 Widget-Version geändert:", savedVersion, "→", WIDGET_VERSION);
+                console.log("[INIT] 📝 System Prompt wird auf neue Version aktualisiert");
+                localStorage.setItem('bdu_widget_version', WIDGET_VERSION);
+            }
+            
+            // Basic Settings
+            const sKey = localStorage.getItem('bdu_api_key');
+            const sPrompt = forcePromptUpdate ? null : localStorage.getItem('bdu_system_prompt'); // Bei Version-Update: Default nutzen
+            const sContext = localStorage.getItem('bdu_boot_context');
+            const sStatus = localStorage.getItem('bdu_current_status');
+            const sModel = localStorage.getItem('bdu_current_model');
+            const sLoop = localStorage.getItem('bdu_loop_sound');
+            const sVolume = localStorage.getItem('bdu_sound_volume');
+            const sApiType = localStorage.getItem('bdu_api_type');
+            const sCustomUrl = localStorage.getItem('bdu_custom_base_url');
+            const sCaching = localStorage.getItem('bdu_caching_enabled');
+
+            apiKey = sKey || "";
+            systemPrompt = sPrompt || DEFAULT_PROMPT; // Nutzt jetzt den neuen langen Prompt!
+            bootContext = sContext || DEFAULT_CONTEXT;
+            currentStatus = sStatus || DEFAULT_STATUS;
+            currentModel = sModel || "gemini-1.5-flash";
+            loopIncomingSound = sLoop !== null ? sLoop === 'true' : true;
+            soundVolume = sVolume !== null ? parseFloat(sVolume) : 0.5;
+            apiType = sApiType || "gemini";
+            customBaseUrl = sCustomUrl || "";
+            cachingEnabled = sCaching !== null ? sCaching === 'true' : true;
+            
+            console.log("[INIT] 📊 Geladene Werte:");
+            console.log("  - System Prompt:", systemPrompt.length, "Zeichen");
+            console.log("  - Boot-Kontext:", bootContext.length, "Zeichen");
+            console.log("  - Status:", currentStatus.length, "Zeichen");
+            
+            // Speichere neuen Prompt wenn Version geändert wurde
+            if (forcePromptUpdate) {
+                saveToLocalStorage('bdu_system_prompt', systemPrompt);
+                console.log("[INIT] ✅ Neuer System Prompt gespeichert (", systemPrompt.length, "Zeichen)");
+                
+                // Cache invalidieren
+                cachedContentName = null;
+                cacheExpiresAt = null;
+                localStorage.removeItem('bdu_cache_name');
+                localStorage.removeItem('bdu_cache_expires');
+                console.log("[INIT] 🗑️ Cache invalidiert wegen Prompt-Update");
+            }
+
+            // Cache Info laden
+            const savedCacheName = localStorage.getItem('bdu_cache_name');
+            const savedCacheExpiry = localStorage.getItem('bdu_cache_expires');
+            
+            if (savedCacheName && savedCacheExpiry) {
+                const expiryDate = new Date(savedCacheExpiry);
+                const now = new Date();
+                
+                if (now < expiryDate) {
+                    cachedContentName = savedCacheName;
+                    cacheExpiresAt = savedCacheExpiry;
+                    const remaining = Math.floor((expiryDate - now) / 60000);
+                    console.log("[INIT] ✅ Cache noch gültig für", remaining, "Minuten");
+                } else {
+                    console.log("[INIT] ⏰ Cache abgelaufen, wird neu erstellt");
+                    localStorage.removeItem('bdu_cache_name');
+                    localStorage.removeItem('bdu_cache_expires');
+                }
+            }
+
+            // Conversation History laden
+            try {
+                const savedHistory = localStorage.getItem('bdu_conversation_history');
+                if (savedHistory) {
+                    conversationHistory = JSON.parse(savedHistory);
+                    
+                    // Validiere Struktur
+                    if (!Array.isArray(conversationHistory)) {
+                        throw new Error("History ist kein Array");
+                    }
+                    
+                    // Filtere ungültige Einträge
+                    conversationHistory = conversationHistory.filter(msg => 
+                        msg && msg.role && msg.text && msg.timestamp
+                    );
+                    
+                    console.log("[INIT] 📜 History geladen:", conversationHistory.length, "Nachrichten");
+                }
+            } catch (e) {
+                console.error("[INIT] ⚠️ Korrupte History, starte neu:", e);
+                conversationHistory = [];
+                localStorage.removeItem('bdu_conversation_history');
+            }
+
+            // History Summary laden
+            const savedSummary = localStorage.getItem('bdu_history_summary');
+            const savedSummaryIndex = localStorage.getItem('bdu_last_summary_index');
+            
+            if (savedSummary) {
+                historySummary = savedSummary;
+                lastSummaryIndex = parseInt(savedSummaryIndex) || 0;
+                console.log("[INIT] 📝 Summary geladen:", historySummary.substring(0, 50) + "...");
+            }
+
+            // UI befüllen - NACH dem Versions-Check
+            setTimeout(() => {
+                const apiInput = document.getElementById('api-key-input');
+                const promptInput = document.getElementById('system-prompt-input');
+                const contextInput = document.getElementById('boot-context-input');
+                const statusInput = document.getElementById('current-status-input');
+                const modelInput = document.getElementById('active-model-input');
+                const loopCheckbox = document.getElementById('loop-sound-checkbox');
+                const volumeSlider = document.getElementById('volume-slider');
+                const volumeDisplay = document.getElementById('volume-display');
+                
+                if (apiInput) apiInput.value = apiKey;
+                if (promptInput) promptInput.value = systemPrompt; // Nutzt jetzt den aktualisierten systemPrompt!
+                if (contextInput) contextInput.value = bootContext;
+                if (statusInput) statusInput.value = currentStatus;
+                if (modelInput) modelInput.value = currentModel;
+                if (loopCheckbox) loopCheckbox.checked = loopIncomingSound;
+                if (volumeSlider) {
+                    volumeSlider.value = soundVolume * 100;
+                    volumeDisplay.textContent = Math.round(soundVolume * 100) + '%';
+                }
+                
+                // Neue Felder
+                const customUrlInput = document.getElementById('custom-base-url-input');
+                const cachingCheckbox = document.getElementById('caching-enabled-checkbox');
+                const geminiRadio = document.getElementById('api-type-gemini');
+                const universalRadio = document.getElementById('api-type-universal');
+                if (customUrlInput) customUrlInput.value = customBaseUrl;
+                if (cachingCheckbox) cachingCheckbox.checked = cachingEnabled;
+                if (geminiRadio && universalRadio) {
+                    geminiRadio.checked = (apiType === "gemini");
+                    universalRadio.checked = (apiType === "universal");
+                }
+                toggleApiTypeUI();
+                
+                console.log("[INIT] 🎨 UI befüllt - System Prompt:", systemPrompt.length, "Zeichen");
+            }, 100);
+            
+            updateCacheStatus();
+        }
+
+        // ==============================================
+        // RESTORE CHAT LOG
+        // ==============================================
+        function restoreChatLog() {
+            const log = document.getElementById('chat-log');
+            
+            if (conversationHistory.length === 0) {
+                log.innerHTML = '<div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>';
+                console.log("[INIT] 💬 Keine History - zeige Willkommensnachricht");
+                return;
+            }
+            
+            log.innerHTML = "";
+            
+            conversationHistory.forEach(msg => {
+                if (msg.role === "user") {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = "msg-user";
+                    msgDiv.textContent = "> " + msg.text;
+                    log.appendChild(msgDiv);
+                } else {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = "msg-bdu";
+                    const bootNameMatch = bootContext.match(/U-Boot:\s*([^\n]+)/);
+                    const bootName = bootNameMatch ? bootNameMatch[1].trim() : "U-Boot";
+                    msgDiv.innerHTML = `<strong>FT von BdU an ${bootName}:</strong> ${msg.text}`;
+                    log.appendChild(msgDiv);
+                }
+            });
+            
+            scrollToBottom();
+            console.log("[INIT] 💬 Chat-Log wiederhergestellt:", conversationHistory.length, "Nachrichten");
+        }
+
+        // ==============================================
+        // HISTORY MANAGEMENT
+        // ==============================================
+        function addToHistory(role, text) {
+            conversationHistory.push({
+                role: role,
+                text: text,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Trimme wenn zu groß
+            if (conversationHistory.length > MAX_HISTORY_ITEMS) {
+                console.log("[HISTORY] ✂️ Trimme History auf", MAX_HISTORY_ITEMS, "Einträge");
+                conversationHistory = conversationHistory.slice(-MAX_HISTORY_ITEMS);
+            }
+            
+            // Speichere
+            saveToLocalStorage('bdu_conversation_history', JSON.stringify(conversationHistory));
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const countDisplay = document.getElementById('history-count');
+            const summaryDisplay = document.getElementById('last-summary-info');
+            
+            if (countDisplay) {
+                countDisplay.textContent = conversationHistory.length;
+            }
+            
+            if (summaryDisplay) {
+                if (historySummary) {
+                    const unsummarized = conversationHistory.length - lastSummaryIndex;
+                    summaryDisplay.textContent = `Vor ${conversationHistory.length - lastSummaryIndex} Nachrichten (${unsummarized} neue)`;
+                    summaryDisplay.style.color = unsummarized >= 8 ? '#ffb84d' : '#4dff4d';
+                } else {
+                    summaryDisplay.textContent = "Noch keine";
+                    summaryDisplay.style.color = '#888';
+                }
+            }
+        }
+
+        function clearHistory() {
+            if (!confirm("Wirklich gesamte Konversations-History löschen?")) return;
+            
+            conversationHistory = [];
+            historySummary = "";
+            lastSummaryIndex = 0;
+            
+            localStorage.removeItem('bdu_conversation_history');
+            localStorage.removeItem('bdu_history_summary');
+            localStorage.removeItem('bdu_last_summary_index');
+            
+            // Cache invalidieren
+            cachedContentName = null;
+            cacheExpiresAt = null;
+            localStorage.removeItem('bdu_cache_name');
+            localStorage.removeItem('bdu_cache_expires');
+            
+            const log = document.getElementById('chat-log');
+            log.innerHTML = '<div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>';
+            
+            updateHistoryDisplay();
+            updateCacheStatus();
+            
+            appendLog("Funkmaat", "HISTORY GELÖSCHT. CACHE INVALIDIERT.");
+        }
+
+        function clearLastFive() {
+            if (!confirm("Wirklich die letzten 5 Nachrichten aus der History löschen?")) return;
+
+            if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+                appendLog("Funkmaat", "Keine History zum Kürzen vorhanden.");
+                return;
+            }
+
+            const removeCount = Math.min(5, conversationHistory.length);
+            conversationHistory.splice(conversationHistory.length - removeCount, removeCount);
+
+            try {
+                localStorage.setItem('bdu_conversation_history', JSON.stringify(conversationHistory));
+            } catch (e) {
+                console.error("Fehler beim Speichern der gekürzten History:", e);
+            }
+
+            updateHistoryDisplay();
+            updateCacheStatus();
+
+            appendLog("Funkmaat", `Letzte ${removeCount} Nachrichten aus der History gelöscht.`);
+        }
+
+        // ==============================================
+        // HISTORY SUMMARIZATION
+        // ==============================================
+        async function summarizeHistory() {
+            const messagesToSummarize = conversationHistory.slice(lastSummaryIndex, -4);
+            
+            if (messagesToSummarize.length < 4) {
+                console.log("[SUMMARY] ⏭️ Noch nicht genug Nachrichten für Zusammenfassung");
+                return;
+            }
+            
+            let historyText = messagesToSummarize.map(msg => {
+                const sender = msg.role === "user" ? "KALEU" : "BdU";
+                const time = new Date(msg.timestamp).toLocaleTimeString('de-DE', {
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+                return `[${time}] ${sender}: ${msg.text}`;
+            }).join('\n');
+            
+            console.log("[SUMMARY] 📝 Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
+            // ENTFERNT: appendLog() - nur Console-Logging
+            
+            const summaryPrompt = `Fasse folgende Funksprüche SEHR KURZ zusammen (max. 3 Sätze, Telegrammstil):
+
+${historyText}
+
+Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
+
+            try {
+                let summaryText = "";
+                
+                if (apiType === "universal") {
+                    // Universal API für Zusammenfassung
+                    const baseUrl = (customBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+                    const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                        body: JSON.stringify({
+                            model: currentModel,
+                            messages: [{ role: "user", content: summaryPrompt }],
+                            max_tokens: 150,
+                            temperature: 0.95
+                        })
+                    });
+                    const d = await resp.json();
+                    summaryText = d.choices?.[0]?.message?.content || "";
+                } else {
+                    // Gemini für Zusammenfassung – FIX: currentModel statt hardcodiertem gemini-2.0-flash-lite
+                    let summaryModelName = currentModel;
+                    if (!summaryModelName.startsWith('models/')) summaryModelName = 'models/' + summaryModelName;
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/${summaryModelName}:generateContent?key=${apiKey}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: summaryPrompt }] }],
+                                generationConfig: {
+                                    maxOutputTokens: 150,
+                                    temperature: 0.95
+                                }
+                            })
+                        }
+                    );
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+                    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
+                    summaryText = data.candidates[0].content.parts[0].text;
+                }
+                
+                if (historySummary) {
+                    historySummary += "\n\n" + summaryText;
+                } else {
+                    historySummary = summaryText;
+                }
+                
+                lastSummaryIndex = conversationHistory.length - 4;
+                
+                saveToLocalStorage('bdu_history_summary', historySummary);
+                saveToLocalStorage('bdu_last_summary_index', lastSummaryIndex.toString());
+                
+                console.log("[SUMMARY] ✅ Zusammenfassung erstellt:", summaryText.substring(0, 60) + "...");
+                // ENTFERNT: appendLog() - nur Console-Logging
+                
+                // Cache invalidieren damit neue Summary eingebaut wird
+                cachedContentName = null;
+                cacheExpiresAt = null;
+                localStorage.removeItem('bdu_cache_name');
+                localStorage.removeItem('bdu_cache_expires');
+                
+                updateHistoryDisplay();
+                
+            } catch (error) {
+                console.error("[SUMMARY] ❌ Fehler:", error);
+                // FIX: Fehler jetzt auch im Widget-Display sichtbar machen
+                appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}`);
+            }
+        }
+
+        // ==============================================
+        // CACHE MANAGEMENT
+        // ==============================================
+        function updateModelBadge() {
+            const display = document.getElementById('model-badge');
+            let shortName = currentModel || "NONE";
+            if(shortName.includes("/")) shortName = shortName.split('/').pop();
+            if (apiType === "gemini") {
+                shortName = shortName.replace("models/", "").replace("gemini-", "").replace("1.5-", "").replace("2.0-", "").replace("tunedModels/", "");
+                display.textContent = "POWERED BY GEMINI " + shortName.toUpperCase();
+            } else {
+                display.textContent = "UNIVERSAL API · " + shortName.toUpperCase();
+            }
+            
+            updateCacheStatus();
+        }
+
+        function updateCacheStatus() {
+            const indicator = document.getElementById('cache-indicator');
+            if (!indicator) return;
+            
+            if (apiType === "universal") {
+                indicator.innerHTML = '⚫ Caching: Nicht verfügbar (Universal-Modus)';
+                indicator.style.color = '#666';
+                updateTokenEstimate();
+                return;
+            }
+            
+            if (!cachingEnabled) {
+                indicator.innerHTML = '🔴 Explizites Caching: Deaktiviert';
+                indicator.style.color = '#888';
+                updateTokenEstimate();
+                return;
+            }
+            
+            const modelLower = currentModel.toLowerCase();
+            const isGemini15 = modelLower.includes('1.5');
+            const isGemini25 = modelLower.includes('2.5');
+            const isGemini20 = modelLower.includes('2.0') || modelLower.includes('flash-latest') || modelLower.includes('pro-latest');
+            
+            if (isGemini15 || isGemini25) {
+                if (cachedContentName && cacheExpiresAt && new Date() < new Date(cacheExpiresAt)) {
+                    const remaining = Math.floor((new Date(cacheExpiresAt) - new Date()) / 60000);
+                    indicator.innerHTML = `🟢 Explizites Caching: Aktiv (${remaining} min)`;
+                    indicator.style.color = '#4dff4d';
+                } else {
+                    indicator.innerHTML = '🟡 Explizites Caching: Bereit (wird erstellt)';
+                    indicator.style.color = '#ffb84d';
+                }
+            } else if (isGemini20) {
+                indicator.innerHTML = '🔵 Implizites Caching: Automatisch (Gemini 2.0+)';
+                indicator.style.color = '#4d9fff';
+            } else {
+                indicator.innerHTML = '⚪ Context Caching: Nicht verfügbar';
+                indicator.style.color = '#888';
+            }
+            
+            // Update Token-Anzeige
+            updateTokenEstimate();
+        }
+
+        function updateTokenEstimate() {
+            const promptLen = systemPrompt.length;
+            const contextLen = bootContext.length;
+            const statusLen = currentStatus.length;
+            const summaryLen = historySummary.length;
+            const totalLen = promptLen + contextLen + statusLen + summaryLen;
+            
+            // Schätzung: 1 Token ≈ 4 Zeichen für deutschen Text
+            const promptTokens = Math.round(promptLen / 4);
+            const contextTokens = Math.round(contextLen / 4);
+            const statusTokens = Math.round(statusLen / 4);
+            const summaryTokens = Math.round(summaryLen / 4);
+            const totalTokens = Math.round(totalLen / 4);
+            
+            // UI Updates
+            const updates = [
+                ['token-prompt', promptLen],
+                ['token-prompt-est', promptTokens],
+                ['token-context', contextLen],
+                ['token-context-est', contextTokens],
+                ['token-status', statusLen],
+                ['token-status-est', statusTokens],
+                ['token-summary', summaryLen],
+                ['token-summary-est', summaryTokens],
+                ['token-total', totalLen],
+                ['token-total-est', totalTokens]
+            ];
+            
+            updates.forEach(([id, value]) => {
+                const elem = document.getElementById(id);
+                if (elem) elem.textContent = value;
+            });
+            
+            // Färbe Total-Tokens je nach Wert
+            const totalElem = document.getElementById('token-total-est');
+            if (totalElem) {
+                if (totalTokens < 2048) {
+                    totalElem.style.color = '#ff4d4d'; // Rot: Zu wenig
+                } else if (totalTokens < 4000) {
+                    totalElem.style.color = '#ffb84d'; // Orange: Knapp genug
+                } else {
+                    totalElem.style.color = '#4dff4d'; // Grün: Optimal
+                }
+            }
+        }
+
+        async function createOrUpdateCache() {
+            if (!cachingEnabled) {
+                console.log("[CACHE] 🔴 Caching deaktiviert (Einstellung)");
+                return null;
+            }
+            
+            const modelLower = currentModel.toLowerCase();
+            const isGemini15 = modelLower.includes('1.5');
+            const isGemini25 = modelLower.includes('2.5');
+            const isCachingSupported = isGemini15 || isGemini25;
+            
+            if (!isCachingSupported) {
+                console.log("[CACHE] ℹ️ Modell unterstützt kein explizites Caching:", currentModel);
+                cachedContentName = null;
+                cacheExpiresAt = null;
+                return null;
+            }
+            
+            // Prüfe ob Cache noch gültig
+            if (cachedContentName && cacheExpiresAt && new Date() < new Date(cacheExpiresAt)) {
+                console.log("[CACHE] ✅ Nutze existierenden Cache (ID:", cachedContentName.split('/').pop() + ")");
+                console.log("[CACHE] ⏰ Gültig noch", Math.floor((new Date(cacheExpiresAt) - new Date()) / 60000), "Minuten");
+                return cachedContentName;
+            }
+            
+            console.log("[CACHE] 🔄 Erstelle neuen Cache für Modell:", currentModel);
+            
+            try {
+                // Summary Text einbauen
+                let summaryText = "";
+                if (historySummary) {
+                    summaryText = "\n\n=== BISHERIGE FUNKSPRÜCHE (Zusammenfassung) ===\n" 
+                                + historySummary 
+                                + "\n=== ENDE ZUSAMMENFASSUNG ===\n";
+                }
+                
+                const systemInstruction = {
+                    parts: [{
+                        // SAFETY_RULES immer voranstellen
+                    text: SAFETY_RULES + "\n" + systemPrompt + 
+                            "\n\n=== BOOT-INFORMATIONEN ===\n" + bootContext +
+                            "\n\n=== AKTUELLER STATUS ===\n" + currentStatus +
+                            summaryText +
+                            "\n\n=== ENDE INFORMATIONEN ==="
+                    }]
+                };
+                
+                let modelName = currentModel;
+                if (!modelName.startsWith("models/")) {
+                    modelName = "models/" + modelName;
+                }
+                
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${apiKey}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: modelName,
+                            systemInstruction: systemInstruction,
+                            ttl: "3600s"
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    const errorMsg = error.error?.message || JSON.stringify(error);
+                    console.warn("[CACHE] ⚠️ Cache konnte nicht erstellt werden:", errorMsg);
+                    
+                    // Prüfe ob es am Minimum liegt
+                    if (errorMsg.includes("too small") || errorMsg.includes("min_total_token_count")) {
+                        console.warn("[CACHE] ℹ️ Kontext zu kurz für Caching (Minimum: 2.048 Tokens)");
+                        console.warn("[CACHE] 💡 Erweitere System Prompt, Boot-Kontext und Status auf insgesamt ~8.000 Zeichen");
+                        
+                        // Zeige im UI
+                        const indicator = document.getElementById('cache-indicator');
+                        if (indicator) {
+                            indicator.innerHTML = '🟠 Caching: Kontext zu kurz (min. 2.048 Tokens benötigt)';
+                            indicator.style.color = '#ffb84d';
+                        }
+                    }
+                    
+                    return null;
+                }
+                
+                const data = await response.json();
+                cachedContentName = data.name;
+                cacheExpiresAt = data.expireTime;
+                
+                // Speichern
+                saveToLocalStorage('bdu_cache_name', cachedContentName);
+                saveToLocalStorage('bdu_cache_expires', cacheExpiresAt);
+                
+                console.log("[CACHE] ✅ Cache erfolgreich erstellt!");
+                console.log("[CACHE] 📦 ID:", cachedContentName.split('/').pop());
+                console.log("[CACHE] ⏰ Gültig bis:", new Date(cacheExpiresAt).toLocaleString('de-DE'));
+                
+                updateCacheStatus();
+                return cachedContentName;
+                
+            } catch (error) {
+                console.warn("[CACHE] ❌ Fehler beim Erstellen:", error.message);
+                return null;
+            }
+        }
+
+        // ==============================================
+        // API ROUTER
+        // ==============================================
+        async function callApi(userMessage) {
+            if (apiType === "universal") {
+                return callUniversal(userMessage);
+            }
+            return callGemini(userMessage);
+        }
+
+        // ==============================================
+        // UNIVERSAL / OPENAI-COMPATIBLE API CALL
+        // ==============================================
+        async function callUniversal(userMessage) {
+            const baseUrl = (customBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+            const url = `${baseUrl}/v1/chat/completions`;
+            
+            let summaryText = "";
+            if (historySummary) {
+                summaryText = "\n\n=== BISHERIGE FUNKSPRÜCHE (Zusammenfassung) ===\n" 
+                            + historySummary 
+                            + "\n=== ENDE ZUSAMMENFASSUNG ===\n";
+            }
+            
+            // SAFETY_RULES immer voranstellen
+            const systemContent = SAFETY_RULES + "\n" + systemPrompt + 
+                "\n\n=== BOOT-INFORMATIONEN ===\n" + bootContext +
+                "\n\n=== AKTUELLER STATUS ===\n" + currentStatus +
+                summaryText +
+                "\n\n=== ENDE INFORMATIONEN ===";
+            
+            const recentHistory = conversationHistory.slice(-10).map(msg => ({
+                role: msg.role === "user" ? "user" : "assistant",
+                content: msg.text
+            }));
+            
+            const payload = {
+                model: currentModel,
+                messages: [
+                    { role: "system", content: systemContent },
+                    ...recentHistory,
+                    { role: "user", content: userMessage }
+                ],
+                max_tokens: 450,
+                temperature: 1.0
+            };
+            
+            console.log("[API-UNIVERSAL] 🌐 Sende Request an:", url);
+            console.log("[API-UNIVERSAL] 📜 History-Einträge:", recentHistory.length);
+            
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || `API Error ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log("[API-UNIVERSAL] 📥 Antwort erhalten");
+            
+            if (data.error) throw new Error(data.error.message);
+            
+            const text = data.choices?.[0]?.message?.content;
+            if (!text) throw new Error("Leere Antwort vom Server.");
+            
+            return text;
+        }
+
+        // ==============================================
+        // GEMINI API CALL
+        // ==============================================
+        async function callGemini(userMessage) {
+            let modelName = currentModel;
+            if(modelName.startsWith("models/")) {
+                modelName = modelName.replace("models/", "");
+            }
+            
+            const modelLower = currentModel.toLowerCase();
+            const isGemini15 = modelLower.includes('1.5');
+            const isGemini25 = modelLower.includes('2.5');
+            const isGemini20 = modelLower.includes('2.0') || modelLower.includes('flash-latest') || modelLower.includes('pro-latest');
+            const supportsCaching = isGemini15 || isGemini25;
+            
+            let payload;
+            
+            if (supportsCaching) {
+                console.log("[API] 🔍 Prüfe Cache-Verfügbarkeit für", currentModel);
+                const cacheName = await createOrUpdateCache();
+                
+                if (cacheName) {
+                    // Letzte 4 Nachrichten (2 Paare) als contents
+                    const recentHistory = conversationHistory.slice(-4).map(msg => ({
+                        role: msg.role === "user" ? "user" : "model",
+                        parts: [{ text: msg.text }]
+                    }));
+                    
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                    payload = {
+                        cachedContent: cacheName,
+                        contents: [
+                            ...recentHistory,
+                            {
+                                role: "user",
+                                parts: [{ text: userMessage }]
+                            }
+                        ],
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+                        ],
+                        generationConfig: {
+                            maxOutputTokens: 450,
+                            temperature: 1.0 
+                        }
+                    };
+                    
+                    console.log("[API] 📦 Sende Request MIT Cache + letzte", recentHistory.length, "Nachrichten");
+                    
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    return await handleGeminiResponse(response, true);
+                }
+            }
+            
+            // Gemini 2.0+ oder Fallback
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            
+            let summaryText = "";
+            if (historySummary) {
+                summaryText = "\n\n=== BISHERIGE FUNKSPRÜCHE (Zusammenfassung) ===\n" 
+                            + historySummary 
+                            + "\n=== ENDE ZUSAMMENFASSUNG ===\n";
+            }
+            
+            const systemInstruction = {
+                parts: [{
+                    // SAFETY_RULES immer voranstellen
+                    text: SAFETY_RULES + "\n" + systemPrompt + 
+                        "\n\n=== BOOT-INFORMATIONEN ===\n" + bootContext +
+                        "\n\n=== AKTUELLER STATUS ===\n" + currentStatus +
+                        summaryText +
+                        "\n\n=== ENDE INFORMATIONEN ==="
+                }]
+            };
+            
+            // Letzte 4 Nachrichten einbauen
+            const recentHistory = conversationHistory.slice(-4).map(msg => ({
+                role: msg.role === "user" ? "user" : "model",
+                parts: [{ text: msg.text }]
+            }));
+            
+            if (isGemini20) {
+                console.log("[API] 🔷 Sende Request mit implizitem Caching (2.0+)");
+            } else {
+                console.log("[API] 📝 Sende Standard-Request (kein Caching)");
+            }
+            
+            payload = {
+                systemInstruction: systemInstruction,
+                contents: [
+                    ...recentHistory,
+                    {
+                        role: "user",
+                        parts: [{ text: userMessage }]
+                    }
+                ],
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+                ],
+                generationConfig: {
+                    maxOutputTokens: 450,
+                    temperature: 1.0 
+                }
+            };
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            return await handleGeminiResponse(response, false);
+        }
+        
+        async function handleGeminiResponse(response, usedCache = false) {
+            const data = await response.json();
+            
+            console.log("[API] 📥 Antwort erhalten");
+            
+            // Token Usage Logging
+            if (data.usageMetadata) {
+                const usage = data.usageMetadata;
+                const promptTokens = usage.promptTokenCount || 0;
+                const cachedTokens = usage.cachedContentTokenCount || 0;
+                const responseTokens = usage.candidatesTokenCount || 0;
+                const totalTokens = usage.totalTokenCount || 0;
+                
+                console.log("📊 Token Verbrauch:");
+                if (cachedTokens > 0) {
+                    console.log("   💾 Cached:", cachedTokens, "Tokens (75% günstiger)");
+                    console.log("   📝 Neu:", promptTokens - cachedTokens, "Tokens");
+                } else {
+                    console.log("   📝 Prompt:", promptTokens, "Tokens");
+                }
+                console.log("   💬 Antwort:", responseTokens, "Tokens");
+                console.log("   📊 Gesamt:", totalTokens, "Tokens");
+                
+                if (usedCache && cachedTokens > 0) {
+                    const savings = Math.round((cachedTokens * 0.75 / totalTokens) * 100);
+                    console.log("   💰 Einsparung: ~" + savings + "% der Kosten");
+                }
+            }
+            
+            if (data.error) {
+                console.error("[API] ❌ Fehler:", data.error.message);
+                throw new Error(data.error.message);
+            }
+
+            if(data.candidates && data.candidates[0]) {
+                const candidate = data.candidates[0];
+                const finishReason = candidate.finishReason;
+                
+                console.log("[API] ✅ Status:", finishReason);
+                
+                if(finishReason === "SAFETY") {
+                    throw new Error("Funkspruch durch Zensur (Safety Filter) abgefangen. Bitte harmlosere Worte wählen.");
+                }
+                
+                if(finishReason === "MAX_TOKENS") {
+                    console.warn("[API] ⚠️ Antwort bei MAX_TOKENS abgeschnitten");
+                    if(candidate.content && candidate.content.parts && candidate.content.parts[0]) {
+                        const responseText = candidate.content.parts[0].text;
+                        if (responseText) {
+                            return responseText + "...";
+                        }
+                    }
+                }
+                
+                if(candidate.content && candidate.content.parts && candidate.content.parts[0]) {
+                    const responseText = candidate.content.parts[0].text;
+                    if (!responseText) {
+                        throw new Error("API gab leeren Text zurück.");
+                    }
+                    return responseText;
+                }
+            }
+            
+            console.error("[API] ❌ Unerwartete Antwortstruktur:", JSON.stringify(data).substring(0, 200));
+            throw new Error("Leere Antwort (siehe Console für Details)");
+        }
+
+        // ==============================================
+        // SEND MESSAGE
+        // ==============================================
+        async function sendMessage() {
+            const inputField = document.getElementById('user-input');
+            const text = inputField.value.trim();
+
+            if (!text) return;
+            if (!apiKey) {
+                alert("Bitte Einstellungen öffnen (Zahnrad) und API Key eingeben!");
+                return;
+            }
+
+            // Prüfe ob Status-Update
+            if (text.toLowerCase().startsWith('status:')) {
+                const newStatus = text.substring(7).trim();
+                if (newStatus) {
+                    currentStatus = newStatus;
+                    saveToLocalStorage('bdu_current_status', currentStatus);
+                    document.getElementById('current-status-input').value = currentStatus;
+                    appendLog("System", "[STATUS AKTUALISIERT] " + newStatus);
+                    
+                    // Cache invalidieren
+                    cachedContentName = null;
+                    cacheExpiresAt = null;
+                    localStorage.removeItem('bdu_cache_name');
+                    localStorage.removeItem('bdu_cache_expires');
+                }
+            }
+
+            appendLog("Kaleu", text);
+            addToHistory("user", text);
+            inputField.value = "";
+
+            const statusLight = document.getElementById('status-light');
+            statusLight.classList.add('transmitting');
+
+            await playSendSound();
+
+            try {
+                const responseText = await callApi(text);
+                addToHistory("assistant", responseText);
+                
+                const audioElement = playReceiveSound();
+                await typewriterEffect(responseText, audioElement);
+                
+                // Prüfe ob Zusammenfassung nötig
+                const unsummarizedCount = conversationHistory.length - lastSummaryIndex;
+                if (unsummarizedCount >= 8) {
+                    console.log("[SUMMARY] 🔄 8 neue Nachrichten - starte Zusammenfassung");
+                    await summarizeHistory();
+                }
+                
+                // Cache-Update tracking
+                messagesSinceLastCache++;
+                if (messagesSinceLastCache >= 8) {
+                    console.log("[CACHE] 🔄 8 Nachrichten seit letztem Cache - wird beim nächsten Request erneuert");
+                    cachedContentName = null;
+                    cacheExpiresAt = null;
+                    localStorage.removeItem('bdu_cache_name');
+                    localStorage.removeItem('bdu_cache_expires');
+                    messagesSinceLastCache = 0;
+                }
+                
+            } catch (error) {
+                console.error(error);
+                appendLog("Funkmaat", "FUNKSTÖRUNG: " + error.message);
+                
+                if(error.message.includes("not found")) {
+                    appendLog("Funkmaat", "HINWEIS: Modell nicht gefunden. Bitte 'Modelle suchen' im Menü nutzen.");
+                }
+            } finally {
+                statusLight.classList.remove('transmitting');
+            }
+        }
+
+        // ==============================================
+        // UI FUNCTIONS
+        // ==============================================
+        function toggleApiTypeUI() {
+            const type = document.querySelector('input[name="api-type"]:checked')?.value || "gemini";
+            const customUrlGroup = document.getElementById('custom-url-group');
+            const cachingGroup = document.getElementById('caching-group');
+            const cacheStatusGroup = document.getElementById('cache-status');
+            const tokenEstimateGroup = document.getElementById('token-estimate');
+            
+            if (type === "universal") {
+                if (customUrlGroup) customUrlGroup.style.display = 'block';
+                if (cachingGroup) cachingGroup.style.display = 'none';
+                if (cacheStatusGroup) cacheStatusGroup.style.display = 'none';
+                if (tokenEstimateGroup) tokenEstimateGroup.style.display = 'none';
+            } else {
+                if (customUrlGroup) customUrlGroup.style.display = 'none';
+                if (cachingGroup) cachingGroup.style.display = 'block';
+                if (cacheStatusGroup) cacheStatusGroup.style.display = 'block';
+                if (tokenEstimateGroup) tokenEstimateGroup.style.display = 'block';
+            }
+            updateCacheStatus();
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'flex';
+            }
+        }
+
+        function saveSettings() {
+            const newKey = document.getElementById('api-key-input').value.trim();
+            const newPrompt = document.getElementById('system-prompt-input').value.trim();
+            const newContext = document.getElementById('boot-context-input').value.trim();
+            const newStatus = document.getElementById('current-status-input').value.trim();
+            const newModel = document.getElementById('active-model-input').value.trim();
+            const newLoop = document.getElementById('loop-sound-checkbox').checked;
+            const newVolume = parseFloat(document.getElementById('volume-slider').value) / 100;
+            const newApiType = document.querySelector('input[name="api-type"]:checked')?.value || "gemini";
+            const newCustomUrl = document.getElementById('custom-base-url-input').value.trim();
+            const newCaching = document.getElementById('caching-enabled-checkbox').checked;
+
+            if (!newKey) { alert("API Key fehlt!"); return; }
+
+            // Prüfe welche Felder sich geändert haben
+            const keyChanged = apiKey !== newKey;
+            const modelChanged = currentModel !== newModel;
+            const promptChanged = systemPrompt !== newPrompt;
+            const contextChanged = bootContext !== newContext;
+            const statusChanged = currentStatus !== newStatus;
+            const apiTypeChanged = apiType !== newApiType;
+            const customUrlChanged = customBaseUrl !== newCustomUrl;
+            const cachingChanged = cachingEnabled !== newCaching;
+            
+            // Cache invalidieren wenn relevante Felder geändert wurden
+            if (keyChanged || modelChanged || promptChanged || contextChanged || statusChanged || apiTypeChanged || customUrlChanged || cachingChanged) {
+                console.log("[CACHE] 🗑️ Einstellungen geändert - Cache wird invalidiert");
+                if (keyChanged) console.log("  - API Key geändert");
+                if (modelChanged) console.log("  - Modell geändert:", currentModel, "→", newModel);
+                if (promptChanged) console.log("  - System Prompt geändert");
+                if (contextChanged) console.log("  - Boot Kontext geändert");
+                if (statusChanged) console.log("  - Status geändert");
+                if (apiTypeChanged) console.log("  - API-Typ geändert:", apiType, "→", newApiType);
+                if (customUrlChanged) console.log("  - Custom URL geändert");
+                if (cachingChanged) console.log("  - Caching-Einstellung geändert");
+                
+                cachedContentName = null;
+                cacheExpiresAt = null;
+                localStorage.removeItem('bdu_cache_name');
+                localStorage.removeItem('bdu_cache_expires');
+            }
+
+            saveToLocalStorage('bdu_api_key', newKey);
+            saveToLocalStorage('bdu_system_prompt', newPrompt);
+            saveToLocalStorage('bdu_boot_context', newContext);
+            saveToLocalStorage('bdu_current_status', newStatus);
+            saveToLocalStorage('bdu_current_model', newModel);
+            saveToLocalStorage('bdu_loop_sound', newLoop);
+            saveToLocalStorage('bdu_sound_volume', newVolume);
+            saveToLocalStorage('bdu_api_type', newApiType);
+            saveToLocalStorage('bdu_custom_base_url', newCustomUrl);
+            saveToLocalStorage('bdu_caching_enabled', newCaching);
+
+            apiKey = newKey;
+            systemPrompt = newPrompt;
+            bootContext = newContext;
+            currentStatus = newStatus;
+            currentModel = newModel;
+            loopIncomingSound = newLoop;
+            soundVolume = newVolume;
+            apiType = newApiType;
+            customBaseUrl = newCustomUrl;
+            cachingEnabled = newCaching;
+
+            toggleSettings();
+            updateModelBadge();
+            updateTokenEstimate(); // ← NEU: Update Token-Anzeige
+            appendLog("Funkmaat", "KONFIGURATION GESPEICHERT.", true);
+        }
+
+        function clearSettings() {
+            if (!confirm("Alle Einstellungen löschen?")) return;
+
+            // Nur eigene Keys gezielt löschen (robuster in OBS)
+            localStorage.removeItem('bdu_api_key');
+            localStorage.removeItem('bdu_system_prompt');
+            localStorage.removeItem('bdu_boot_context');
+            localStorage.removeItem('bdu_current_status');
+            localStorage.removeItem('bdu_active_model');
+            localStorage.removeItem('bdu_loop_sound');
+            localStorage.removeItem('bdu_sound_volume');
+            localStorage.removeItem('bdu_conversation_history');
+            localStorage.removeItem('bdu_history_summary');
+            localStorage.removeItem('bdu_last_summary_index');
+            localStorage.removeItem('bdu_cache_name');
+            localStorage.removeItem('bdu_cache_expires');
+            localStorage.removeItem('bdu_api_type');
+            localStorage.removeItem('bdu_custom_base_url');
+            localStorage.removeItem('bdu_caching_enabled');
+
+            // In-Memory-Werte zurücksetzen
+            systemPrompt = DEFAULT_PROMPT;
+            bootContext = "";
+            currentStatus = "";
+            apiKey = "";
+            currentModel = "gemini-2.5-flash";
+            loopIncomingSound = false;
+            soundVolume = 0.5;
+            conversationHistory = [];
+            historySummary = "";
+            lastSummaryIndex = 0;
+            cachedContentName = null;
+            cacheExpiresAt = null;
+            apiType = "gemini";
+            customBaseUrl = "";
+            cachingEnabled = true;
+
+            // UI-Felder neu befüllen
+            const apiInput = document.getElementById('api-key-input');
+            const promptInput = document.getElementById('system-prompt-input');
+            const contextInput = document.getElementById('boot-context-input');
+            const statusInput = document.getElementById('current-status-input');
+            const modelInput = document.getElementById('active-model-input');
+            const loopCheckbox = document.getElementById('loop-sound-checkbox');
+            const volumeSlider = document.getElementById('volume-slider');
+            const volumeDisplay = document.getElementById('volume-display');
+
+            if (apiInput) apiInput.value = "";
+            if (promptInput) promptInput.value = DEFAULT_PROMPT;
+            if (contextInput) contextInput.value = "";
+            if (statusInput) statusInput.value = "";
+            if (modelInput) modelInput.value = "gemini-1.5-flash";
+            if (loopCheckbox) loopCheckbox.checked = false;
+            if (volumeSlider) {
+                volumeSlider.value = 50;
+                if (volumeDisplay) volumeDisplay.textContent = '50%';
+            }
+            const geminiRadio = document.getElementById('api-type-gemini');
+            const customUrlInput = document.getElementById('custom-base-url-input');
+            const cachingCheckbox = document.getElementById('caching-enabled-checkbox');
+            const customUrlGroup = document.getElementById('custom-url-group');
+            const cachingGroup = document.getElementById('caching-group');
+            if (geminiRadio) geminiRadio.checked = true;
+            if (customUrlInput) customUrlInput.value = "";
+            if (cachingCheckbox) cachingCheckbox.checked = true;
+            if (customUrlGroup) customUrlGroup.style.display = 'none';
+            if (cachingGroup) cachingGroup.style.display = 'block';
+
+            // Chat-Log zurücksetzen
+            const log = document.getElementById('chat-log');
+            if (log) {
+                log.innerHTML = '<div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>';
+            }
+
+            updateHistoryDisplay();
+            updateCacheStatus();
+
+            console.log("[SYSTEM] Alle Einstellungen zurückgesetzt");
+        }
+
+        async function fetchModels() {
+            const tempKey = document.getElementById('api-key-input').value.trim();
+            const tempApiType = document.querySelector('input[name="api-type"]:checked')?.value || "gemini";
+            const tempBaseUrl = document.getElementById('custom-base-url-input').value.trim();
+            const listDiv = document.getElementById('model-list-display');
+            
+            if(!tempKey) {
+                alert("Bitte erst API Key eingeben!");
+                return;
+            }
+
+            listDiv.style.display = 'block';
+            listDiv.innerHTML = "Lade Liste... (Bitte warten)";
+            listDiv.style.color = "#aaa";
+
+            try {
+                if (tempApiType === "gemini") {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${tempKey}`);
+                    const data = await response.json();
+
+                    if(data.error) throw new Error(data.error.message);
+                    if(!data.models) throw new Error("Keine Modelle gefunden.");
+
+                    listDiv.innerHTML = "";
+                    
+                    const validModels = data.models.filter(m => 
+                        m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent")
+                    );
+
+                    if(validModels.length === 0) {
+                        listDiv.innerHTML = "Keine Chat-Modelle verfügbar.";
+                        return;
+                    }
+
+                    validModels.forEach(model => {
+                        const item = document.createElement('div');
+                        item.className = 'model-item';
+                        const displayName = model.name.replace("models/", "");
+                        item.textContent = displayName;
+                        item.onclick = function() {
+                            document.getElementById('active-model-input').value = displayName;
+                            item.style.color = "#4dff4d";
+                            item.textContent = "> " + displayName;
+                        };
+                        listDiv.appendChild(item);
+                    });
+                } else {
+                    // Universal: /v1/models
+                    const baseUrl = (tempBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+                    const response = await fetch(`${baseUrl}/v1/models`, {
+                        headers: { "Authorization": `Bearer ${tempKey}` }
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+                    
+                    const models = data.data || data.models || [];
+                    listDiv.innerHTML = "";
+                    if (models.length === 0) { listDiv.innerHTML = "Keine Modelle gefunden."; return; }
+                    
+                    models.forEach(model => {
+                        const id = model.id || model.name;
+                        const item = document.createElement('div');
+                        item.className = 'model-item';
+                        item.textContent = id;
+                        item.onclick = function() {
+                            document.getElementById('active-model-input').value = id;
+                            item.style.color = "#4dff4d";
+                            item.textContent = "> " + id;
+                        };
+                        listDiv.appendChild(item);
+                    });
+                }
+            } catch (e) {
+                listDiv.innerHTML = "<span style='color:red'>Fehler: " + e.message + "</span>";
+            }
+        }
+
+        function appendLog(sender, text) {
+            const log = document.getElementById('chat-log');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === "Kaleu") {
+                msgDiv.className = "msg-user";
+                msgDiv.textContent = "> " + text;
+            } else if (sender === "System") {
+                msgDiv.className = "msg-sys";
+                msgDiv.textContent = "[SYS] " + text;
+            } else {
+                msgDiv.className = "msg-bdu";
+            }
+            
+            log.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function typewriterEffect(text, audioElement) {
+            return new Promise(resolve => {
+                const log = document.getElementById('chat-log');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = "msg-bdu";
+                
+                const bootNameMatch = bootContext.match(/U-Boot:\s*([^\n]+)/);
+                const bootName = bootNameMatch ? bootNameMatch[1].trim() : "U-Boot";
+                
+                msgDiv.innerHTML = `<strong>FT von BdU an ${bootName}:</strong> `; 
+                log.appendChild(msgDiv);
+
+                let i = 0;
+                const speed = 45;
+
+                function type() {
+                    if (i < text.length) {
+                        const char = text.charAt(i);
+                        if(char === '\n') {
+                            msgDiv.innerHTML += "<br>";
+                        } else {
+                            msgDiv.innerHTML += char;
+                        }
+                        i++;
+                        scrollToBottom();
+                        setTimeout(type, speed);
+                    } else {
+                        stopReceiveSound(audioElement);
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('screen-container');
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
