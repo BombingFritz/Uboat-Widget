@@ -1,19 +1,29 @@
 # Bugs und historische Probleme
 
-## Offen (aus Code-Durchsicht 02.11.2026, nicht zur Laufzeit reproduziert)
+## Offen
 
 | Nr. | Symptom | Ursache | Vorschlag | Priorität |
 |---|---|---|---|---|
-| B1 | Fehlermeldungen wie „FUNKSTÖRUNG: …“, „KONFIGURATION GESPEICHERT.“ oder „ZUSAMMENFASSUNG FEHLGESCHLAGEN“ erscheinen nicht im Display, nur eine leere Zeile | `appendLog` kennt nur die Absender `Kaleu` und `System`; Aufrufe mit `Funkmaat` bzw. `sys` landen im `else`-Zweig, der keinen Text setzt | `appendLog` um diese Absender ergänzen oder Aufrufe vereinheitlichen | P1 |
-| B2 | Die neue Meldung geht doppelt an die API | `sendMessage` speichert die Meldung vor dem Aufruf im Verlauf; `callGemini`/`callUniversal` nehmen die letzten Einträge (inkl. dieser Meldung) und hängen sie noch einmal an | Verlauf vor dem Hinzufügen auslesen oder letzte Meldung beim Aufbau überspringen | P1 |
-| B3 | Nach einem fehlgeschlagenen Aufruf steht eine Meldung ohne Antwort im Verlauf | Meldung wird vor dem Aufruf gespeichert, bei Fehler nicht entfernt | Bei Fehler entfernen oder als unbeantwortet markieren | P2 |
-| B4 | KI-Antworten werden als HTML eingefügt (`innerHTML` im Schreibmaschinen-Effekt und beim Wiederherstellen). Spitze Klammern oder `&` können die Ausgabe verfälschen; Markup aus der Antwort wird ausgeführt | Zeichenweises `innerHTML +=` und Template-String mit `msg.text` | Text per `textContent`/Textknoten einfügen, Zeilenumbrüche getrennt behandeln. Vor einem Chat-Modus zwingend (fremde Eingaben) | P1 vor Server-Modus |
-| B5 | „RESET“ löscht das Modell nicht und setzt andere Werte als ein Erststart | `clearSettings` entfernt `bdu_active_model` statt `bdu_current_model`; setzt Boot-Kontext und Status leer statt auf Standard, Loop aus statt an, Modell `gemini-2.5-flash` statt `gemini-1.5-flash`; `bdu_widget_version` bleibt | Schlüssel korrigieren, Standardwerte an einer Stelle definieren | P2 |
-| B6 | „MODELLE SUCHEN“ im Universal-Modus schlägt fehl oder zeigt Gemini-Modelle | `fetchModels` fragt immer die Gemini-API ab | Im Universal-Modus `{base}/v1/models` abfragen oder Knopf ausblenden | P3 |
-| B7 | Standardmodell beim Erststart ist `gemini-1.5-flash` | Fester Standardwert in `loadSettings`; Gemini-1.5-Modelle sind nach bisherigem Stand eingestellt (vor Änderung in der Modellliste prüfen) | Standard auf ein aktuelles Modell setzen (README empfiehlt `gemini-2.5-flash-lite`) | P2 |
-| B8 | Eigene Prompt-Anpassungen gehen nach einem Update ohne Rückfrage verloren | `WIDGET_VERSION`-Abgleich in `loadSettings` ersetzt den gespeicherten Prompt | Siehe `docs/OFFEN.md`, Punkt „Prompt-Version“ | P2 |
-| B9 | Label „Browsercash“ | Tippfehler im Einstellungsfeld des API-Schlüssels | „Browsercache“ | P3 |
-| B10 | Nach „LETZTE 5 LÖSCHEN“ kann der Zusammenfassungsstand hinter dem Verlauf liegen | `lastSummaryIndex` wird nicht angepasst | Index auf höchstens Verlaufslänge begrenzen | P3 |
+| B8 | Eigene Prompt-Anpassungen gehen nach einem Update ohne Rückfrage verloren | `WIDGET_VERSION`-Abgleich in `loadSettings` ersetzt den gespeicherten Prompt | Siehe `docs/OFFEN.md`, Punkt „Prompt-Version“; Entscheidung des Nutzers offen | P2 |
+
+## Behoben in 1.0.1
+Nachweis: Laufzeittest im Headless-Chromium mit simulierter Gemini- und OpenAI-API (keine echten API-Aufrufe), 26/26 Prüfungen bestanden. Gegenprobe mit unveränderter 1.0.0: die Fehler B1–B3, B5, B7, B9–B13 wurden dort reproduziert. Noch nicht mit echter API, in OBS oder im Stream erprobt.
+
+| Nr. | Symptom | Ursache | Fix |
+|---|---|---|---|
+| B1 | Fehlermeldungen wie „FUNKSTÖRUNG: …“, „KONFIGURATION GESPEICHERT.“ oder „ZUSAMMENFASSUNG FEHLGESCHLAGEN“ erschienen nur als leere Zeile | `appendLog` kannte nur `Kaleu` und `System`; `Funkmaat` und `sys` landeten ohne Text im `else`-Zweig | `appendLog` behandelt `Funkmaat` und `sys` als Systemmeldung |
+| B2 | Die neue Meldung ging doppelt an die API | Meldung stand vor dem Aufruf schon im Verlauf und wurde zusätzlich angehängt | Meldung und Antwort kommen erst nach erfolgreichem Aufruf in den Verlauf |
+| B3 | Nach einem fehlgeschlagenen Aufruf blieb eine unbeantwortete Meldung im Verlauf | wie B2 | wie B2; die Meldung bleibt nur im Display sichtbar |
+| B4 | KI-Antworten wurden beim Wiederherstellen nach dem Neuladen als HTML eingefügt (Markup aus der Antwort wurde ausgeführt) | `innerHTML` mit `msg.text` in `restoreChatLog`. Im Schreibmaschinen-Effekt wurde Markup durch das zeichenweise Einfügen faktisch maskiert (Gegenprobe), war aber fragil | Beide Wege schreiben nur noch Textknoten und `<br>` (`createBduMessageDiv`, `appendTextWithBreaks`); auch der Bootsname in der Kopfzeile |
+| B5 | „RESET“ löschte das Modell nicht und setzte andere Werte als ein Erststart | Schlüssel `bdu_active_model` statt `bdu_current_model`; Boot-Kontext und Status leer, Loop aus, abweichende Modellnamen | Richtiger Schlüssel; Standardwerte `DEFAULT_MODEL`, `DEFAULT_LOOP_SOUND`, `DEFAULT_VOLUME`, `DEFAULT_CONTEXT`, `DEFAULT_STATUS` für Erststart und Reset; Modell-Badge wird aktualisiert |
+| B7 | Standardmodell beim Erststart war `gemini-1.5-flash` | Fester Wert; Gemini 1.5 ist eingestellt, 2.5 laut Google nur noch für bisherige Nutzer | `DEFAULT_MODEL = "gemini-3.5-flash-lite"` (laut Google-Deprecation-Seite, Stand 22.10.2026, Empfehlung für neue Projekte) |
+| B9 | Label „Browsercash“ | Tippfehler | „Browsercache“ |
+| B10 | Zusammenfassungsstand passte nach „LETZTE 5 LÖSCHEN“ oder nach dem Kürzen auf 100 Einträge nicht mehr zum Verlauf (Nachrichten wurden übersprungen oder doppelt zusammengefasst) | `lastSummaryIndex` wurde beim Löschen und Kürzen nicht angepasst | `trimHistory` verschiebt den Index beim Kürzen mit; „LETZTE 5 LÖSCHEN“ begrenzt ihn auf die Verlaufslänge; Index wird gespeichert |
+| B11 | Ließ sich der Sende-Ton nicht laden (z. B. offline oder GitHub nicht erreichbar), wurde gar nichts gesendet und das Statuslicht blinkte weiter | `await outgoingSound.play()` warf einen Fehler außerhalb des `try` in `sendMessage` | Ton-Fehler werden abgefangen und geloggt; der Funkspruch wird trotzdem gesendet |
+| B12 | Universal-Modus mit dem empfohlenen Ollama-Wert `http://localhost:11434/v1` rief `…/v1/v1/chat/completions` auf | Hinweistext nannte `/v1`, der Code hängt `/v1` selbst an | `normalizeBaseUrl` entfernt abschließendes `/` und `/v1`; Hinweistext ohne `/v1` |
+| B13 | Schlug die Cache-Erstellung fehl (z. B. Kontext zu kurz, kein Caching im kostenlosen Kontingent), kostete jede weitere Meldung einen zusätzlichen, erfolglosen API-Aufruf | Kein Merker für den Fehlschlag | `cacheCreationFailed`: kein neuer Versuch bis zum nächsten Speichern der Einstellungen, „RESET“ oder Neuladen |
+
+**Korrektur zur Code-Durchsicht vom 02.11.2026:** Der dort als B6 geführte Befund („Modellsuche im Universal-Modus fragt Gemini ab“) war falsch. `fetchModels` fragt im Universal-Modus bereits `{base}/v1/models` ab. Gefunden wurde dabei stattdessen B12.
 
 ## Historisch (aus der Entwicklung, behoben)
 

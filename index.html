@@ -412,7 +412,7 @@
             <h2>KONFIGURATION</h2>
             
             <div class="setting-group">
-                <label>Google Gemini API Key (wird lokal im Browsercash gespeichert):</label>
+                <label>Google Gemini API Key (wird lokal im Browsercache gespeichert):</label>
                 <input type="password" id="api-key-input" placeholder="Hier API Key einfügen...">
             </div>
 
@@ -434,7 +434,7 @@
             <div class="setting-group" id="custom-url-group" style="display:none;">
                 <label>Base-URL (ohne /v1/chat/completions):</label>
                 <input type="text" id="custom-base-url-input" placeholder="z.B. https://api.openai.com  oder  http://localhost:11434">
-                <small style="color:#666;">Leer lassen für OpenAI Standard. Ollama: http://localhost:11434/v1</small>
+                <small style="color:#666;">Leer lassen für OpenAI Standard. Ollama: http://localhost:11434</small>
             </div>
 
             <div class="setting-group" id="caching-group">
@@ -449,7 +449,7 @@
             <div class="setting-group">
                 <label>Aktives Modell (Bitte beim ersten Mal suchen und auswählen):</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="active-model-input" placeholder="z.B. gemini-1.5-flash">
+                    <input type="text" id="active-model-input" placeholder="z.B. gemini-3.5-flash-lite">
                     <button onclick="fetchModels()" style="width: auto; font-size: 10px; cursor:pointer;">🔍 MODELLE<br>SUCHEN</button>
                 </div>
                 <div id="model-list-display"></div>
@@ -715,9 +715,16 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
         async function playSendSound() {
             outgoingSound.currentTime = 0;
             outgoingSound.volume = soundVolume;
-            await outgoingSound.play();
+            try {
+                await outgoingSound.play();
+            } catch (e) {
+                // Ton nicht ladbar oder blockiert: Funkspruch trotzdem senden
+                console.warn("[AUDIO] ⚠️ Sende-Ton nicht abspielbar:", e.message);
+                return;
+            }
             return new Promise(resolve => {
                 outgoingSound.onended = resolve;
+                outgoingSound.onerror = resolve;
             });
         }
 
@@ -730,7 +737,7 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
             currentIncomingAudio = incomingSound.cloneNode();
             currentIncomingAudio.loop = loopIncomingSound;
             currentIncomingAudio.volume = soundVolume;
-            currentIncomingAudio.play();
+            currentIncomingAudio.play().catch(e => console.warn("[AUDIO] ⚠️ Empfangs-Ton nicht abspielbar:", e.message));
             return currentIncomingAudio;
         }
 
@@ -948,6 +955,11 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
 
         const DEFAULT_STATUS = `Alle Systeme voll funktionsfähig. Boot klar zum Gefecht`;
 
+        // Standardwerte für Erststart und RESET (eine Stelle für beide)
+        const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+        const DEFAULT_LOOP_SOUND = true;
+        const DEFAULT_VOLUME = 0.5;
+
         // ==============================================
         // STATE
         // ==============================================
@@ -955,7 +967,7 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
         let systemPrompt = DEFAULT_PROMPT;
         let bootContext = DEFAULT_CONTEXT;
         let currentStatus = DEFAULT_STATUS;
-        let currentModel = "gemini-1.5-flash";
+        let currentModel = DEFAULT_MODEL;
         
         // API-Typ & URL
         let apiType = "gemini";      // "gemini" | "universal"
@@ -965,14 +977,30 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
         // Caching
         let cachedContentName = null;
         let cacheExpiresAt = null;
-        
+        let cacheCreationFailed = false; // Nach Fehlschlag kein neuer Versuch bis zum nächsten Speichern/Neuladen
+
         // History Management
         let conversationHistory = [];
         let historySummary = "";
         let lastSummaryIndex = 0;
         let messagesSinceLastCache = 0;
-        
+
         const MAX_HISTORY_ITEMS = 100;
+
+        // Base-URL für den Universal-Modus: Standard OpenAI, ohne abschließenden "/" und ohne "/v1"
+        // (der Code hängt "/v1/..." selbst an; "http://localhost:11434/v1" wird so zu "http://localhost:11434")
+        function normalizeBaseUrl(raw) {
+            return (raw || "https://api.openai.com").trim().replace(/\/+$/, "").replace(/\/v1$/, "");
+        }
+
+        // Kürzt den Verlauf auf die letzten maxItems Einträge und hält den Zusammenfassungsstand passend
+        function trimHistory(maxItems) {
+            const removed = conversationHistory.length - maxItems;
+            if (removed <= 0) return;
+            conversationHistory = conversationHistory.slice(-maxItems);
+            lastSummaryIndex = Math.max(0, lastSummaryIndex - removed);
+            try { localStorage.setItem('bdu_last_summary_index', lastSummaryIndex.toString()); } catch (e) {}
+        }
 
         // ==============================================
         // LOCALSTORAGE HELPER
@@ -987,7 +1015,7 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
                     alert("Speicher voll! Ältere Nachrichten werden gelöscht.");
                     
                     // Lösche älteste History-Hälfte
-                    conversationHistory = conversationHistory.slice(-50);
+                    trimHistory(50);
                     localStorage.setItem('bdu_conversation_history', JSON.stringify(conversationHistory));
                     
                     // Versuche nochmal
@@ -1050,9 +1078,9 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
             systemPrompt = sPrompt || DEFAULT_PROMPT; // Nutzt jetzt den neuen langen Prompt!
             bootContext = sContext || DEFAULT_CONTEXT;
             currentStatus = sStatus || DEFAULT_STATUS;
-            currentModel = sModel || "gemini-1.5-flash";
-            loopIncomingSound = sLoop !== null ? sLoop === 'true' : true;
-            soundVolume = sVolume !== null ? parseFloat(sVolume) : 0.5;
+            currentModel = sModel || DEFAULT_MODEL;
+            loopIncomingSound = sLoop !== null ? sLoop === 'true' : DEFAULT_LOOP_SOUND;
+            soundVolume = sVolume !== null ? parseFloat(sVolume) : DEFAULT_VOLUME;
             apiType = sApiType || "gemini";
             customBaseUrl = sCustomUrl || "";
             cachingEnabled = sCaching !== null ? sCaching === 'true' : true;
@@ -1191,11 +1219,8 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
                     msgDiv.textContent = "> " + msg.text;
                     log.appendChild(msgDiv);
                 } else {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = "msg-bdu";
-                    const bootNameMatch = bootContext.match(/U-Boot:\s*([^\n]+)/);
-                    const bootName = bootNameMatch ? bootNameMatch[1].trim() : "U-Boot";
-                    msgDiv.innerHTML = `<strong>FT von BdU an ${bootName}:</strong> ${msg.text}`;
+                    const msgDiv = createBduMessageDiv();
+                    appendTextWithBreaks(msgDiv, msg.text);
                     log.appendChild(msgDiv);
                 }
             });
@@ -1217,7 +1242,7 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
             // Trimme wenn zu groß
             if (conversationHistory.length > MAX_HISTORY_ITEMS) {
                 console.log("[HISTORY] ✂️ Trimme History auf", MAX_HISTORY_ITEMS, "Einträge");
-                conversationHistory = conversationHistory.slice(-MAX_HISTORY_ITEMS);
+                trimHistory(MAX_HISTORY_ITEMS);
             }
             
             // Speichere
@@ -1281,9 +1306,12 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
 
             const removeCount = Math.min(5, conversationHistory.length);
             conversationHistory.splice(conversationHistory.length - removeCount, removeCount);
+            // Zusammenfassungsstand darf nicht hinter dem Verlaufsende liegen
+            lastSummaryIndex = Math.min(lastSummaryIndex, conversationHistory.length);
 
             try {
                 localStorage.setItem('bdu_conversation_history', JSON.stringify(conversationHistory));
+                localStorage.setItem('bdu_last_summary_index', lastSummaryIndex.toString());
             } catch (e) {
                 console.error("Fehler beim Speichern der gekürzten History:", e);
             }
@@ -1328,7 +1356,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
                 if (apiType === "universal") {
                     // Universal API für Zusammenfassung
-                    const baseUrl = (customBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+                    const baseUrl = normalizeBaseUrl(customBaseUrl);
                     const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
@@ -1507,6 +1535,12 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 return null;
             }
             
+            // Nach einem Fehlschlag nicht bei jeder Meldung erneut versuchen (kostet je einen API-Aufruf)
+            if (cacheCreationFailed) {
+                console.log("[CACHE] ⏭️ Cache-Erstellung zuvor fehlgeschlagen – erneuter Versuch nach Speichern der Einstellungen oder Neuladen");
+                return null;
+            }
+            
             const modelLower = currentModel.toLowerCase();
             const isGemini15 = modelLower.includes('1.5');
             const isGemini25 = modelLower.includes('2.5');
@@ -1570,6 +1604,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     const error = await response.json();
                     const errorMsg = error.error?.message || JSON.stringify(error);
                     console.warn("[CACHE] ⚠️ Cache konnte nicht erstellt werden:", errorMsg);
+                    cacheCreationFailed = true;
                     
                     // Prüfe ob es am Minimum liegt
                     if (errorMsg.includes("too small") || errorMsg.includes("min_total_token_count")) {
@@ -1604,6 +1639,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
             } catch (error) {
                 console.warn("[CACHE] ❌ Fehler beim Erstellen:", error.message);
+                cacheCreationFailed = true;
                 return null;
             }
         }
@@ -1622,7 +1658,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         // UNIVERSAL / OPENAI-COMPATIBLE API CALL
         // ==============================================
         async function callUniversal(userMessage) {
-            const baseUrl = (customBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+            const baseUrl = normalizeBaseUrl(customBaseUrl);
             const url = `${baseUrl}/v1/chat/completions`;
             
             let summaryText = "";
@@ -1906,7 +1942,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             }
 
             appendLog("Kaleu", text);
-            addToHistory("user", text);
             inputField.value = "";
 
             const statusLight = document.getElementById('status-light');
@@ -1915,7 +1950,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             await playSendSound();
 
             try {
+                // Meldung erst NACH dem Aufruf in den Verlauf: callApi hängt sie selbst an
+                // (vorher doppelt gesendet), und bei Fehlern bleibt keine unbeantwortete Meldung stehen.
                 const responseText = await callApi(text);
+                addToHistory("user", text);
                 addToHistory("assistant", responseText);
                 
                 const audioElement = playReceiveSound();
@@ -2019,12 +2057,14 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 if (apiTypeChanged) console.log("  - API-Typ geändert:", apiType, "→", newApiType);
                 if (customUrlChanged) console.log("  - Custom URL geändert");
                 if (cachingChanged) console.log("  - Caching-Einstellung geändert");
-                
+
                 cachedContentName = null;
                 cacheExpiresAt = null;
                 localStorage.removeItem('bdu_cache_name');
                 localStorage.removeItem('bdu_cache_expires');
             }
+            // Speichern erlaubt einen neuen Cache-Versuch (z. B. nach längerem Prompt oder anderem Modell)
+            cacheCreationFailed = false;
 
             saveToLocalStorage('bdu_api_key', newKey);
             saveToLocalStorage('bdu_system_prompt', newPrompt);
@@ -2062,7 +2102,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             localStorage.removeItem('bdu_system_prompt');
             localStorage.removeItem('bdu_boot_context');
             localStorage.removeItem('bdu_current_status');
-            localStorage.removeItem('bdu_active_model');
+            localStorage.removeItem('bdu_current_model');
             localStorage.removeItem('bdu_loop_sound');
             localStorage.removeItem('bdu_sound_volume');
             localStorage.removeItem('bdu_conversation_history');
@@ -2076,17 +2116,18 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             // In-Memory-Werte zurücksetzen
             systemPrompt = DEFAULT_PROMPT;
-            bootContext = "";
-            currentStatus = "";
+            bootContext = DEFAULT_CONTEXT;
+            currentStatus = DEFAULT_STATUS;
             apiKey = "";
-            currentModel = "gemini-2.5-flash";
-            loopIncomingSound = false;
-            soundVolume = 0.5;
+            currentModel = DEFAULT_MODEL;
+            loopIncomingSound = DEFAULT_LOOP_SOUND;
+            soundVolume = DEFAULT_VOLUME;
             conversationHistory = [];
             historySummary = "";
             lastSummaryIndex = 0;
             cachedContentName = null;
             cacheExpiresAt = null;
+            cacheCreationFailed = false;
             apiType = "gemini";
             customBaseUrl = "";
             cachingEnabled = true;
@@ -2103,13 +2144,13 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             if (apiInput) apiInput.value = "";
             if (promptInput) promptInput.value = DEFAULT_PROMPT;
-            if (contextInput) contextInput.value = "";
-            if (statusInput) statusInput.value = "";
-            if (modelInput) modelInput.value = "gemini-1.5-flash";
-            if (loopCheckbox) loopCheckbox.checked = false;
+            if (contextInput) contextInput.value = DEFAULT_CONTEXT;
+            if (statusInput) statusInput.value = DEFAULT_STATUS;
+            if (modelInput) modelInput.value = DEFAULT_MODEL;
+            if (loopCheckbox) loopCheckbox.checked = DEFAULT_LOOP_SOUND;
             if (volumeSlider) {
-                volumeSlider.value = 50;
-                if (volumeDisplay) volumeDisplay.textContent = '50%';
+                volumeSlider.value = Math.round(DEFAULT_VOLUME * 100);
+                if (volumeDisplay) volumeDisplay.textContent = Math.round(DEFAULT_VOLUME * 100) + '%';
             }
             const geminiRadio = document.getElementById('api-type-gemini');
             const customUrlInput = document.getElementById('custom-base-url-input');
@@ -2129,7 +2170,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             }
 
             updateHistoryDisplay();
-            updateCacheStatus();
+            updateModelBadge(); // aktualisiert auch den Cache-Status
 
             console.log("[SYSTEM] Alle Einstellungen zurückgesetzt");
         }
@@ -2182,7 +2223,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     });
                 } else {
                     // Universal: /v1/models
-                    const baseUrl = (tempBaseUrl || "https://api.openai.com").replace(/\/$/, "");
+                    const baseUrl = normalizeBaseUrl(tempBaseUrl);
                     const response = await fetch(`${baseUrl}/v1/models`, {
                         headers: { "Authorization": `Bearer ${tempKey}` }
                     });
@@ -2218,39 +2259,60 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             if (sender === "Kaleu") {
                 msgDiv.className = "msg-user";
                 msgDiv.textContent = "> " + text;
-            } else if (sender === "System") {
+            } else if (sender === "System" || sender === "Funkmaat" || sender === "sys") {
+                // Systemmeldungen (Fehler, Bestätigungen) – vorher fielen "Funkmaat" und "sys" ohne Text durch
                 msgDiv.className = "msg-sys";
                 msgDiv.textContent = "[SYS] " + text;
             } else {
                 msgDiv.className = "msg-bdu";
+                msgDiv.textContent = text;
             }
             
             log.appendChild(msgDiv);
             scrollToBottom();
         }
 
+        // Funkspruch-Element mit Kopfzeile "FT von BdU an <Boot>:" – alles als Text, nie als HTML
+        function createBduMessageDiv() {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = "msg-bdu";
+            const bootNameMatch = bootContext.match(/U-Boot:\s*([^\n]+)/);
+            const bootName = bootNameMatch ? bootNameMatch[1].trim() : "U-Boot";
+            const head = document.createElement('strong');
+            head.textContent = `FT von BdU an ${bootName}:`;
+            msgDiv.appendChild(head);
+            msgDiv.appendChild(document.createTextNode(" "));
+            return msgDiv;
+        }
+
+        // Text mit Zeilenumbrüchen als Textknoten und <br> anhängen
+        function appendTextWithBreaks(el, text) {
+            String(text).split('\n').forEach((line, idx) => {
+                if (idx > 0) el.appendChild(document.createElement('br'));
+                el.appendChild(document.createTextNode(line));
+            });
+        }
+
         function typewriterEffect(text, audioElement) {
             return new Promise(resolve => {
                 const log = document.getElementById('chat-log');
-                const msgDiv = document.createElement('div');
-                msgDiv.className = "msg-bdu";
-                
-                const bootNameMatch = bootContext.match(/U-Boot:\s*([^\n]+)/);
-                const bootName = bootNameMatch ? bootNameMatch[1].trim() : "U-Boot";
-                
-                msgDiv.innerHTML = `<strong>FT von BdU an ${bootName}:</strong> `; 
+                const msgDiv = createBduMessageDiv();
                 log.appendChild(msgDiv);
 
                 let i = 0;
                 const speed = 45;
+                let textNode = document.createTextNode("");
+                msgDiv.appendChild(textNode);
 
                 function type() {
                     if (i < text.length) {
                         const char = text.charAt(i);
                         if(char === '\n') {
-                            msgDiv.innerHTML += "<br>";
+                            msgDiv.appendChild(document.createElement('br'));
+                            textNode = document.createTextNode("");
+                            msgDiv.appendChild(textNode);
                         } else {
-                            msgDiv.innerHTML += char;
+                            textNode.appendData(char);
                         }
                         i++;
                         scrollToBottom();
