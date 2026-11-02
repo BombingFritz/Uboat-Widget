@@ -1,6 +1,6 @@
 # Offene Punkte
 
-## Chat-Modus (geplant für 1.1.0)
+## Chat-Modus (geplant für 1.2.0)
 Spezifiziert in `docs/specs/chat-modus.md` (Widget), ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026):
 - `!BdU <Text>` im Chat; Server erkennt, kürzt (200 Zeichen), prüft Limits; Widget erzeugt die Antwort; Server postet „FT vom BdU: …“ als Antwort auf die Chat-Nachricht.
 - Limits ohne Ausnahmen (auch Broadcaster und Mods): eine Anfrage je 3 Minuten insgesamt, je Nutzer 3 in 30 Minuten. Bei Verstoß „Funkverkehr einschränken, Feind peilt ein!“, höchstens einmal je 10 Minuten, sonst keine Antwort.
@@ -12,13 +12,14 @@ Spezifiziert in `docs/specs/chat-modus.md` (Widget), ADR 0004 und `docs/specs/bd
 
 Vor der Umsetzung:
 1. ~~BUGS B14 beheben~~ erledigt in 1.0.2 (`getContextHistory`).
-2. Zu bestätigen: Funkstille bei Minutenlimit 30 Minuten, bei Tageslimit bis zum nächsten Streamstart; optionale Tagesobergrenze für Chat-Antworten (Vorschlag 60). Details in der Server-Spec.
+2. Server-Doku nennt noch „Widget 1.1.0“ (`docs/specs/bdu-chat.md`, `docs/OFFEN.md` im Server-Repository); bei der Umsetzung auf 1.2.0 korrigieren.
+3. Zu bestätigen: Funkstille bei Minutenlimit 30 Minuten, bei Tageslimit bis zum nächsten Streamstart; optionale Tagesobergrenze für Chat-Antworten (Vorschlag 60). Details in der Server-Spec.
 
 ## Prompt-Version
 `WIDGET_VERSION` bestimmt heute, wann der gespeicherte Prompt ersetzt wird (BUGS B8). Vorschlag: Konstante in `PROMPT_VERSION` umbenennen, App-Version nur über `CHANGELOG.md`/Tags führen. Bei neuer Prompt-Version nachfragen bzw. nur ersetzen, wenn der gespeicherte Prompt unverändert der alte Standard war. Entscheidung des Nutzers offen.
 
 ## Arbeitskopie des Nutzers
-Der Nutzer arbeitet lokal mit einer älteren Fassung (`WIDGET_VERSION = "2.1"`, ohne Universal-Modus und Caching-Schalter). `index.html` 1.0.0 enthält deren Funktionen vollständig; Unterschiede sind Titel, Standard-Boot-Kontext und die Auslagerung der Sicherheitsregeln in `SAFETY_RULES`. Für die Weiterentwicklung ist `index.html` aus `main` die Basis. Beim Umstieg: Datei am selben Pfad und mit derselben OBS-Einbindung ersetzen, sonst sind Einstellungen weg; der Versionsabgleich ersetzt den gespeicherten Prompt durch den neuen Standard.
+Der Nutzer arbeitet lokal mit einer älteren Fassung (`WIDGET_VERSION = "2.1"`, ohne Universal-Modus und Caching-Schalter). `index.html` 1.0.0 enthält deren Funktionen vollständig; Unterschiede sind Titel, Standard-Boot-Kontext und die Auslagerung der Sicherheitsregeln in `SAFETY_RULES`. Für die Weiterentwicklung ist `index.html` aus `main` die Basis. Beim Umstieg: Datei am selben Pfad und mit derselben OBS-Einbindung ersetzen, sonst sind Einstellungen weg; der Versionsabgleich ersetzt den gespeicherten Prompt durch den neuen Standard, sichert ihn seit 1.1.0 aber vorher. Für den Wechsel auf `file:///` Export/Import nutzen.
 
 ## Weitere Punkte
 1. **Lizenzdatei:** `LICENSE-CC-BY-4.0.txt` wird von GitHub nicht als Lizenz erkannt (Repository zeigt keine Lizenz). Umbenennen in `LICENSE` wäre möglich; Entscheidung des Nutzers.

@@ -4,7 +4,7 @@
 
 | Nr. | Symptom | Ursache | Vorschlag | Priorität |
 |---|---|---|---|---|
-| B8 | Eigene Prompt-Anpassungen gehen nach einem Update ohne Rückfrage verloren | `WIDGET_VERSION`-Abgleich in `loadSettings` ersetzt den gespeicherten Prompt | Siehe `docs/OFFEN.md`, Punkt „Prompt-Version“; Entscheidung des Nutzers offen | P2 |
+| B8 | Eigene Prompt-Anpassungen werden nach einem Update ohne Rückfrage durch den Standard ersetzt | `WIDGET_VERSION`-Abgleich in `loadSettings` | Seit 1.1.0 abgemildert: alter Prompt wird gesichert und ist in den Einstellungen zurückholbar. Grundsätzliche Lösung siehe `docs/OFFEN.md`, Punkt „Prompt-Version“ | P3 |
 | B18 | Bei Gemini 1.5/2.5 mit explizitem Caching wird der Cache etwa jede zweite Meldung neu erstellt; das Caching spart dann kaum etwas und alte Caches laufen kostenpflichtig bis zum TTL-Ende weiter | Die Zusammenfassung steht im gecachten Systemtext; jede neue Zusammenfassung invalidiert den Cache | Zusammenfassung aus dem gecachten Teil nehmen (z. B. als erster Eintrag in `contents`), dann bleibt der Cache bis zu einer Stunde gültig. Das Standardmodell `gemini-3.5-flash-lite` ist nicht betroffen | P3 |
 | B19 | Nach „LETZTE 5 LÖSCHEN“ endet der Verlauf mit einer Meldung ohne Antwort; die nächste Anfrage enthält zwei Nutzer-Einträge hintereinander | Verlauf besteht seit 1.0.1 nur aus Paaren; 5 ist ungerade | Paarweise löschen (z. B. „LETZTE 2 FUNKSPRÜCHE“ = 4 Einträge). Ob Gemini zwei aufeinanderfolgende Nutzer-Einträge ablehnt, ist [UNGEKLÄRT] | P3 |
 

@@ -39,4 +39,4 @@ Funksprüche aus dem Twitch-Chat im Hintergrund vom BdU beantworten lassen, mit 
 `index.html`: Einstellungen (neue Gruppe), `loadSettings`, `saveSettings`, `clearSettings`, neue Funktionen für Verbindung, Warteschlange und Chat-Anfrage; Kontextaufbau aus `callGemini`/`callUniversal` gemeinsam nutzen.
 
 ## Status
-geplant (Version 1.1.0). Voraussetzung BUGS B14 ist seit 1.0.2 erfüllt.
+geplant (Version 1.2.0). Voraussetzung BUGS B14 ist seit 1.0.2 erfüllt.

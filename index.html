@@ -678,6 +678,28 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
             </div>
 
             <div class="setting-group">
+                <label>Sichern &amp; Übertragen (Export / Import):</label>
+                <div style="background: #1a1a1a; padding: 8px; border: 1px solid #333; border-radius: 3px; font-size: 11px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <input type="checkbox" id="export-key-checkbox" style="width: auto; margin: 0;">
+                        <span style="color: #ccc;">API-Schlüssel mitexportieren (nur für eigene Geräte, nie weitergeben)</span>
+                    </div>
+                    <button onclick="exportData()" style="margin-right: 5px; font-size: 10px; border-color: #4d9fff; color: #cde;">📤 EXPORTIEREN</button>
+                    <button onclick="downloadExport()" style="margin-right: 5px; font-size: 10px;">💾 ALS DATEI</button>
+                    <button onclick="importData()" style="margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">📥 IMPORTIEREN</button>
+                    <button onclick="document.getElementById('import-file-input').click()" style="font-size: 10px;">📂 DATEI LADEN</button>
+                    <input type="file" id="import-file-input" accept=".json,application/json,text/plain" style="display: none;" onchange="loadImportFile(this)">
+                    <textarea id="transfer-text" style="height: 70px; margin-top: 6px;" placeholder="Export erscheint hier (kopieren mit Strg+A, Strg+C). Zum Import hier einfügen und IMPORTIEREN klicken."></textarea>
+                    <div id="transfer-status" style="margin-top: 4px; color: #888;"></div>
+                    <div id="prompt-backup-info" style="display: none; margin-top: 6px; color: #ffb84d;">
+                        Beim Update wurde ein eigener Persönlichkeits-Prompt gesichert.
+                        <button onclick="restorePromptBackup()" style="margin-left: 5px; font-size: 10px; border-color: #ffb84d; color: #ffdca8;">↩️ GESICHERTEN PROMPT ÜBERNEHMEN</button>
+                    </div>
+                </div>
+                <small style="color:#666;">Enthält Einstellungen, Persönlichkeit, Boot-Kontext, Status, Verlauf und Zusammenfassung. Zum Umzug in einen anderen Browser oder auf eine andere OBS-Einbindung.</small>
+            </div>
+
+            <div class="setting-group">
                 <label>Empfangs-Sound:</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" id="loop-sound-checkbox" style="width: auto; margin: 0;">
@@ -1063,6 +1085,7 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
             updateTokenEstimate(); // ← NEU: Initiale Token-Berechnung
             restoreChatLog();
             updateHistoryDisplay();
+            updatePromptBackupInfo();
             console.log("[INIT] ✅ Widget bereit!");
         };
 
@@ -1079,6 +1102,12 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
             if (forcePromptUpdate) {
                 console.log("[INIT] 🔄 Widget-Version geändert:", savedVersion, "→", WIDGET_VERSION);
                 console.log("[INIT] 📝 System Prompt wird auf neue Version aktualisiert");
+                // Eigenen Prompt vor dem Ersetzen sichern (kann über Export oder "GESICHERTEN PROMPT ÜBERNEHMEN" zurückgeholt werden)
+                const oldPrompt = localStorage.getItem('bdu_system_prompt');
+                if (oldPrompt && oldPrompt.trim() && oldPrompt !== DEFAULT_PROMPT) {
+                    saveToLocalStorage('bdu_system_prompt_backup', oldPrompt);
+                    console.log("[INIT] 💾 Bisheriger Prompt gesichert (", oldPrompt.length, "Zeichen, Version", savedVersion, ")");
+                }
                 localStorage.setItem('bdu_widget_version', WIDGET_VERSION);
             }
             
@@ -2151,6 +2180,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             localStorage.removeItem('bdu_api_type');
             localStorage.removeItem('bdu_custom_base_url');
             localStorage.removeItem('bdu_caching_enabled');
+            localStorage.removeItem('bdu_system_prompt_backup');
 
             // In-Memory-Werte zurücksetzen
             systemPrompt = DEFAULT_PROMPT;
@@ -2211,6 +2241,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             updateHistoryDisplay();
             updateModelBadge(); // aktualisiert auch den Cache-Status
+            updatePromptBackupInfo();
 
             console.log("[SYSTEM] Alle Einstellungen zurückgesetzt");
         }
@@ -2364,6 +2395,183 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 }
                 type();
             });
+        }
+
+        // ==============================================
+        // EXPORT / IMPORT
+        // Überträgt Einstellungen, Kontexte, Verlauf und Zusammenfassung in einen anderen
+        // Browser bzw. eine andere OBS-Einbindung (localStorage gilt je Herkunft).
+        // ==============================================
+        const EXPORT_FORMAT = "enigma-bdu-funk";
+        const EXPORT_FORMAT_VERSION = 1;
+
+        function setTransferStatus(text, color) {
+            const el = document.getElementById('transfer-status');
+            if (el) { el.textContent = text; el.style.color = color || '#888'; }
+        }
+
+        function buildExportData() {
+            const includeKey = document.getElementById('export-key-checkbox')?.checked === true;
+            const data = {
+                format: EXPORT_FORMAT,
+                formatVersion: EXPORT_FORMAT_VERSION,
+                exportedAt: new Date().toISOString(),
+                promptVersion: WIDGET_VERSION,
+                settings: {
+                    apiType: apiType,
+                    customBaseUrl: customBaseUrl,
+                    model: currentModel,
+                    cachingEnabled: cachingEnabled,
+                    loopSound: loopIncomingSound,
+                    volume: soundVolume,
+                    systemPrompt: systemPrompt,
+                    bootContext: bootContext,
+                    currentStatus: currentStatus
+                },
+                memory: {
+                    history: conversationHistory,
+                    summary: historySummary,
+                    lastSummaryIndex: lastSummaryIndex
+                }
+            };
+            if (includeKey && apiKey) data.settings.apiKey = apiKey;
+            const backup = localStorage.getItem('bdu_system_prompt_backup');
+            if (backup) data.promptBackup = backup;
+            return data;
+        }
+
+        async function exportData() {
+            const json = JSON.stringify(buildExportData(), null, 2);
+            const area = document.getElementById('transfer-text');
+            area.value = json;
+            area.focus();
+            area.select();
+            let copied = false;
+            try {
+                await navigator.clipboard.writeText(json);
+                copied = true;
+            } catch (e) {
+                try { copied = document.execCommand('copy'); } catch (e2) { copied = false; }
+            }
+            const keyNote = document.getElementById('export-key-checkbox')?.checked ? " (mit API-Schlüssel!)" : " (ohne API-Schlüssel)";
+            setTransferStatus(
+                (copied ? "✅ Exportiert und in die Zwischenablage kopiert" : "✅ Exportiert – Text markiert, mit Strg+C kopieren") + keyNote +
+                ` · ${conversationHistory.length} Verlaufseinträge`, '#4dff4d');
+            console.log("[EXPORT] 📤", json.length, "Zeichen,", conversationHistory.length, "Verlaufseinträge");
+        }
+
+        function downloadExport() {
+            try {
+                const json = JSON.stringify(buildExportData(), null, 2);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                setTransferStatus("💾 Datei-Download gestartet (in OBS nicht möglich – dort EXPORTIEREN und kopieren).", '#4dff4d');
+            } catch (e) {
+                setTransferStatus("❌ Download nicht möglich: " + e.message, '#ff4d4d');
+            }
+        }
+
+        function loadImportFile(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                document.getElementById('transfer-text').value = String(reader.result || "");
+                input.value = "";
+                importData();
+            };
+            reader.onerror = () => setTransferStatus("❌ Datei konnte nicht gelesen werden.", '#ff4d4d');
+            reader.readAsText(file);
+        }
+
+        // Prüft den Import-Text und liefert bereinigte Werte oder wirft einen Fehler mit verständlicher Meldung
+        function parseImportData(raw) {
+            let data;
+            try { data = JSON.parse(raw); } catch (e) { throw new Error("Kein gültiger Export (JSON fehlerhaft)."); }
+            if (!data || data.format !== EXPORT_FORMAT) throw new Error("Kein Export dieses Widgets.");
+            if (typeof data.formatVersion !== "number" || data.formatVersion > EXPORT_FORMAT_VERSION) {
+                throw new Error("Export stammt aus einer neueren Widget-Version. Bitte Widget aktualisieren.");
+            }
+            const st = data.settings || {};
+            const mem = data.memory || {};
+            const str = (v) => (typeof v === "string" ? v : null);
+            const history = Array.isArray(mem.history) ? mem.history
+                .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.text === "string")
+                .map(m => ({ role: m.role, text: m.text, timestamp: str(m.timestamp) || new Date().toISOString() }))
+                .slice(-MAX_HISTORY_ITEMS) : [];
+            const idx = Number.isInteger(mem.lastSummaryIndex) ? mem.lastSummaryIndex : 0;
+            return {
+                apiKey: str(st.apiKey),
+                apiType: st.apiType === "universal" ? "universal" : "gemini",
+                customBaseUrl: str(st.customBaseUrl) || "",
+                model: str(st.model),
+                cachingEnabled: typeof st.cachingEnabled === "boolean" ? st.cachingEnabled : true,
+                loopSound: typeof st.loopSound === "boolean" ? st.loopSound : DEFAULT_LOOP_SOUND,
+                volume: (typeof st.volume === "number" && st.volume >= 0 && st.volume <= 1) ? st.volume : DEFAULT_VOLUME,
+                systemPrompt: str(st.systemPrompt),
+                bootContext: str(st.bootContext),
+                currentStatus: str(st.currentStatus),
+                history: history,
+                summary: str(mem.summary) || "",
+                lastSummaryIndex: Math.min(Math.max(0, idx), history.length),
+                promptBackup: str(data.promptBackup),
+                exportedAt: str(data.exportedAt)
+            };
+        }
+
+        function importData() {
+            const raw = document.getElementById('transfer-text').value.trim();
+            if (!raw) { setTransferStatus("Bitte zuerst einen Export in das Feld einfügen.", '#ffb84d'); return; }
+            let d;
+            try { d = parseImportData(raw); } catch (e) { setTransferStatus("❌ " + e.message, '#ff4d4d'); return; }
+
+            const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('de-DE') : "unbekannt";
+            const keyInfo = d.apiKey ? "inklusive API-Schlüssel" : "ohne API-Schlüssel (bisheriger bleibt erhalten)";
+            if (!confirm(`Export vom ${when} importieren?\n\n${d.history.length} Verlaufseinträge, ${keyInfo}.\n\nAktuelle Einstellungen, Persönlichkeit, Kontext und Verlauf werden ersetzt.`)) return;
+
+            const set = (k, v) => saveToLocalStorage(k, String(v));
+            if (d.apiKey) set('bdu_api_key', d.apiKey);
+            set('bdu_api_type', d.apiType);
+            set('bdu_custom_base_url', d.customBaseUrl);
+            if (d.model) set('bdu_current_model', d.model);
+            set('bdu_caching_enabled', d.cachingEnabled);
+            set('bdu_loop_sound', d.loopSound);
+            set('bdu_sound_volume', d.volume);
+            if (d.systemPrompt) set('bdu_system_prompt', d.systemPrompt);
+            if (d.bootContext !== null) set('bdu_boot_context', d.bootContext);
+            if (d.currentStatus !== null) set('bdu_current_status', d.currentStatus);
+            if (d.promptBackup) set('bdu_system_prompt_backup', d.promptBackup);
+            // Importierter Prompt gilt als aktuell: kein Ersetzen durch den Standard beim Neuladen
+            set('bdu_widget_version', WIDGET_VERSION);
+            saveToLocalStorage('bdu_conversation_history', JSON.stringify(d.history));
+            set('bdu_history_summary', d.summary);
+            set('bdu_last_summary_index', d.lastSummaryIndex);
+            // Gemini-Cache gehört zur alten Sitzung
+            localStorage.removeItem('bdu_cache_name');
+            localStorage.removeItem('bdu_cache_expires');
+
+            console.log("[IMPORT] 📥 Import abgeschlossen:", d.history.length, "Verlaufseinträge – lade neu");
+            setTransferStatus("✅ Importiert – Widget wird neu geladen …", '#4dff4d');
+            setTimeout(() => location.reload(), 600);
+        }
+
+        function updatePromptBackupInfo() {
+            const el = document.getElementById('prompt-backup-info');
+            if (el) el.style.display = localStorage.getItem('bdu_system_prompt_backup') ? 'block' : 'none';
+        }
+
+        function restorePromptBackup() {
+            const backup = localStorage.getItem('bdu_system_prompt_backup');
+            if (!backup) return;
+            document.getElementById('system-prompt-input').value = backup;
+            setTransferStatus("↩️ Gesicherter Prompt ins Feld „Persönlichkeit“ übernommen – mit SPEICHERN bestätigen.", '#ffb84d');
         }
 
         function scrollToBottom() {
