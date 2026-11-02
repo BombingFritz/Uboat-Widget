@@ -7,6 +7,7 @@ Funksprüche aus dem Twitch-Chat im Hintergrund vom BdU beantworten lassen, mit 
 ### Einstellungen
 - Neue Gruppe „CHAT-MODUS (TWITCH)“: Schalter (Standard aus), Server-Adresse (Standard `http://localhost:3000`) und **Chat-Persönlichkeit** (editierbarer Ton nur für Chat-Antworten, Standardtext `DEFAULT_CHAT_PERSONALITY`: etwas nachsichtiger, trockener Humor, kein Rumblödeln; leer = kein zusätzlicher Ton).
 - Statusanzeige in den Einstellungen: verbunden / verbinde / getrennt / aus. Nichts davon im Display.
+- Beschriftungen machen klar, dass Schalter und Chat-Persönlichkeit nur den externen Twitch-Chat betreffen; Antworten erscheinen dort, nicht im Widget.
 - Hinweis am Schalter: nur mit einem Flash-Lite-Modell nutzen; größere Modelle haben im kostenlosen Kontingent nur wenige Anfragen pro Tag.
 - Neue `localStorage`-Schlüssel: `bdu_chat_enabled`, `bdu_chat_server_url`, `bdu_chat_personality` (auch in `clearSettings`, Export/Import und `docs/ARCHITEKTUR.md`). Die Chat-Persönlichkeit hängt nicht an `WIDGET_VERSION` und wird bei Updates nie ersetzt.
 
