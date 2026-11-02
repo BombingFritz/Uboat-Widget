@@ -98,11 +98,12 @@ Das Widget erkennt automatisch Meldungen, die mit "Status:" begonnen werden und 
 Beispiel: "Status: Brennstoff 60%, 4 Aale, leichte Schäden am Sehrohr, gefechtsklar"
 Datenspeicherung & Sicherheit
 Im Browser Cache gespeichert:
-•	API-Schlüssel (verschlüsselt im localStorage)
+•	API-Schlüssel (im localStorage, unverschlüsselt im Klartext)
 •	Alle Einstellungen (Kontext, Boot-Daten, Status)
 •	Nachrichtenverlauf (begrenzt auf letzte Nachrichten)
 Cache löschen:
-•	Im Widget: Zahnrad → "HISTORY LÖSCHEN" Button
+•	Im Widget: Zahnrad → "HISTORY LÖSCHEN" löscht nur den Nachrichtenverlauf
+•	Im Widget: Zahnrad → "RESET" löscht auch den API-Schlüssel und die Einstellungen
 •	Browser-weit: F12 → Application → Storage → Clear All
 ⚠️ SICHERHEITSHINWEIS: API-Schlüssel sind sensible Daten und werden lokal gespeichert. Bei geteilten Computern nach Nutzung Cache löschen! 
 
@@ -111,6 +112,7 @@ Bei Fragen oder Problemen:
 •	Erstelle ein Issue auf GitHub
 •	Prüfe die Konsole des Browsers auf Fehlermeldungen
 •	Stelle sicher, dass dein API-Schlüssel korrekt ist
+Änderungen je Version stehen in CHANGELOG.md, technische Dokumentation und bekannte Fehler im Ordner docs/.
 
 12. Credits
 Entwickelt von BombingFritz mit umfangreicher historischer Recherche basierend u.a. auf authentischen U-Boot-Kriegstagebüchern aus dem U-Boot-Archiv.
