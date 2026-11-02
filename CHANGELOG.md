@@ -5,7 +5,15 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
-## [Unreleased]
+## [1.0.2] - 2026-11-02
+
+Verlauf und Zusammenfassung korrigiert, ohne neue Funktionen. Per Verlaufsprotokoll im Headless-Chromium mit simulierter API geprüft (10 Meldungen, vier Szenarien) und mit dem Regressionstest von 1.0.1 (26/26). Noch nicht mit echter API getestet. Design, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Fixed
+- Gemini-Modus: Bei jeder zweiten Meldung fehlte der KI ein früherer Funkspruch. Jetzt gehen alle noch nicht zusammengefassten Funksprüche im Volltext mit (mindestens 2, höchstens 5 Funksprüche), sodass jeder frühere Funkspruch genau einmal im Kontext steht.
+- Universal-Modus: Bereits zusammengefasste Funksprüche gingen doppelt mit (gleiche Regel wie oben).
+- Eine scheiternde Zusammenfassung wird nicht mehr nach jeder Antwort erneut versucht, sondern nach 2 weiteren Funksprüchen; die Fehlermeldung erscheint nur einmal je Fehlerserie.
+- Zusammenfassungen sind sachlicher (Temperatur 0,3 statt 0,95) und haben mehr Platz (300 statt 150 Tokens). Abgeschnittene oder leere Ergebnisse werden verworfen statt gespeichert; im Universal-Modus werden API-Fehler erkannt.
 
 ### Documentation
 - Plan für den Chat-Modus: ADR 0004, `docs/specs/chat-modus.md`, Entscheidungen in `docs/OFFEN.md`.

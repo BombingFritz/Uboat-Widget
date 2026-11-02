@@ -20,7 +20,7 @@ Gehäuse 520×520 px, transparenter Body. DOM: `radio-device` mit Metallecken un
 | Senden | `sendMessage` | „Status:“ erkennen, Meldung anzeigen, Ton, API-Aufruf; nur bei Erfolg Meldung und Antwort speichern, Antwort ausgeben, Zusammenfassung und Cache-Erneuerung anstoßen |
 | API | `callApi`, `callGemini`, `callUniversal`, `handleGeminiResponse`, `normalizeBaseUrl` | Je nach `apiType` Gemini oder OpenAI-kompatibel aufrufen, Antwort und Token-Verbrauch auswerten |
 | Caching | `createOrUpdateCache`, `updateCacheStatus`, `updateTokenEstimate` | Explizites Gemini-Caching des Systemkontexts, Statusanzeige, Token-Schätzung (Zeichen ÷ 4) |
-| Gedächtnis | `addToHistory`, `trimHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
+| Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
 | Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern mit Cache-Invalidierung, Zurücksetzen, Modellliste |
 | Ton | `playSendSound`, `playReceiveSound`, `stopReceiveSound` | Sende-Ton abwarten, Empfangs-Ton (optional Loop) während der Ausgabe; nicht ladbare Töne werden übersprungen |
 | Anzeige | `appendLog`, `typewriterEffect`, `createBduMessageDiv`, `appendTextWithBreaks`, `scrollToBottom` | Meldungen ins Display schreiben, Antwort zeichenweise (45 ms); Inhalte nur als Text, nie als HTML |
@@ -37,9 +37,9 @@ Persönlichkeits-Prompt (systemPrompt)
 === ENDE INFORMATIONEN ===
 ```
 
-Dazu kommen die letzten Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue Meldung:
-- Gemini: letzte 4 Einträge, `maxOutputTokens` 450, `temperature` 1.0, Safety-Schwellen `BLOCK_ONLY_HIGH`.
-- Universal: letzte 10 Einträge, `max_tokens` 450, `temperature` 1.0, Endpunkt `<Base-URL>/v1/chat/completions` (Standard `https://api.openai.com`; `normalizeBaseUrl` entfernt abschließendes `/` und `/v1`), Schlüssel als `Bearer`.
+Dazu kommen Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue Meldung. `getContextHistory` wählt dafür bei beiden API-Typen alle noch nicht zusammengefassten Einträge ab `lastSummaryIndex`, mindestens die letzten 4 (`CONTEXT_MIN_ENTRIES`), höchstens die letzten 10 (`CONTEXT_MAX_ENTRIES`), beginnend mit einer Kaleu-Meldung. Im Normalfall sind das 4–6 Einträge; jeder frühere Funkspruch steht damit genau einmal im Kontext, entweder im Volltext oder in der Zusammenfassung.
+- Gemini: `maxOutputTokens` 450, `temperature` 1.0, Safety-Schwellen `BLOCK_ONLY_HIGH`.
+- Universal: `max_tokens` 450, `temperature` 1.0, Endpunkt `<Base-URL>/v1/chat/completions` (Standard `https://api.openai.com`; `normalizeBaseUrl` entfernt abschließendes `/` und `/v1`), Schlüssel als `Bearer`.
 
 Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt der Aufruf fehl, bleibt sie nur im Display stehen.
 
@@ -50,8 +50,8 @@ Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt 
 
 ## Gedächtnis
 - Verlauf: Einträge `{role: "user"|"assistant", text, timestamp}`, höchstens 100 (`MAX_HISTORY_ITEMS`). Kürzen läuft über `trimHistory`, das `lastSummaryIndex` um die Zahl entfernter Einträge verringert; „LETZTE 5 LÖSCHEN“ begrenzt den Index auf die Verlaufslänge.
-- Nach jeder Antwort: Sind seit `lastSummaryIndex` mindestens 8 Einträge dazugekommen, fasst `summarizeHistory` alles ab `lastSummaryIndex` bis auf die letzten 4 Einträge zusammen (höchstens 150 Tokens, gleiches Modell) und hängt das Ergebnis an `historySummary` an. Die Zusammenfassung wächst damit unbegrenzt.
-- Schlägt die Zusammenfassung fehl, bleibt der Verlauf unverändert; der nächste Versuch folgt nach der nächsten Antwort.
+- Nach jeder Antwort: Sind seit `lastSummaryIndex` mindestens 8 Einträge dazugekommen, fasst `summarizeHistory` alles ab `lastSummaryIndex` bis auf die letzten 4 Einträge zusammen (gleiches Modell, `temperature` 0.3, Budget 300 Tokens; abgeschnittene oder leere Ergebnisse gelten als Fehlschlag) und hängt das Ergebnis an `historySummary` an. Die Zusammenfassung wächst damit unbegrenzt.
+- Schlägt die Zusammenfassung fehl, bleibt der Verlauf unverändert. Der nächste Versuch folgt erst nach 4 weiteren Einträgen (`summaryPauseEntries`, 2 Funksprüche); die Fehlermeldung erscheint einmal je Fehlerserie im Display. Bis dahin gehen bis zu 10 Einträge im Volltext mit; bei längerem Ausfall fallen die ältesten heraus. Pause und Meldungsmerker liegen nur im RAM.
 
 ## Datenhaltung (`localStorage`)
 | Schlüssel | Inhalt |
