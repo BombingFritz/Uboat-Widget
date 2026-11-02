@@ -31,7 +31,7 @@ Das Widget benötigt einen API-Schlüssel für eine KI. Empfohlen und getestet:
 Google Gemini (Kostenlos)
 •	Gehe zu Google AI Studio
 •	Erstelle einen kostenlosen API-Schlüssel
-•	Wähle das Modell gemini-2.5-flash-lite oder höher (kostenlos)
+•	Wähle über "MODELLE SUCHEN" ein aktuelles Flash-Lite-Modell, z. B. gemini-3.5-flash-lite (Standard). Ob es im kostenlosen Kontingent enthalten ist, legt Google fest.
 •	Die Modelle entwickeln sich stetig weiter, probiere ruhig andere textbasierte Modelle aus. Falls keine Antwort kommt, öffne die Konsole in deinem Browser und checke den Log. Nicht alle Modelle haben kostenlose Kontingente und diese Kontingente können sich natürlich ändern.
 Alternative Optionen
 •	OpenAI (kostenpflichtig)

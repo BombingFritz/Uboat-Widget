@@ -12,7 +12,7 @@ Vor der Umsetzung zu klären:
 1. **Wer erkennt die Chat-Eingabe?** Der Server (EventSub, z. B. Präfix wie `!bdu`) und reicht sie ans Widget weiter, oder das Widget hört selbst mit. Laut Projektregeln laufen neue Events über den Server.
 2. **Rückweg der Antwort:** Chat-Versand per Helix als Broadcaster (wie SpargelPoll) oder über einen Server-Endpunkt.
 3. **Gemeinsames Gedächtnis:** Gehen Chat-Funksprüche in denselben Verlauf und dieselbe Zusammenfassung wie die eigenen Meldungen? Erscheinen sie im Display?
-4. **Missbrauchsschutz:** Rate-Limit pro Nutzer und insgesamt, Längenbegrenzung, ggf. nur bestimmte Rollen; Antworten an das Twitch-Limit von 500 Zeichen anpassen. Chat-Eingaben sind fremde Eingaben (Prompt-Injection), daher vorher BUGS B4 beheben.
+4. **Missbrauchsschutz:** Rate-Limit pro Nutzer und insgesamt, Längenbegrenzung, ggf. nur bestimmte Rollen; Antworten an das Twitch-Limit von 500 Zeichen anpassen. Chat-Eingaben sind fremde Eingaben (Prompt-Injection). Anzeige nur als Text ist seit 1.0.1 gesichert (BUGS B4).
 5. **Gleichzeitigkeit:** Eigene Meldung und Chat-Anfrage gleichzeitig; Warteschlange im Widget nötig.
 6. **API-Schlüssel:** Bleibt im Browser oder zieht in die `.env` des Servers, mit Server als Vermittler zur KI-API. Letzteres entfernt den Klartext-Schlüssel aus dem Browser.
 7. **OBS-Einbindung:** Sobald das Widget `localhost` anfragt, sperrt OBS die Einbindung als „Lokale Datei“. Dann URL `file:///…/index.html` verwenden. Achtung: Das ist eine andere Speicher-Herkunft, Einstellungen und Verlauf müssen einmal neu eingetragen werden (siehe `docs/ARCHITEKTUR.md`).
@@ -26,6 +26,6 @@ Der Nutzer arbeitet lokal mit einer älteren Fassung (`WIDGET_VERSION = "2.1"`, 
 ## Weitere Punkte
 1. **Lizenzdatei:** `LICENSE-CC-BY-4.0.txt` wird von GitHub nicht als Lizenz erkannt (Repository zeigt keine Lizenz). Umbenennen in `LICENSE` wäre möglich; Entscheidung des Nutzers.
 2. **Wachsende Zusammenfassung:** `historySummary` wird nur angehängt, nie verdichtet. Bei langen Einsätzen steigt der Token-Verbrauch. Mögliche Lösung: Zusammenfassung ab einer Länge selbst zusammenfassen.
-3. **Caching-Erkennung über Modellnamen** („1.5“, „2.5“) passt nicht zu neueren Modellen. Besser: Fehler der Cache-Erstellung auswerten statt Namen raten.
+3. **Caching-Erkennung über Modellnamen** („1.5“, „2.5“) passt nicht zu neueren Modellen: Das neue Standardmodell `gemini-3.5-flash-lite` nutzt kein explizites Caching. Besser: Caching für alle Gemini-Modelle versuchen und den Fehlschlag auswerten (seit 1.0.1 wird ein Fehlschlag nicht mehr bei jeder Meldung wiederholt).
 4. **Release-Anhänge:** Das Release `v1.0` enthält zusätzlich `Enigma.Bdu.Readme.1.docx`. Künftig README als einzige Anleitung, Release nur mit `index.html`.
 5. **Externe Abhängigkeiten:** Hintergrundbild (Unsplash) und Schriften (Google Fonts) werden online geladen. Ohne Internet fehlen sie; die Funktion bleibt.
