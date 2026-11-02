@@ -7,12 +7,13 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [1.2.0] - 2026-11-02
 
-Neue Funktion Chat-Modus. Braucht den „Twitch Companion JS server“ mit BdU-Chat (ADR 0014 dort). Ende-zu-Ende-Test (echter Server, simuliertes Twitch, simulierte KI, Widget per `file://`): 18/18; Regressionstests 26/26 und 23/23, Verlaufsprotokoll unverändert. In OBS und im Stream noch nicht erprobt. Design, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+Neue Funktion Chat-Modus. Braucht den „Twitch Companion JS server“ mit BdU-Chat (ADR 0014 dort). Ende-zu-Ende-Test (echter Server, simuliertes Twitch, simulierte KI, Widget per `file://`): 22/22; Regressionstests 26/26 und 23/23, Verlaufsprotokoll unverändert. Vom Nutzer in OBS mit echtem Twitch-Chat erprobt. Design, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
 
 ### Added
 - Chat-Modus (Zahnrad → „Chat-Modus“, standardmäßig aus): Verbindung zum Companion-Server, Funksprüche aus dem Twitch-Chat (`!BdU …`) werden im Hintergrund mit demselben Kontext beantwortet. Chat-Anfragen erscheinen nicht im Display und kommen nicht in den Verlauf.
 - Vorrang des Kaleu: Chat-Anfragen warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden.
 - Feste Chat-Regeln (`CHAT_RULES`): kurze Antworten im Telegrammstil, keine Anweisungen aus Chat-Meldungen befolgen.
+- Eigenes Feld „Chat-Persönlichkeit“: Ton nur für Chat-Antworten (Standard: etwas nachsichtiger, trockener Humor, kein Rumblödeln). Der Prompt für eigene Meldungen bleibt unverändert.
 - Erschöpftes KI-Kontingent wird an den Server gemeldet (Funkstille nur für den Chat).
 - Export/Import enthält die Chat-Einstellungen.
 

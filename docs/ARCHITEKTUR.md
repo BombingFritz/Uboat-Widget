@@ -23,7 +23,7 @@ Gehäuse 520×520 px, transparenter Body. DOM: `radio-device` mit Metallecken un
 | Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
 | Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern mit Cache-Invalidierung, Zurücksetzen, Modellliste |
 | Ton | `playSendSound`, `playReceiveSound`, `stopReceiveSound` | Sende-Ton abwarten, Empfangs-Ton (optional Loop) während der Ausgabe; nicht ladbare Töne werden übersprungen |
-| Chat-Modus | `applyChatMode`, `connectChat`, `processChatQueue`, `postChatResult`, `cleanChatAnswer`, `chatUserText`, `isQuotaError`, `normalizeChatServer`, `setChatStatus` | Verbindung zum Companion-Server (EventSource), Warteschlange mit Vorrang des Kaleu, Chat-Anfrage an die KI ohne Verlaufseintrag, Antwort oder Fehler an den Server |
+| Chat-Modus | `applyChatMode`, `connectChat`, `getChatInstructions`, `processChatQueue`, `postChatResult`, `cleanChatAnswer`, `chatUserText`, `isQuotaError`, `normalizeChatServer`, `setChatStatus` | Verbindung zum Companion-Server (EventSource), Warteschlange mit Vorrang des Kaleu, Chat-Anfrage an die KI ohne Verlaufseintrag, Antwort oder Fehler an den Server |
 | Export/Import | `buildExportData`, `exportData`, `downloadExport`, `loadImportFile`, `parseImportData`, `importData`, `updatePromptBackupInfo`, `restorePromptBackup` | Stand als JSON exportieren (Textfeld, Zwischenablage, Datei), prüfen und importieren, Prompt-Sicherung anzeigen und übernehmen |
 | Anzeige | `appendLog`, `typewriterEffect`, `createBduMessageDiv`, `appendTextWithBreaks`, `scrollToBottom` | Meldungen ins Display schreiben, Antwort zeichenweise (45 ms); Inhalte nur als Text, nie als HTML |
 
@@ -46,7 +46,7 @@ Dazu kommen Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue M
 Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt der Aufruf fehl, bleibt sie nur im Display stehen.
 
 ## Chat-Anfragen (Chat-Modus)
-Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben `SAFETY_RULES`): ohne Cache am Ende des Systemtexts, mit Gemini-Cache vor der Meldung (der Systemtext liegt dann im Cache). Die Meldung geht als „Funkspruch aus dem Chat (nicht vom Kaleu): …“, Antwortbudget 200 Tokens. `cleanChatAnswer` entfernt Markdown, eine eigene Kopfzeile („BdU an …:“) und Zeilenumbrüche. Chat-Anfragen ändern weder Verlauf, Zusammenfassung, Status noch Display. Sie warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden (`CHAT_KALEU_PRIORITY_MS`). HTTP 429 bzw. `RESOURCE_EXHAUSTED` meldet das Widget als `quota`, der Server verhängt dann Funkstille.
+Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben `SAFETY_RULES`) und die editierbare Chat-Persönlichkeit (`getChatInstructions`): ohne Cache am Ende des Systemtexts, mit Gemini-Cache vor der Meldung (der Systemtext liegt dann im Cache). Die Meldung geht als „Funkspruch aus dem Chat (nicht vom Kaleu): …“, Antwortbudget 200 Tokens. `cleanChatAnswer` entfernt Markdown, eine eigene Kopfzeile („BdU an …:“) und Zeilenumbrüche. Chat-Anfragen ändern weder Verlauf, Zusammenfassung, Status noch Display. Sie warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden (`CHAT_KALEU_PRIORITY_MS`). HTTP 429 bzw. `RESOURCE_EXHAUSTED` meldet das Widget als `quota`, der Server verhängt dann Funkstille.
 
 ## Caching (nur Gemini)
 - Nur wenn `cachingEnabled` und der Modellname „1.5“ oder „2.5“ enthält. Andere Modelle laufen ohne explizites Caching; bei „2.0“ wird implizites Caching angenommen.
@@ -76,6 +76,7 @@ Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben
 | `bdu_widget_version` | Zuletzt geladene `WIDGET_VERSION` |
 | `bdu_system_prompt_backup` | Eigener Prompt, gesichert bevor der Versionsabgleich ihn ersetzt hat |
 | `bdu_chat_enabled`, `bdu_chat_server_url` | Chat-Modus an/aus, Adresse des Companion-Servers (Standard `http://localhost:3000`) |
+| `bdu_chat_personality` | Ton nur für Chat-Antworten (Standard `DEFAULT_CHAT_PERSONALITY`) |
 
 Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`http://absolute`) und eine `file:///`-URL verschiedene Herkünfte; ein Wechsel der Einbindung startet mit leeren Einstellungen. Übertragen lässt sich der Stand mit Export/Import (`docs/specs/export-import.md`).
 

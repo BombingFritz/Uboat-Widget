@@ -4,8 +4,8 @@
 Umgesetzt nach `docs/specs/chat-modus.md`, ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026): `!BdU` im Chat, Limits ohne Ausnahmen (1 je 3 min, 3 je Nutzer in 30 min, Warnung höchstens 1× je 10 min), anonyme Antworten, nicht im Verlauf und nicht im Display, 60 s Vorrang des Kaleu, Funkstille nur für den Chat. Mit Standardwerten umgesetzt (im Server als Konstanten änderbar): Funkstille bei Tageskontingent bis Streamstart, Tagesobergrenze 60, Anfragen an das zuletzt verbundene Widget.
 
 Noch offen:
-1. Test in OBS und im Stream: Umstellung der Quelle auf `file:///` (Export/Import), Option „Quelle herunterfahren, wenn nicht sichtbar“ aus, echte `!BdU`-Nachrichten.
-2. Qualität der Chat-Antworten mit echtem Modell prüfen; ggf. `CHAT_RULES` oder Budget anpassen; später Kontext „Meldung eines Mannschafters“.
+1. ~~Test in OBS mit echtem Chat~~ erledigt (03.11.2026). Stolperstein beim ersten Test: Quelle noch als „Lokale Datei“ eingebunden (Anfrage an `localhost` von OBS gesperrt, im Server-Log keine Verbindung). Lösung `file:///`.
+2. Ton der Chat-Antworten: seit 1.2.0 eigenes Feld „Chat-Persönlichkeit“; Wortlaut nach Streams nachschärfen. Später ggf. Kontext „Meldung eines Mannschafters“.
 3. Absendernamen bewusst nicht übergeben; bei Bedarf später entscheiden.
 
 ## Prompt-Version
