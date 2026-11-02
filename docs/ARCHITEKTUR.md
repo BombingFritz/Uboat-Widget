@@ -23,6 +23,7 @@ Gehäuse 520×520 px, transparenter Body. DOM: `radio-device` mit Metallecken un
 | Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
 | Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern mit Cache-Invalidierung, Zurücksetzen, Modellliste |
 | Ton | `playSendSound`, `playReceiveSound`, `stopReceiveSound` | Sende-Ton abwarten, Empfangs-Ton (optional Loop) während der Ausgabe; nicht ladbare Töne werden übersprungen |
+| Export/Import | `buildExportData`, `exportData`, `downloadExport`, `loadImportFile`, `parseImportData`, `importData`, `updatePromptBackupInfo`, `restorePromptBackup` | Stand als JSON exportieren (Textfeld, Zwischenablage, Datei), prüfen und importieren, Prompt-Sicherung anzeigen und übernehmen |
 | Anzeige | `appendLog`, `typewriterEffect`, `createBduMessageDiv`, `appendTextWithBreaks`, `scrollToBottom` | Meldungen ins Display schreiben, Antwort zeichenweise (45 ms); Inhalte nur als Text, nie als HTML |
 
 ## Kontextaufbau je Anfrage
@@ -69,14 +70,15 @@ Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt 
 | `bdu_history_summary`, `bdu_last_summary_index` | Zusammenfassung und Stand |
 | `bdu_cache_name`, `bdu_cache_expires` | Gemini-Cache |
 | `bdu_widget_version` | Zuletzt geladene `WIDGET_VERSION` |
+| `bdu_system_prompt_backup` | Eigener Prompt, gesichert bevor der Versionsabgleich ihn ersetzt hat |
 
-Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`http://absolute`) und eine `file:///`-URL verschiedene Herkünfte; ein Wechsel der Einbindung startet mit leeren Einstellungen.
+Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`http://absolute`) und eine `file:///`-URL verschiedene Herkünfte; ein Wechsel der Einbindung startet mit leeren Einstellungen. Übertragen lässt sich der Stand mit Export/Import (`docs/specs/export-import.md`).
 
 ## Standardwerte
 `DEFAULT_PROMPT`, `DEFAULT_CONTEXT`, `DEFAULT_STATUS`, `DEFAULT_MODEL` (`gemini-3.5-flash-lite`), `DEFAULT_LOOP_SOUND` (an) und `DEFAULT_VOLUME` (0,5) gelten für den Erststart und für „RESET“ gleichermaßen.
 
 ## Versionierung im Code
-`loadSettings` vergleicht `bdu_widget_version` mit `WIDGET_VERSION`. Bei Abweichung wird der gespeicherte Persönlichkeits-Prompt verworfen und durch `DEFAULT_PROMPT` ersetzt, der Cache wird invalidiert. Eigene Prompt-Anpassungen gehen dabei ohne Rückfrage verloren.
+`loadSettings` vergleicht `bdu_widget_version` mit `WIDGET_VERSION`. Bei Abweichung wird der gespeicherte Persönlichkeits-Prompt durch `DEFAULT_PROMPT` ersetzt, der Cache wird invalidiert. Seit 1.1.0 wird ein eigener Prompt vorher in `bdu_system_prompt_backup` gesichert und lässt sich in den Einstellungen zurückholen. Ein Import setzt `bdu_widget_version` auf die aktuelle Version, damit der importierte Prompt bleibt.
 
 ## Schnittstellen
 | Ziel | Aufruf | Zweck |

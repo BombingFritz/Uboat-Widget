@@ -5,6 +5,17 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.1.0] - 2026-11-02
+
+Neue Funktion Export/Import. Headless-Test zwischen zwei Speicher-Herkünften (23/23), Regressionstest (26/26) und Verlaufsprotokoll unverändert. In OBS noch nicht geprüft. Design des Funkgeräts, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Added
+- „Sichern & Übertragen“ in den Einstellungen: Export als Text (mit Kopieren in die Zwischenablage) oder Datei, Import aus Text oder Datei. Enthält Einstellungen, Persönlichkeit, Boot-Kontext, Status, Verlauf und Zusammenfassung; API-Schlüssel nur auf Wunsch. Für den Umzug in einen anderen Browser oder auf eine andere OBS-Einbindung (z. B. `file:///`).
+- Ersetzt der Versionsabgleich einen eigenen Persönlichkeits-Prompt durch den Standard, wird der alte vorher gesichert und kann in den Einstellungen zurückgeholt werden.
+
+### Changed
+- Der Chat-Modus ist jetzt für Version 1.2.0 geplant.
+
 ## [1.0.2] - 2026-11-02
 
 Verlauf und Zusammenfassung korrigiert, ohne neue Funktionen. Per Verlaufsprotokoll im Headless-Chromium mit simulierter API geprüft (10 Meldungen, vier Szenarien) und mit dem Regressionstest von 1.0.1 (26/26). Noch nicht mit echter API getestet. Design, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
