@@ -1,7 +1,7 @@
 # ADR 0004: Chat-Modus über den Companion-Server
 
 ## Status
-Angenommen als Plan; Nutzer bestätigt (02.11.2026). Noch nicht umgesetzt.
+Angenommen; Nutzer bestätigt (02.11.2026). Umgesetzt in Widget 1.2.0 und im Server (ADR 0014 dort).
 
 ## Kontext
 Zuschauer sollen dem BdU aus dem Twitch-Chat Funksprüche schicken können und eine Antwort im Chat bekommen, mit derselben KI und demselben Kontext wie die Meldungen des Kaleu. Der „Twitch Companion JS server“ liest den Chat bereits per EventSub und sendet Nachrichten per Helix. Das Widget ist öffentlich und muss ohne Server unverändert funktionieren (ADR 0002).

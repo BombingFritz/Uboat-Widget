@@ -18,7 +18,7 @@ Einstellungen, Kontexte, Verlauf und Zusammenfassung in einen anderen Browser od
 {
   "format": "enigma-bdu-funk", "formatVersion": 1, "exportedAt": "…", "promptVersion": "3.0",
   "settings": { "apiType", "customBaseUrl", "model", "cachingEnabled", "loopSound", "volume",
-                "systemPrompt", "bootContext", "currentStatus", "apiKey (optional)" },
+                "systemPrompt", "bootContext", "currentStatus", "chatEnabled", "chatServerUrl", "apiKey (optional)" },
   "memory": { "history": [{ "role", "text", "timestamp" }], "summary", "lastSummaryIndex" },
   "promptBackup": "optional"
 }
