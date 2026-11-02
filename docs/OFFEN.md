@@ -1,21 +1,18 @@
 # Offene Punkte
 
-## Server-Modus (geplant, noch nicht spezifiziert)
-Ziel laut Nutzer (02.11.2026): BdU-Eingaben aus dem Twitch-Chat erkennen und im Chat beantworten, mit derselben API und demselben Kontext wie das Widget. Das läuft im Hintergrund, nicht über die grafische Oberfläche. Details folgen vom Nutzer; vor der Umsetzung eine Spec in `docs/specs/` anlegen.
+## Chat-Modus (geplant für 1.1.0)
+Spezifiziert in `docs/specs/chat-modus.md` (Widget), ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026):
+- `!BdU <Text>` im Chat; Server erkennt, kürzt (200 Zeichen), prüft Limits; Widget erzeugt die Antwort; Server postet „FT vom BdU: …“ als Antwort auf die Chat-Nachricht.
+- Limits ohne Ausnahmen (auch Broadcaster und Mods): eine Anfrage je 3 Minuten insgesamt, je Nutzer 3 in 30 Minuten. Bei Verstoß „Funkverkehr einschränken, Feind peilt ein!“, höchstens einmal je 10 Minuten, sonst keine Antwort.
+- Antworten anonym, ohne Absendernamen. Später eventuell Kontext „Meldung eines Mannschafters“.
+- Chat-Anfragen und -Antworten nicht im Verlauf, nicht im Display.
+- Nach einer eigenen Meldung werden Chat-Anfragen eine Minute zurückgehalten (nicht verworfen).
+- Funkstille bei erschöpftem KI-Kontingent: betrifft nur den Chat; eigene Meldungen laufen weiter.
+- Widget läuft im Stream als OBS-Browser-Source und wird auf `file:///` umgestellt; Einstellungen dort einmal neu eintragen.
 
-Rahmen aus ADR 0002 und 0003:
-- Standardmäßig aus; ohne Server keine Fehlermeldungen und kein Warten.
-- `SAFETY_RULES` auch für Chat-Eingaben.
-- Twitch-Zugangsdaten bleiben im Server; das Widget holt nur, was es braucht (Muster wie bei SpargelPoll und Coinflip über `/token`).
-
-Vor der Umsetzung zu klären:
-1. **Wer erkennt die Chat-Eingabe?** Der Server (EventSub, z. B. Präfix wie `!bdu`) und reicht sie ans Widget weiter, oder das Widget hört selbst mit. Laut Projektregeln laufen neue Events über den Server.
-2. **Rückweg der Antwort:** Chat-Versand per Helix als Broadcaster (wie SpargelPoll) oder über einen Server-Endpunkt.
-3. **Gemeinsames Gedächtnis:** Gehen Chat-Funksprüche in denselben Verlauf und dieselbe Zusammenfassung wie die eigenen Meldungen? Erscheinen sie im Display?
-4. **Missbrauchsschutz:** Rate-Limit pro Nutzer und insgesamt, Längenbegrenzung, ggf. nur bestimmte Rollen; Antworten an das Twitch-Limit von 500 Zeichen anpassen. Chat-Eingaben sind fremde Eingaben (Prompt-Injection). Anzeige nur als Text ist seit 1.0.1 gesichert (BUGS B4).
-5. **Gleichzeitigkeit:** Eigene Meldung und Chat-Anfrage gleichzeitig; Warteschlange im Widget nötig.
-6. **API-Schlüssel:** Bleibt im Browser oder zieht in die `.env` des Servers, mit Server als Vermittler zur KI-API. Letzteres entfernt den Klartext-Schlüssel aus dem Browser.
-7. **OBS-Einbindung:** Sobald das Widget `localhost` anfragt, sperrt OBS die Einbindung als „Lokale Datei“. Dann URL `file:///…/index.html` verwenden. Achtung: Das ist eine andere Speicher-Herkunft, Einstellungen und Verlauf müssen einmal neu eingetragen werden (siehe `docs/ARCHITEKTUR.md`).
+Vor der Umsetzung:
+1. BUGS B14 beheben (Chat-Anfragen nutzen denselben Kontextaufbau).
+2. Zu bestätigen: Funkstille bei Minutenlimit 30 Minuten, bei Tageslimit bis zum nächsten Streamstart; optionale Tagesobergrenze für Chat-Antworten (Vorschlag 60). Details in der Server-Spec.
 
 ## Prompt-Version
 `WIDGET_VERSION` bestimmt heute, wann der gespeicherte Prompt ersetzt wird (BUGS B8). Vorschlag: Konstante in `PROMPT_VERSION` umbenennen, App-Version nur über `CHANGELOG.md`/Tags führen. Bei neuer Prompt-Version nachfragen bzw. nur ersetzen, wenn der gespeicherte Prompt unverändert der alte Standard war. Entscheidung des Nutzers offen.
