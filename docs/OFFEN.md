@@ -11,7 +11,7 @@ Spezifiziert in `docs/specs/chat-modus.md` (Widget), ADR 0004 und `docs/specs/bd
 - Widget läuft im Stream als OBS-Browser-Source und wird auf `file:///` umgestellt; Einstellungen dort einmal neu eintragen.
 
 Vor der Umsetzung:
-1. BUGS B14 beheben (Chat-Anfragen nutzen denselben Kontextaufbau).
+1. ~~BUGS B14 beheben~~ erledigt in 1.0.2 (`getContextHistory`).
 2. Zu bestätigen: Funkstille bei Minutenlimit 30 Minuten, bei Tageslimit bis zum nächsten Streamstart; optionale Tagesobergrenze für Chat-Antworten (Vorschlag 60). Details in der Server-Spec.
 
 ## Prompt-Version

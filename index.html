@@ -984,6 +984,16 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
         let historySummary = "";
         let lastSummaryIndex = 0;
         let messagesSinceLastCache = 0;
+        let summaryPauseEntries = 0;     // Nach fehlgeschlagener Zusammenfassung: so viele neue Einträge abwarten
+        let summaryFailureShown = false; // Fehlermeldung im Display nur einmal je Fehlerserie
+
+        // Volltext-Verlauf für die KI: alle noch nicht zusammengefassten Einträge,
+        // mindestens die letzten MIN, höchstens die letzten MAX. Beginnt immer mit einer Kaleu-Meldung.
+        const CONTEXT_MIN_ENTRIES = 4;
+        const CONTEXT_MAX_ENTRIES = 10;
+        const SUMMARY_RETRY_AFTER_ENTRIES = 4; // = 2 Funksprüche
+        const SUMMARY_MAX_TOKENS = 300;        // vorher 150: zu knapp, Ergebnisse konnten abbrechen
+        const SUMMARY_TEMPERATURE = 0.3;       // vorher 0.95: Zusammenfassungen sollen sachlich, nicht kreativ sein
 
         const MAX_HISTORY_ITEMS = 100;
 
@@ -991,6 +1001,16 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
         // (der Code hängt "/v1/..." selbst an; "http://localhost:11434/v1" wird so zu "http://localhost:11434")
         function normalizeBaseUrl(raw) {
             return (raw || "https://api.openai.com").trim().replace(/\/+$/, "").replace(/\/v1$/, "");
+        }
+
+        function getContextHistory() {
+            const len = conversationHistory.length;
+            const unsummarizedStart = Math.min(Math.max(0, lastSummaryIndex), len);
+            let start = Math.min(unsummarizedStart, Math.max(0, len - CONTEXT_MIN_ENTRIES));
+            start = Math.max(start, len - CONTEXT_MAX_ENTRIES);
+            let entries = conversationHistory.slice(start);
+            while (entries.length && entries[0].role !== "user") entries = entries.slice(1);
+            return entries;
         }
 
         // Kürzt den Verlauf auf die letzten maxItems Einträge und hält den Zusammenfassungsstand passend
@@ -1238,6 +1258,7 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
                 text: text,
                 timestamp: new Date().toISOString()
             });
+            if (summaryPauseEntries > 0) summaryPauseEntries--;
             
             // Trimme wenn zu groß
             if (conversationHistory.length > MAX_HISTORY_ITEMS) {
@@ -1276,6 +1297,8 @@ Boot im Frontdienst, die Besatzung ist erfahren, der Kommandant ist es noch nich
             conversationHistory = [];
             historySummary = "";
             lastSummaryIndex = 0;
+            summaryPauseEntries = 0;
+            summaryFailureShown = false;
             
             localStorage.removeItem('bdu_conversation_history');
             localStorage.removeItem('bdu_history_summary');
@@ -1363,12 +1386,15 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                         body: JSON.stringify({
                             model: currentModel,
                             messages: [{ role: "user", content: summaryPrompt }],
-                            max_tokens: 150,
-                            temperature: 0.95
+                            max_tokens: SUMMARY_MAX_TOKENS,
+                            temperature: SUMMARY_TEMPERATURE
                         })
                     });
-                    const d = await resp.json();
-                    summaryText = d.choices?.[0]?.message?.content || "";
+                    const d = await resp.json().catch(() => ({}));
+                    if (!resp.ok || d.error) throw new Error(d.error?.message || `API Error ${resp.status}`);
+                    if (d.choices?.[0]?.finish_reason === "length") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                    summaryText = (d.choices?.[0]?.message?.content || "").trim();
+                    if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
                 } else {
                     // Gemini für Zusammenfassung – FIX: currentModel statt hardcodiertem gemini-2.0-flash-lite
                     let summaryModelName = currentModel;
@@ -1381,16 +1407,17 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                             body: JSON.stringify({
                                 contents: [{ parts: [{ text: summaryPrompt }] }],
                                 generationConfig: {
-                                    maxOutputTokens: 150,
-                                    temperature: 0.95
+                                    maxOutputTokens: SUMMARY_MAX_TOKENS,
+                                    temperature: SUMMARY_TEMPERATURE
                                 }
                             })
                         }
                     );
                     const data = await response.json();
                     if (data.error) throw new Error(data.error.message);
-                    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
-                    summaryText = data.candidates[0].content.parts[0].text;
+                    if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                    summaryText = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+                    if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
                 }
                 
                 if (historySummary) {
@@ -1400,6 +1427,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 }
                 
                 lastSummaryIndex = conversationHistory.length - 4;
+                summaryPauseEntries = 0;
+                summaryFailureShown = false;
                 
                 saveToLocalStorage('bdu_history_summary', historySummary);
                 saveToLocalStorage('bdu_last_summary_index', lastSummaryIndex.toString());
@@ -1417,8 +1446,13 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
             } catch (error) {
                 console.error("[SUMMARY] ❌ Fehler:", error);
-                // FIX: Fehler jetzt auch im Widget-Display sichtbar machen
-                appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}`);
+                // Nicht nach jeder Antwort erneut versuchen (kostet je einen Aufruf), sondern erst nach 2 weiteren Funksprüchen
+                summaryPauseEntries = SUMMARY_RETRY_AFTER_ENTRIES;
+                // Im Display nur einmal je Fehlerserie melden, danach nur Konsole
+                if (!summaryFailureShown) {
+                    appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}`);
+                    summaryFailureShown = true;
+                }
             }
         }
 
@@ -1675,7 +1709,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 summaryText +
                 "\n\n=== ENDE INFORMATIONEN ===";
             
-            const recentHistory = conversationHistory.slice(-10).map(msg => ({
+            const recentHistory = getContextHistory().map(msg => ({
                 role: msg.role === "user" ? "user" : "assistant",
                 content: msg.text
             }));
@@ -1741,8 +1775,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 const cacheName = await createOrUpdateCache();
                 
                 if (cacheName) {
-                    // Letzte 4 Nachrichten (2 Paare) als contents
-                    const recentHistory = conversationHistory.slice(-4).map(msg => ({
+                    // Noch nicht zusammengefasste Funksprüche im Volltext (siehe getContextHistory)
+                    const recentHistory = getContextHistory().map(msg => ({
                         role: msg.role === "user" ? "user" : "model",
                         parts: [{ text: msg.text }]
                     }));
@@ -1802,8 +1836,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 }]
             };
             
-            // Letzte 4 Nachrichten einbauen
-            const recentHistory = conversationHistory.slice(-4).map(msg => ({
+            // Noch nicht zusammengefasste Funksprüche im Volltext (siehe getContextHistory)
+            const recentHistory = getContextHistory().map(msg => ({
                 role: msg.role === "user" ? "user" : "model",
                 parts: [{ text: msg.text }]
             }));
@@ -1962,8 +1996,12 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 // Prüfe ob Zusammenfassung nötig
                 const unsummarizedCount = conversationHistory.length - lastSummaryIndex;
                 if (unsummarizedCount >= 8) {
-                    console.log("[SUMMARY] 🔄 8 neue Nachrichten - starte Zusammenfassung");
-                    await summarizeHistory();
+                    if (summaryPauseEntries > 0) {
+                        console.log("[SUMMARY] ⏸️ Nach Fehlschlag pausiert – nächster Versuch in", summaryPauseEntries, "Einträgen");
+                    } else {
+                        console.log("[SUMMARY] 🔄 8 neue Nachrichten - starte Zusammenfassung");
+                        await summarizeHistory();
+                    }
                 }
                 
                 // Cache-Update tracking
@@ -2128,6 +2166,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             cachedContentName = null;
             cacheExpiresAt = null;
             cacheCreationFailed = false;
+            summaryPauseEntries = 0;
+            summaryFailureShown = false;
             apiType = "gemini";
             customBaseUrl = "";
             cachingEnabled = true;
