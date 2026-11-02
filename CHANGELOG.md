@@ -7,7 +7,7 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [1.0.1] - 2026-11-02
 
-Fehlerbehebungen ohne neue Funktionen. Im Headless-Chromium mit simulierter Gemini- und OpenAI-API geprüft (26/26; dieselben Prüfungen schlagen gegen 1.0.0 fehl). Noch nicht mit echter API, in OBS oder im Stream erprobt. Design, Persönlichkeits-Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) sind unverändert; gespeicherte Prompts bleiben also erhalten.
+Fehlerbehebungen ohne neue Funktionen. Im Headless-Chromium mit simulierter Gemini- und OpenAI-API geprüft (26/26; dieselben Prüfungen schlagen gegen 1.0.0 fehl). Vom Nutzer getestet, funktioniert (02.11.2026); im Stream noch nicht erprobt. Design, Persönlichkeits-Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) sind unverändert; gespeicherte Prompts bleiben also erhalten.
 
 ### Fixed
 - Fehler- und Bestätigungsmeldungen („FUNKSTÖRUNG“, „KONFIGURATION GESPEICHERT“, „ZUSAMMENFASSUNG FEHLGESCHLAGEN“) erscheinen wieder im Display statt als leere Zeile.

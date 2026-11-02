@@ -7,7 +7,7 @@
 | B8 | Eigene Prompt-Anpassungen gehen nach einem Update ohne Rückfrage verloren | `WIDGET_VERSION`-Abgleich in `loadSettings` ersetzt den gespeicherten Prompt | Siehe `docs/OFFEN.md`, Punkt „Prompt-Version“; Entscheidung des Nutzers offen | P2 |
 
 ## Behoben in 1.0.1
-Nachweis: Laufzeittest im Headless-Chromium mit simulierter Gemini- und OpenAI-API (keine echten API-Aufrufe), 26/26 Prüfungen bestanden. Gegenprobe mit unveränderter 1.0.0: die Fehler B1–B3, B5, B7, B9–B13 wurden dort reproduziert. Noch nicht mit echter API, in OBS oder im Stream erprobt.
+Nachweis: Laufzeittest im Headless-Chromium mit simulierter Gemini- und OpenAI-API (keine echten API-Aufrufe), 26/26 Prüfungen bestanden. Gegenprobe mit unveränderter 1.0.0: die Fehler B1–B3, B5, B7, B9–B13 wurden dort reproduziert. Vom Nutzer getestet, funktioniert (02.11.2026); im Stream noch nicht erprobt.
 
 | Nr. | Symptom | Ursache | Fix |
 |---|---|---|---|
