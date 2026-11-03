@@ -1,19 +1,17 @@
 # Offene Punkte
 
-## Chat-Modus (geplant für 1.2.0)
-Spezifiziert in `docs/specs/chat-modus.md` (Widget), ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026):
-- `!BdU <Text>` im Chat; Server erkennt, kürzt (200 Zeichen), prüft Limits; Widget erzeugt die Antwort; Server postet „FT vom BdU: …“ als Antwort auf die Chat-Nachricht.
-- Limits ohne Ausnahmen (auch Broadcaster und Mods): eine Anfrage je 3 Minuten insgesamt, je Nutzer 3 in 30 Minuten. Bei Verstoß „Funkverkehr einschränken, Feind peilt ein!“, höchstens einmal je 10 Minuten, sonst keine Antwort.
-- Antworten anonym, ohne Absendernamen. Später eventuell Kontext „Meldung eines Mannschafters“.
-- Chat-Anfragen und -Antworten nicht im Verlauf, nicht im Display.
-- Nach einer eigenen Meldung werden Chat-Anfragen eine Minute zurückgehalten (nicht verworfen).
-- Funkstille bei erschöpftem KI-Kontingent: betrifft nur den Chat; eigene Meldungen laufen weiter.
-- Widget läuft im Stream als OBS-Browser-Source und wird auf `file:///` umgestellt; Einstellungen dort einmal neu eintragen.
+## Nächste Schritte (Stand 03.11.2026)
+1. **Livestream-Test von 1.2.0** abwarten (Chat-Modus mit echtem Publikum, Ton der Chat-Antworten, Limits, Funkstille). Ergebnisse hier und in `docs/BUGS.md` festhalten.
+2. **Release `v1.2.0`** danach in der GitHub-Oberfläche anlegen (Tag auf `main`, Anhang `index.html`). Bei Befunden vorher als 1.2.1 korrigieren.
+3. **Bot-Account „DerBdu“** für die Chat-Antworten: Baustelle im Server (`Twitch-Companion-JS-server`, `docs/OFFEN.md` dort). Am Widget ändert sich dafür nichts.
 
-Vor der Umsetzung:
-1. ~~BUGS B14 beheben~~ erledigt in 1.0.2 (`getContextHistory`).
-2. Server-Doku nennt noch „Widget 1.1.0“ (`docs/specs/bdu-chat.md`, `docs/OFFEN.md` im Server-Repository); bei der Umsetzung auf 1.2.0 korrigieren.
-3. Zu bestätigen: Funkstille bei Minutenlimit 30 Minuten, bei Tageslimit bis zum nächsten Streamstart; optionale Tagesobergrenze für Chat-Antworten (Vorschlag 60). Details in der Server-Spec.
+## Chat-Modus (umgesetzt in 1.2.0)
+Umgesetzt nach `docs/specs/chat-modus.md`, ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026): `!BdU` im Chat, Limits ohne Ausnahmen (1 je 3 min, 3 je Nutzer in 30 min, Warnung höchstens 1× je 10 min), anonyme Antworten, nicht im Verlauf und nicht im Display, 60 s Vorrang des Kaleu, Funkstille nur für den Chat. Mit Standardwerten umgesetzt (im Server als Konstanten änderbar): Funkstille bei Tageskontingent bis Streamstart, Tagesobergrenze 60, Anfragen an das zuletzt verbundene Widget.
+
+Noch offen:
+1. ~~Test in OBS mit echtem Chat~~ erledigt (03.11.2026); Livestream-Test steht aus (siehe oben). Stolperstein beim ersten Test: Quelle noch als „Lokale Datei“ eingebunden (Anfrage an `localhost` von OBS gesperrt, im Server-Log keine Verbindung). Lösung `file:///`.
+2. Ton der Chat-Antworten: seit 1.2.0 eigenes Feld „Chat-Persönlichkeit“; feste Chat-Regeln verlangen inhaltliche Antworten statt Floskeln (Nutzertest 03.11.2026: „klappt nun ganz gut“). Wortlaut nach Streams nachschärfen. Später ggf. Kontext „Meldung eines Mannschafters“.
+3. Absendernamen bewusst nicht übergeben; bei Bedarf später entscheiden.
 
 ## Prompt-Version
 `WIDGET_VERSION` bestimmt heute, wann der gespeicherte Prompt ersetzt wird (BUGS B8). Vorschlag: Konstante in `PROMPT_VERSION` umbenennen, App-Version nur über `CHANGELOG.md`/Tags führen. Bei neuer Prompt-Version nachfragen bzw. nur ersetzen, wenn der gespeicherte Prompt unverändert der alte Standard war. Entscheidung des Nutzers offen.
