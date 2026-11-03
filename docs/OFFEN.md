@@ -1,11 +1,16 @@
 # Offene Punkte
 
+## Nächste Schritte (Stand 03.11.2026)
+1. **Livestream-Test von 1.2.0** abwarten (Chat-Modus mit echtem Publikum, Ton der Chat-Antworten, Limits, Funkstille). Ergebnisse hier und in `docs/BUGS.md` festhalten.
+2. **Release `v1.2.0`** danach in der GitHub-Oberfläche anlegen (Tag auf `main`, Anhang `index.html`). Bei Befunden vorher als 1.2.1 korrigieren.
+3. **Bot-Account „DerBdu“** für die Chat-Antworten: Baustelle im Server (`Twitch-Companion-JS-server`, `docs/OFFEN.md` dort). Am Widget ändert sich dafür nichts.
+
 ## Chat-Modus (umgesetzt in 1.2.0)
 Umgesetzt nach `docs/specs/chat-modus.md`, ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026): `!BdU` im Chat, Limits ohne Ausnahmen (1 je 3 min, 3 je Nutzer in 30 min, Warnung höchstens 1× je 10 min), anonyme Antworten, nicht im Verlauf und nicht im Display, 60 s Vorrang des Kaleu, Funkstille nur für den Chat. Mit Standardwerten umgesetzt (im Server als Konstanten änderbar): Funkstille bei Tageskontingent bis Streamstart, Tagesobergrenze 60, Anfragen an das zuletzt verbundene Widget.
 
 Noch offen:
-1. ~~Test in OBS mit echtem Chat~~ erledigt (03.11.2026). Stolperstein beim ersten Test: Quelle noch als „Lokale Datei“ eingebunden (Anfrage an `localhost` von OBS gesperrt, im Server-Log keine Verbindung). Lösung `file:///`.
-2. Ton der Chat-Antworten: seit 1.2.0 eigenes Feld „Chat-Persönlichkeit“; Wortlaut nach Streams nachschärfen. Später ggf. Kontext „Meldung eines Mannschafters“.
+1. ~~Test in OBS mit echtem Chat~~ erledigt (03.11.2026); Livestream-Test steht aus (siehe oben). Stolperstein beim ersten Test: Quelle noch als „Lokale Datei“ eingebunden (Anfrage an `localhost` von OBS gesperrt, im Server-Log keine Verbindung). Lösung `file:///`.
+2. Ton der Chat-Antworten: seit 1.2.0 eigenes Feld „Chat-Persönlichkeit“; feste Chat-Regeln verlangen inhaltliche Antworten statt Floskeln (Nutzertest 03.11.2026: „klappt nun ganz gut“). Wortlaut nach Streams nachschärfen. Später ggf. Kontext „Meldung eines Mannschafters“.
 3. Absendernamen bewusst nicht übergeben; bei Bedarf später entscheiden.
 
 ## Prompt-Version
