@@ -2061,6 +2061,11 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             if(data.candidates && data.candidates[0]) {
                 const candidate = data.candidates[0];
                 const finishReason = candidate.finishReason;
+                // Alle Text-Teile zusammensetzen (ohne Denk-Teile): Gemini 3.x liefert die Antwort teils in mehreren Teilen;
+                // bisher kam nur parts[0] an: 4 von 20 Antworten brachen mitten im Satz ab, obwohl die Token-Zählung die volle Länge zeigte (Benchmark 07.11.2026, BUGS B21)
+                const responseText = (candidate.content?.parts || [])
+                    .filter(p => typeof p.text === "string" && !p.thought)
+                    .map(p => p.text).join("");
                 
                 console.log("[API] ✅ Status:", finishReason);
                 
@@ -2070,16 +2075,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
                 if(finishReason === "MAX_TOKENS") {
                     console.warn("[API] ⚠️ Antwort bei MAX_TOKENS abgeschnitten");
-                    if(candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-                        const responseText = candidate.content.parts[0].text;
-                        if (responseText) {
-                            return responseText + "...";
-                        }
-                    }
+                    if (responseText) return responseText + "...";
                 }
                 
-                if(candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-                    const responseText = candidate.content.parts[0].text;
+                if(candidate.content && candidate.content.parts && candidate.content.parts.length) {
                     if (!responseText) {
                         throw new Error("API gab leeren Text zurück.");
                     }
@@ -2747,21 +2746,11 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             console.log("[EXPORT] 📤", json.length, "Zeichen,", conversationHistory.length, "Verlaufseinträge");
         }
 
-        // Anleitung für OBS: dort gibt es keine Downloads (Nutzertest 07.11.2026)
-        function exportFileHint(fileName) {
-            return `Als Datei sichern: Text mit Strg+A, Strg+C kopieren, in einen Texteditor (z. B. Windows-Editor) einfügen und als „${fileName}“ speichern (Codierung UTF-8).`;
-        }
+        const EXPORT_FILE_NAME = "Funk-Export.json";
 
+        // Auch in OBS landet die Datei im Download-Ordner, nur ohne Hinweis (Nutzertest 07.11.2026)
         function downloadExport() {
-            const fileName = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
-            // OBS-Browserquelle (erkennbar an window.obsstudio): kein Download möglich, stattdessen Text zum Kopieren bereitstellen
-            if (window.obsstudio) {
-                exportData().then(() => {
-                    const el = document.getElementById('transfer-status');
-                    setTransferStatus((el ? el.textContent : "✅ Exportiert") + ". In OBS gibt es keine Downloads. " + exportFileHint(fileName), '#ffb84d');
-                });
-                return;
-            }
+            const fileName = EXPORT_FILE_NAME;
             try {
                 const json = JSON.stringify(buildExportData(), null, 2);
                 const blob = new Blob([json], { type: "application/json" });
@@ -2773,7 +2762,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 a.click();
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setTransferStatus(`💾 Datei-Download gestartet. In OBS gibt es keine Downloads: dort EXPORTIEREN, dann ${exportFileHint(fileName).charAt(0).toLowerCase() + exportFileHint(fileName).slice(1)}`, '#4dff4d');
+                setTransferStatus(`💾 Als „${fileName}“ im Download-Ordner gespeichert (in OBS ohne Hinweis; gibt es die Datei schon, hängt der Browser eine Nummer an). Kommt nichts an: EXPORTIEREN, Text kopieren, in einen Texteditor einfügen und als „${fileName}“ speichern.`, '#4dff4d');
             } catch (e) {
                 setTransferStatus("❌ Download nicht möglich: " + e.message, '#ff4d4d');
             }

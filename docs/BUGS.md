@@ -10,6 +10,12 @@
 
 Bereits zusammengefasste Funksprüche bleiben in der Zusammenfassung, auch wenn sie danach per „LETZTE 5 LÖSCHEN“ entfernt werden (erwartet, nicht korrigierbar ohne Neuberechnung).
 
+## Behoben in 1.2.2
+
+| Nr. | Symptom | Ursache | Behebung |
+|---|---|---|---|
+| B21 | Mit `gemini-3.5-flash-lite` brachen Antworten gelegentlich mitten im Satz ab („Rückmarsch wird“), obwohl `finishReason` STOP meldete (Benchmark 07.11.2026: 4 von 20 Antworten; bei `gemini-2.5-flash-lite` 0 von 20) | `handleGeminiResponse` las nur `parts[0].text`; Gemini liefert die Antwort teils in mehreren Teilen. Beleg: Bei den abgebrochenen Antworten passten Zeichenzahl und Token-Zählung nicht zusammen (etwa 1,5 statt 3,5 Zeichen je Token) | Alle Text-Teile ohne Denk-Teile (`thought`) zusammensetzen, wie schon bei der Zusammenfassung seit 1.0.2 |
+
 ## Behoben in 1.2.1
 
 | Nr. | Symptom | Ursache | Behebung |
