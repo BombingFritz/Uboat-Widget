@@ -1,10 +1,16 @@
 # Offene Punkte
 
-## Nächste Schritte (Stand 07.11.2026)
-1. ~~Livestream-Test von 1.2.0~~ erledigt (03.11.2026, laut Server-Doku): 6 Anfragen (5 vom Broadcaster, 1 aus dem Publikum), Antworten nach 1–3 s, keine Fehler. Limits, Warnung und Funkstille wurden nicht erreicht, unter Last also weiter unerprobt.
-2. **Release:** Import in OBS ging nicht (BUGS B20), behoben in 1.2.1. Vorschlag: nach Test des Nutzers in OBS Release `v1.2.1` statt `v1.2.0` anlegen (Tag auf `main`, Anhang `index.html`), 1.2.0 ohne eigenes Release. Entscheidung des Nutzers offen.
-3. ~~Bot-Account „DerBdu“~~ im Server umgesetzt (Server 1.1.5, ADR 0017 dort): BdU-Antworten, Warnung und Funkstille-Ansage kommen vom Bot, ohne „FT vom BdU:“; Rückfall auf das Streamer-Konto mit Präfix. Am Widget hat sich dafür nichts geändert (Protokoll `{id, text}` → `{id, status, text}` unverändert).
-4. **Benchmark** der Gemini-Flash-Lite-Modelle (PR #7, `docs/specs/benchmark.md`), danach Kontext schärfen.
+## Nächste Schritte (Stand 07.11.2026, abends)
+Erledigt: Livestream-Test von 1.2.0 (03.11.2026, laut Server-Doku), Bot-Account „DerBdu“ im Server (Server 1.1.5, ADR 0017 dort), Releases `v1.2.1` (Import in OBS, BUGS B20) und `v1.2.2` (vollständige Gemini-Antworten, BUGS B21; Download in OBS). Erster Benchmark-Durchlauf Gemini 2.5 gegen 3.5 Flash-Lite (Ergebnis in PR #7).
+
+### Plan für 1.3.0
+1. **Benchmark** (PR #7): Ordner `benchmark/` mit `bench.html`, `README.md` und `beispiel-kontext.json`; Gemini, Groq, Mistral. Vor dem Merge: Test des Nutzers mit Groq und Mistral über die echte API (ob Aufrufe aus dem Browser zugelassen sind, ist [UNGEKLÄRT]). Release-Anhänge dann `index.html`, `bench.html`, `beispiel-kontext.json`.
+2. **Chat-Modus einklappen:** Gruppe „Chat-Modus“ in den Einstellungen als eingeklappter Bereich „Für Streamer mit Companion-Server“; klappt von selbst auf, wenn der Chat-Modus eingeschaltet ist. Sonst keine Designänderung. Kein eigener Branch für eine einfache Fassung (Nutzer 07.11.2026, ADR 0002 bleibt).
+3. **README-Startseite:** oben ein kurzer Schnellstart für alle (Datei laden, Schlüssel, Modell, loslegen); Streamer-Funktionen (Chat-Modus) und Benchmark weiter unten.
+4. **Tests ins Repository:** die bisherigen Headless-Tests (Playwright, simulierte APIs) in `tests/` mit kurzer Anleitung, damit jede Sitzung sie ausführen kann, auch lokal mit Claude Code und GitHub Desktop (Umzug erwogen).
+5. **Kontext schärfen** (nach Messung, Umfang offen): 3.5 Flash-Lite mit 1.2.2 erneut messen; Zusammenfassung des Nutzers erneuern bzw. für die neue Feindfahrt leeren und gegenprüfen; ggf. Wortlaut der Chat-Persönlichkeit, falls 3.5 im Chat weiter zu verspielt antwortet.
+
+Zu entscheiden: Fällt der Benchmark für Groq oder Mistral gut aus, im Universal-Modus Voreinstellungen für deren Base-URL anbieten? Lizenzdatei in `LICENSE` umbenennen (siehe unten)?
 
 ## Chat-Modus (umgesetzt in 1.2.0)
 Umgesetzt nach `docs/specs/chat-modus.md`, ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026): `!BdU` im Chat, Limits ohne Ausnahmen (1 je 3 min, 3 je Nutzer in 30 min, Warnung höchstens 1× je 10 min), anonyme Antworten, nicht im Verlauf und nicht im Display, 60 s Vorrang des Kaleu, Funkstille nur für den Chat. Mit Standardwerten umgesetzt (im Server als Konstanten änderbar): Funkstille bei Tageskontingent bis Streamstart, Tagesobergrenze 60, Anfragen an das zuletzt verbundene Widget.
