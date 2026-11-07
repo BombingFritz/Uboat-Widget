@@ -40,8 +40,13 @@ Alternative Optionen (Zahnrad → API-Typ „Universal“, Base-URL eintragen, d
 •	OpenRouter (Modelle mit „:free“ kostenlos, ohne Guthaben nur 50 Anfragen pro Tag): Base-URL https://openrouter.ai/api
 •	Mistral (seit Oktober 2026 nur noch kostenpflichtig): Base-URL https://api.mistral.ai
 •	OpenAI (kostenpflichtig): Base-URL https://api.openai.com
-•	Lokale KI (Ollama, etc.) und jede andere OpenAI-kompatible API
+•	Lokale KI (z. B. Ollama: Base-URL http://localhost:11434, LM Studio: http://localhost:1234) und jede andere OpenAI-kompatible API
 Hinweis: Das Widget ist nur mit Google Gemini ausführlich getestet. Andere APIs sollten funktionieren, sind aber nicht garantiert. Ob ein Anbieter Aufrufe direkt aus dem Browser zulässt, zeigt am schnellsten der Benchmark (siehe unten).
+
+Kostenlos oder lokal?
+•	Kostenlose Kontingente sind stark eingeschränkt: wenige Anfragen pro Minute und pro Tag, oft nur kleine Modelle, und die Anbieter ändern die Bedingungen regelmäßig (Google stellt ältere Modelle ab, Mistral bietet seit Oktober 2026 keine kostenlosen API-Schlüssel mehr). Bei Gratis-Angeboten können Eingaben außerdem zur Verbesserung der Modelle genutzt werden.
+•	Kostenlose Modelle liefern offenbar auch schlechtere Ergebnisse: Im ersten Benchmark (November 2026) klang das neue kostenlose gemini-3.5-flash-lite deutlich weniger authentisch als das ältere gemini-2.5-flash-lite. Größere, kostenpflichtige Modelle antworten in der Regel besser, wurden hier aber nicht verglichen.
+•	Kostenlos und ohne Kontingent geht es mit einem lokalen Modell (z. B. Ollama oder LM Studio) auf dem eigenen PC. Dafür braucht es genug Arbeits- bzw. Grafikspeicher; wer nebenher ein anspruchsvolles Spiel streamt, merkt das. Einrichtung: API-Typ „Universal“, Base-URL des lokalen Programms eintragen, als API-Schlüssel einen beliebigen Platzhalter (z. B. „lokal“), dann „MODELLE SUCHEN“. Blockiert der Browser die Anfrage, in Ollama die Umgebungsvariable OLLAMA_ORIGINS=* setzen bzw. in LM Studio „CORS“ einschalten. Mit lokalen Modellen ist das Widget bisher nicht getestet.
 
 Welches Modell passt? – Benchmark
 Im Ordner benchmark/ liegt eine eigene Seite (bench.html, gehört nicht zum Widget), mit der man mehrere Modelle (Gemini, Groq, OpenRouter, Mistral oder jede andere OpenAI-kompatible Adresse) mit denselben 10 Testfragen und demselben Kontext vergleicht und die Antworten blind bewertet. Als Kontext dient ein Export aus dem Widget; wer noch keinen eigenen Funkverlauf hat, lädt den Beispielkontext beispiel-kontext.json aus demselben Ordner. Anleitung: benchmark/README.md. Erster Vergleich (Nov. 2026): gemini-2.5-flash-lite klang deutlich authentischer als gemini-3.5-flash-lite; 2.5 bietet Google aber nur noch bisherigen Nutzern an.

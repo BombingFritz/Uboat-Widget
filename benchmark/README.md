@@ -10,7 +10,7 @@ Erster Vergleich (November 2026, eigener Funkverlauf, blind bewertet): `gemini-2
   - **Groq:** [console.groq.com](https://console.groq.com), kostenloses Kontingent (offene Modelle, sehr schnell)
   - **OpenRouter:** [openrouter.ai](https://openrouter.ai), ein Schlüssel für viele Anbieter; kostenlos sind nur Modelle mit „:free“ (ohne Guthaben 50 Anfragen pro Tag), der Benchmark zeigt nur diese
   - **Mistral:** [console.mistral.ai](https://console.mistral.ai), seit Oktober 2026 nur noch kostenpflichtig
-  - **Eigene Adresse:** jede andere OpenAI-kompatible API mit Base-URL und (falls nötig) Schlüssel, genau wie im Universal-Modus des Widgets
+  - **Eigene Adresse:** jede andere OpenAI-kompatible API mit Base-URL und (falls nötig) Schlüssel, genau wie im Universal-Modus des Widgets – auch ein **lokales Modell** (z. B. Ollama `http://localhost:11434`, LM Studio `http://localhost:1234`), kostenlos und ohne Kontingent, solange der PC genug Speicher hat
 - Einen Kontext: deinen eigenen Export aus dem Widget (Zahnrad → „Sichern & Übertragen“ → „ALS DATEI“, ohne Schlüssel) **oder** den Beispielkontext `beispiel-kontext.json`, falls du das Widget noch nicht benutzt hast.
 
 ## Ablauf
@@ -24,6 +24,7 @@ Erster Vergleich (November 2026, eigener Funkverlauf, blind bewertet): `gemini-2
 ## Hinweise
 - **Gleiche Anfrage wie im Widget:** Gemini wie im Widget ohne Cache, alle anderen wie im Universal-Modus. Was im Benchmark gut klingt, klingt im Widget genauso. Base-URLs für den Universal-Modus: Groq `https://api.groq.com/openai`, OpenRouter `https://openrouter.ai/api`, Mistral `https://api.mistral.ai`.
 - **Browser-Aufrufe:** Ob Groq, OpenRouter und Mistral Aufrufe direkt aus einer lokal geöffneten Seite zulassen, ist noch nicht erprobt. Meldet der Benchmark eine blockierte Anfrage (CORS), funktioniert der Anbieter auch im Widget nicht direkt.
-- **Kontingente:** Flash-Lite-Modelle erlauben im Gratis-Kontingent etwa 10 Anfragen pro Minute; größere Modelle teils nur wenige pro Tag.
+- **Kontingente:** Flash-Lite-Modelle erlauben im Gratis-Kontingent etwa 10 Anfragen pro Minute; größere Modelle teils nur wenige pro Tag. Kostenlose Modelle sind generell stärker eingeschränkt und lieferten im ersten Vergleich schwächere Ergebnisse; größere, kostenpflichtige Modelle wurden nicht verglichen.
+- **Lokale Modelle:** Blockiert der Browser die Anfrage, in Ollama `OLLAMA_ORIGINS=*` setzen bzw. in LM Studio CORS einschalten.
 - **Speicher:** Ergebnisse und Bewertungen liegen im Browser (`localStorage`, Schlüssel `bdu_bench_state_v1`); regelmäßig exportieren.
 - **Verlauf:** Jede Frage wird unabhängig gegen den eingefrorenen Kontext gestellt; Antworten kommen nicht in den Verlauf.
