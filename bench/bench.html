@@ -51,6 +51,7 @@
   .progress > div { height:100%; background:var(--accent); width:0; }
   .tag { display:inline-block; font-size:12px; padding:1px 6px; border-radius:9px; background:#2c3138; color:var(--muted); }
   .ok { color:var(--ok); } .bad { color:var(--bad); }
+  .status { margin:6px 0; font-size:14px; }
   pre.req { max-height:300px; overflow:auto; background:#121417; padding:8px; font-size:12px; white-space:pre-wrap; }
 </style>
 </head>
@@ -71,10 +72,12 @@
 
   <section id="s-ctx">
     <h2>2. Kontext (Export aus dem Widget)</h2>
-    <p class="hint">Im Widget: Zahnrad → „Sichern &amp; Übertragen“ → als Datei exportieren (ohne Schlüssel). Mehrere Exporte = Vergleich verschiedener Kontexte.</p>
-    <div class="row"><input type="file" id="ctx-file" accept=".json,application/json" multiple></div>
+    <p class="hint">Im Widget: Zahnrad → „Sichern &amp; Übertragen“ → Export als Datei (ohne Schlüssel) oder als Text (in OBS nur so). Datei hier laden oder den kopierten Text einfügen. Mehrere Exporte = Vergleich verschiedener Kontexte.</p>
+    <div class="row"><input type="file" id="ctx-file" accept=".json,.txt,application/json,text/plain" multiple></div>
+    <textarea id="ctx-text" rows="3" placeholder="… oder hier den Export-Text einfügen (Strg+V)"></textarea>
+    <div class="row"><input type="text" id="ctx-text-name" placeholder="Name für den eingefügten Kontext (optional)"><button id="btn-ctx-text">Eingefügten Text laden</button></div>
+    <div id="ctx-status" class="status"></div>
     <div id="ctx-list"></div>
-    <small id="ctx-status"></small>
   </section>
 
   <section id="s-q">
@@ -304,9 +307,35 @@ function seededShuffle(arr, seed) {
 // Kontexte
 // ==============================================
 // Prüfung wie parseImportData() im Widget; Schlüssel wird verworfen
+function parseJsonLenient(raw) {
+    // Byte-Order-Mark und Leerraum entfernen (Editoren unter Windows speichern oft mit BOM)
+    const text = String(raw).replace(/^\uFEFF/, "").trim();
+    if (!text) throw new Error("Datei bzw. Feld ist leer");
+    try { return JSON.parse(text); } catch (e) {
+        // Fallback: Text um den Export herum (z. B. beim Kopieren mit erfasst) abschneiden
+        const a = text.indexOf("{"), b = text.lastIndexOf("}");
+        if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch (e2) { /* unten melden */ } }
+        throw new Error("kein gültiges JSON (" + e.message + "). Ist der Export vollständig kopiert?");
+    }
+}
+// Datei als Text lesen; erkennt UTF-16 (z. B. „Unicode“ im Windows-Editor) und UTF-8 mit/ohne BOM
+async function readFileText(file) {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (buf[0] === 0xFF && buf[1] === 0xFE) return new TextDecoder("utf-16le").decode(buf);
+    if (buf[0] === 0xFE && buf[1] === 0xFF) return new TextDecoder("utf-16be").decode(buf);
+    return new TextDecoder("utf-8").decode(buf);
+}
+function setCtxStatus(html, ok) { $("ctx-status").innerHTML = `<span class="${ok ? "ok" : "bad"}">${html}</span>`; }
+function addContext(raw, name) {
+    const ctx = parseExport(raw, name);
+    const hadKey = ctx.hadKey; delete ctx.hadKey;
+    state.contexts.push(ctx);
+    saveState(); renderContexts();
+    setCtxStatus(`✓ Kontext „${esc(ctx.name)}“ geladen: ${ctx.history.length} Verlaufseinträge.` +
+        (hadKey ? " Der Export enthielt einen API-Schlüssel; er wurde verworfen und nicht gespeichert." : ""), true);
+}
 function parseExport(raw, fileName) {
-    let data;
-    try { data = JSON.parse(raw); } catch (e) { throw new Error("kein gültiges JSON"); }
+    const data = parseJsonLenient(raw);
     if (!data || data.format !== "enigma-bdu-funk") throw new Error("kein Export des Widgets");
     if (typeof data.formatVersion !== "number" || data.formatVersion > 1) throw new Error("Export aus neuerer Widget-Version");
     const st = data.settings || {}, mem = data.memory || {};
@@ -319,7 +348,7 @@ function parseExport(raw, fileName) {
     const idx = Number.isInteger(mem.lastSummaryIndex) ? mem.lastSummaryIndex : 0;
     return {
         id: "x" + hash(raw + Date.now()).toString(36),
-        name: fileName.replace(/\.json$/i, ""),
+        name: fileName.replace(/\.(json|txt)$/i, ""),
         exportedAt: str(data.exportedAt),
         widgetModel: str(st.model),
         systemPrompt: st.systemPrompt,
@@ -334,17 +363,15 @@ function parseExport(raw, fileName) {
 }
 async function onContextFiles(files) {
     for (const f of files) {
-        try {
-            const ctx = parseExport(await f.text(), f.name);
-            state.contexts.push(ctx);
-            $("ctx-status").textContent = ctx.hadKey
-                ? "Hinweis: Der Export enthielt einen API-Schlüssel. Er wurde verworfen und nicht gespeichert."
-                : "";
-            delete ctx.hadKey;
-        } catch (e) { $("ctx-status").textContent = "❌ " + f.name + ": " + e.message; }
+        try { addContext(await readFileText(f), f.name); }
+        catch (e) { setCtxStatus("❌ " + esc(f.name) + ": " + esc(e.message), false); console.error("[BENCH] Kontext-Import", e); }
     }
     $("ctx-file").value = "";
-    saveState(); renderContexts();
+}
+function onContextText() {
+    const name = $("ctx-text-name").value.trim() || ("Kontext " + (state.contexts.length + 1));
+    try { addContext($("ctx-text").value, name); $("ctx-text").value = ""; $("ctx-text-name").value = ""; }
+    catch (e) { setCtxStatus("❌ Eingefügter Text: " + esc(e.message), false); console.error("[BENCH] Kontext-Import", e); }
 }
 function renderContexts() {
     if (!state.contexts.length) { $("ctx-list").innerHTML = "<small>Noch kein Kontext geladen.</small>"; return; }
@@ -663,6 +690,7 @@ function bind() {
     $("btn-models").onclick = loadModels;
     $("api-key").addEventListener("keydown", e => { if (e.key === "Enter") loadModels(); });
     $("ctx-file").onchange = e => onContextFiles(Array.from(e.target.files));
+    $("btn-ctx-text").onclick = onContextText;
     $("ctx-list").addEventListener("input", e => {
         const i = e.target.dataset.ctxName; if (i !== undefined) { state.contexts[i].name = e.target.value; saveState(); }
     });
