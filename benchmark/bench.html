@@ -7,8 +7,8 @@
 <!--
   Benchmark für das Enigma-BdU-Funk-Widget (docs/specs/benchmark.md).
   Gehört nicht zum Widget. Stellt Testfragen gegen einen eingefrorenen Kontext (Export des Widgets)
-  an mehrere Gemini-Modelle und erlaubt eine blinde Bewertung der Antworten.
-  Der Aufbau der Anfrage entspricht callGemini() in index.html (Weg ohne Cache) – bei Änderungen dort hier nachziehen.
+  an mehrere Modelle (Gemini, Groq, Mistral) und erlaubt eine blinde Bewertung der Antworten.
+  Der Aufbau der Anfrage entspricht callGemini() (Weg ohne Cache) bzw. callUniversal() in index.html – bei Änderungen dort hier nachziehen.
 -->
 <style>
   :root { --bg:#16181b; --panel:#1f2227; --line:#33373e; --text:#e6e6e6; --muted:#9aa0a6; --accent:#e0b04d; --ok:#6fcf7f; --bad:#ff6b6b; }
@@ -58,21 +58,23 @@
 <body>
 <main>
   <h1>BdU-Benchmark</h1>
-  <p class="hint">Vergleich der Antwortqualität verschiedener Gemini-Modelle mit demselben Kontext. Gehört nicht zum Widget.
-    Der API-Schlüssel bleibt nur im Arbeitsspeicher dieser Seite (nach Neuladen neu eingeben). Ergebnisse und Bewertungen werden im Browser gespeichert.</p>
+  <p class="hint">Vergleich der Antwortqualität verschiedener KI-Modelle (Gemini, Groq, Mistral) mit demselben Kontext. Gehört nicht zum Widget.
+    API-Schlüssel bleiben nur im Arbeitsspeicher dieser Seite (nach Neuladen neu eingeben). Ergebnisse und Bewertungen werden im Browser gespeichert.</p>
 
   <section id="s-key">
     <h2>1. API-Schlüssel</h2>
-    <div class="row">
-      <input type="password" id="api-key" class="grow" placeholder="Gemini API-Schlüssel (AI Studio)" autocomplete="off">
-      <button id="btn-models">Modelle laden</button>
-    </div>
-    <small id="key-status"></small>
+    <p class="hint">Nur die Anbieter ausfüllen, die du testen willst. Alle drei haben ein kostenloses Kontingent: Gemini über Google AI Studio, Groq über console.groq.com, Mistral über console.mistral.ai (Gratis-Tarif „Experiment“; Eingaben können dort zum Training genutzt werden).</p>
+    <div class="row"><span style="width:70px">Gemini</span><input type="password" id="key-gemini" class="grow" placeholder="Gemini API-Schlüssel (AI Studio)" autocomplete="off"></div>
+    <div class="row"><span style="width:70px">Groq</span><input type="password" id="key-groq" class="grow" placeholder="Groq API-Schlüssel (gsk_…)" autocomplete="off"></div>
+    <div class="row"><span style="width:70px">Mistral</span><input type="password" id="key-mistral" class="grow" placeholder="Mistral API-Schlüssel" autocomplete="off"></div>
+    <div class="row"><button id="btn-models">Modelle laden</button></div>
+    <div id="key-status" class="status"></div>
   </section>
 
   <section id="s-ctx">
     <h2>2. Kontext (Export aus dem Widget)</h2>
-    <p class="hint">Im Widget: Zahnrad → „Sichern &amp; Übertragen“ → Export als Datei (ohne Schlüssel) oder als Text (in OBS nur so). Datei hier laden oder den kopierten Text einfügen. Mehrere Exporte = Vergleich verschiedener Kontexte.</p>
+    <p class="hint">Im Widget: Zahnrad → „Sichern &amp; Übertragen“ → „ALS DATEI“ (ohne Schlüssel) oder „EXPORTIEREN“ und Text kopieren. Datei hier laden oder den kopierten Text einfügen. Mehrere Exporte = Vergleich verschiedener Kontexte.<br>
+    <b>Noch keinen eigenen Funkverlauf?</b> Die Datei <code>beispiel-kontext.json</code> aus diesem Ordner laden: Standard-Persönlichkeit des Widgets, ein Beispielboot (U-68, Typ IXc, Herbst 1941 vor Westafrika) und ein kurzer erfundener Funkverlauf. Die Standardfragen passen dazu.</p>
     <div class="row"><input type="file" id="ctx-file" accept=".json,.txt,application/json,text/plain" multiple></div>
     <textarea id="ctx-text" rows="3" placeholder="… oder hier den Export-Text einfügen (Strg+V)"></textarea>
     <div class="row"><input type="text" id="ctx-text-name" placeholder="Name für den eingefügten Kontext (optional)"><button id="btn-ctx-text">Eingefügten Text laden</button></div>
@@ -92,10 +94,12 @@
 
   <section id="s-models">
     <h2>4. Modelle</h2>
-    <div class="row"><label><input type="checkbox" id="models-all"> alle Modelle zeigen (sonst nur „flash-lite“)</label></div>
-    <div id="model-list" class="row"><small>Erst Schlüssel eingeben und „Modelle laden“.</small></div>
+    <p class="hint">Nach „Modelle laden“ stehen hier alle Modelle, die dein Schlüssel nutzen darf, zum Ankreuzen. Bei Gemini zuerst nur die Flash-Lite-Modelle (für den Dauerbetrieb im Gratis-Kontingent geeignet).</p>
+    <div class="row"><label><input type="checkbox" id="models-all"> alle Gemini-Modelle zeigen (sonst nur „flash-lite“)</label></div>
+    <div id="model-list"><small>Erst Schlüssel eingeben und „Modelle laden“.</small></div>
     <div class="row">
-      <input type="text" id="model-manual" placeholder="Modellname, z. B. gemini-2.5-flash-lite">
+      <select id="model-manual-provider"><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="mistral">Mistral</option></select>
+      <input type="text" id="model-manual" class="grow" placeholder="Modellname von Hand, z. B. gemini-2.5-flash-lite">
       <button id="btn-model-add">Hinzufügen</button>
     </div>
   </section>
@@ -194,8 +198,8 @@ function cleanChatAnswer(text) {
         .trim();
 }
 
-// Request-Body wie callGemini() ohne Cache; „Status:“ ersetzt vorher den Status wie sendMessage()
-function buildPayload(ctx, question) {
+// Systemtext wie callGemini()/callUniversal(); „Status:“ ersetzt vorher den Status wie sendMessage()
+function buildSystemText(ctx, question) {
     const chat = question.mode === "chat";
     let status = ctx.currentStatus;
     if (!chat && question.text.toLowerCase().startsWith("status:")) {
@@ -206,12 +210,18 @@ function buildPayload(ctx, question) {
     if (ctx.summary) {
         summaryText = "\n\n=== BISHERIGE FUNKSPRÜCHE (Zusammenfassung) ===\n" + ctx.summary + "\n=== ENDE ZUSAMMENFASSUNG ===\n";
     }
-    const systemText = SAFETY_RULES + "\n" + ctx.systemPrompt +
+    return SAFETY_RULES + "\n" + ctx.systemPrompt +
         "\n\n=== BOOT-INFORMATIONEN ===\n" + ctx.bootContext +
         "\n\n=== AKTUELLER STATUS ===\n" + status +
         summaryText +
         "\n\n=== ENDE INFORMATIONEN ===" +
         (chat ? "\n\n" + getChatInstructions(ctx.chatPersonality) : "");
+}
+
+// Request-Body wie callGemini() ohne Cache
+function buildPayload(ctx, question) {
+    const chat = question.mode === "chat";
+    const systemText = buildSystemText(ctx, question);
     const recent = getContextHistory(ctx.history, ctx.lastSummaryIndex).map(m => ({
         role: m.role === "user" ? "user" : "model",
         parts: [{ text: m.text }]
@@ -223,6 +233,40 @@ function buildPayload(ctx, question) {
         generationConfig: { maxOutputTokens: chat ? CHAT_MAX_OUTPUT_TOKENS : KALEU_MAX_OUTPUT_TOKENS, temperature: TEMPERATURE }
     };
 }
+
+// Request-Body wie callUniversal() (OpenAI-kompatibel: Groq, Mistral)
+function buildUniversalPayload(ctx, question, model) {
+    const chat = question.mode === "chat";
+    const recent = getContextHistory(ctx.history, ctx.lastSummaryIndex).map(m => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text
+    }));
+    return {
+        model: model,
+        messages: [
+            { role: "system", content: buildSystemText(ctx, question) },
+            ...recent,
+            { role: "user", content: chat ? chatUserText(question.text) : question.text }
+        ],
+        max_tokens: chat ? CHAT_MAX_OUTPUT_TOKENS : KALEU_MAX_OUTPUT_TOKENS,
+        temperature: TEMPERATURE
+    };
+}
+
+// ==============================================
+// Anbieter. Modell-IDs: Gemini ohne Präfix (wie bisher), sonst "groq:<name>" bzw. "mistral:<name>"
+// ==============================================
+const PROVIDERS = {
+    gemini:  { label: "Gemini",  keyInput: "key-gemini" },
+    groq:    { label: "Groq",    keyInput: "key-groq",    baseUrl: "https://api.groq.com/openai" },
+    mistral: { label: "Mistral", keyInput: "key-mistral", baseUrl: "https://api.mistral.ai" }
+};
+function parseModelId(id) {
+    const m = /^(groq|mistral):(.+)$/.exec(id);
+    return m ? { provider: m[1], model: m[2] } : { provider: "gemini", model: id };
+}
+function modelId(provider, model) { return provider === "gemini" ? model : provider + ":" + model; }
+function providerKey(provider) { return ($(PROVIDERS[provider].keyInput).value || "").trim(); }
 
 // ==============================================
 // Standardfragen (Entwurf 07.11.2026, passend zu U-68 / Typ IXc / 1941 / vor Westafrika)
@@ -266,8 +310,7 @@ const FLAWS = [
 // Zustand (ohne API-Schlüssel im localStorage)
 // ==============================================
 const STORE_KEY = "bdu_bench_state_v1";
-let apiKey = "";
-let availableModels = [];
+let availableModels = [];   // Modell-IDs aus den Listen der Anbieter
 let running = false, stopRequested = false;
 let state = freshState();
 
@@ -406,29 +449,59 @@ function nextQuestionId(mode) {
 // ==============================================
 // Modelle
 // ==============================================
+// Gemini: nur Modelle mit generateContent
+async function listGemini(key) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`);
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error?.message || ("HTTP " + r.status));
+    return (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+}
+// Groq/Mistral: OpenAI-kompatible Liste; Sprach-, Audio-, Embedding- und Prüfmodelle ausblenden
+async function listUniversal(provider, key) {
+    let r;
+    try { r = await fetch(PROVIDERS[provider].baseUrl + "/v1/models", { headers: { "Authorization": "Bearer " + key } }); }
+    catch (e) { throw new Error(fetchErrorText(e)); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) throw new Error(errorMessage(d) || ("HTTP " + r.status));
+    return (d.data || [])
+        .filter(m => !(m.capabilities && m.capabilities.completion_chat === false))
+        .map(m => m.id)
+        .filter(id => !/whisper|tts|guard|embed|moderation|ocr|playai|orpheus|transcri|voxtral/i.test(id));
+}
 async function loadModels() {
-    apiKey = $("api-key").value.trim();
-    if (!apiKey) { $("key-status").textContent = "Bitte Schlüssel eingeben."; return; }
-    $("key-status").textContent = "Lade Modelle …";
-    try {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=200`);
-        const d = await r.json();
-        if (!r.ok || d.error) throw new Error(d.error?.message || ("HTTP " + r.status));
-        availableModels = (d.models || [])
-            .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
-            .map(m => m.name.replace(/^models\//, ""));
-        $("key-status").innerHTML = `<span class="ok">Schlüssel funktioniert.</span> ${availableModels.length} Modelle verfügbar.`;
-    } catch (e) { $("key-status").innerHTML = `<span class="bad">Fehler: ${esc(e.message)}</span>`; }
+    const lines = [];
+    availableModels = [];
+    let any = false;
+    for (const provider of Object.keys(PROVIDERS)) {
+        const key = providerKey(provider);
+        if (!key) continue;
+        any = true;
+        $("key-status").innerHTML = lines.join("<br>") + (lines.length ? "<br>" : "") + `Lade ${PROVIDERS[provider].label} …`;
+        try {
+            const names = provider === "gemini" ? await listGemini(key) : await listUniversal(provider, key);
+            availableModels.push(...names.map(n => modelId(provider, n)));
+            lines.push(`<span class="ok">${PROVIDERS[provider].label}: Schlüssel funktioniert, ${names.length} Modelle.</span>`);
+        } catch (e) { lines.push(`<span class="bad">${PROVIDERS[provider].label}: ${esc(e.message)}</span>`); }
+    }
+    $("key-status").innerHTML = any ? lines.join("<br>") : "Bitte mindestens einen Schlüssel eingeben.";
     renderModels();
 }
 function renderModels() {
     const all = $("models-all").checked;
-    const names = Array.from(new Set([...availableModels.filter(n => all || n.includes("flash-lite")), ...state.models])).sort();
-    if (!names.length) { $("model-list").innerHTML = "<small>Keine Modelle gefunden.</small>"; return; }
-    $("model-list").innerHTML = names.map(n => {
-        const unknown = availableModels.length && !availableModels.includes(n);
-        return `<label class="tag" style="font-size:14px"><input type="checkbox" data-model="${esc(n)}"${state.models.includes(n) ? " checked" : ""}> ${esc(n)}${unknown ? " ⚠️ nicht in der Liste" : ""}</label>`;
-    }).join(" ");
+    const visible = availableModels.filter(id => {
+        const p = parseModelId(id);
+        return p.provider !== "gemini" || all || p.model.includes("flash-lite");
+    });
+    const ids = Array.from(new Set([...visible, ...state.models]));
+    if (!ids.length) { $("model-list").innerHTML = "<small>Keine Modelle gefunden.</small>"; return; }
+    $("model-list").innerHTML = Object.keys(PROVIDERS).map(provider => {
+        const list = ids.filter(id => parseModelId(id).provider === provider).sort();
+        if (!list.length) return "";
+        return `<div class="row"><b style="width:70px">${PROVIDERS[provider].label}</b>` + list.map(id => {
+            const unknown = availableModels.some(a => parseModelId(a).provider === provider) && !availableModels.includes(id);
+            return `<label class="tag" style="font-size:14px"><input type="checkbox" data-model="${esc(id)}"${state.models.includes(id) ? " checked" : ""}> ${esc(parseModelId(id).model)}${unknown ? " ⚠️ nicht in der Liste" : ""}</label>`;
+        }).join(" ") + "</div>";
+    }).join("");
 }
 
 // ==============================================
@@ -447,10 +520,49 @@ function buildJobs() {
                 }
     return jobs;
 }
-function isDailyQuota(msg) { return /per ?day|perday|daily|täglich/i.test(msg || ""); }
+function isDailyQuota(msg) { return /per ?day|perday|daily|täglich|\bRPD\b|\bTPD\b/i.test(msg || ""); }
+// Modell existiert nicht (mehr) bzw. ist für den Schlüssel nicht freigegeben: im Durchlauf überspringen
+function isModelUnavailable(e) {
+    return e.httpStatus === 404 || /no longer available|not found|does not exist|decommissioned|not supported for generateContent|invalid model|model_not_found/i.test(e.message || "");
+}
+function errorMessage(d) {
+    if (!d) return "";
+    if (typeof d.error === "string") return d.error;
+    return d.error?.message || d.message || (typeof d.detail === "string" ? d.detail : "");
+}
+function fetchErrorText(e) {
+    return "Anfrage blockiert oder Netzwerkfehler (" + e.message + "). Häufige Ursache: Der Anbieter erlaubt keine Aufrufe direkt aus dem Browser (CORS).";
+}
 
-async function callModel(model, payload) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+async function callModel(id, ctx, question) {
+    const { provider, model } = parseModelId(id);
+    return provider === "gemini" ? callGeminiModel(model, buildPayload(ctx, question)) : callUniversalModel(provider, model, buildUniversalPayload(ctx, question, model));
+}
+
+async function callUniversalModel(provider, model, payload) {
+    const url = PROVIDERS[provider].baseUrl + "/v1/chat/completions";
+    const t0 = performance.now();
+    let r;
+    try {
+        r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + providerKey(provider) }, body: JSON.stringify(payload) });
+    } catch (e) { const err = new Error(fetchErrorText(e)); err.ms = Math.round(performance.now() - t0); throw err; }
+    const d = await r.json().catch(() => ({}));
+    const ms = Math.round(performance.now() - t0);
+    if (!r.ok || d.error) {
+        const e = new Error(errorMessage(d) || ("HTTP " + r.status));
+        e.httpStatus = r.status; e.ms = ms;
+        throw e;
+    }
+    const u = d.usage || {};
+    const usage = { prompt: u.prompt_tokens || 0, out: u.completion_tokens || 0, thoughts: u.completion_tokens_details?.reasoning_tokens || 0, total: u.total_tokens || 0 };
+    const choice = d.choices && d.choices[0];
+    // wie callUniversal(): Text aus message.content, kein Anhängen von "..." bei Abbruch
+    const text = typeof choice?.message?.content === "string" ? choice.message.content : "";
+    return { text, finishReason: choice?.finish_reason || "UNBEKANNT", ms, usage, parts: 1 };
+}
+
+async function callGeminiModel(model, payload) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(providerKey("gemini"))}`;
     const t0 = performance.now();
     const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const d = await r.json().catch(() => ({}));
@@ -464,15 +576,17 @@ async function callModel(model, payload) {
     }
     const cand = d.candidates && d.candidates[0];
     const finishReason = cand?.finishReason || (d.promptFeedback?.blockReason ? "BLOCKED:" + d.promptFeedback.blockReason : "UNBEKANNT");
-    let text = cand?.content?.parts?.[0]?.text || "";
-    // wie handleGeminiResponse(): abgeschnittene Antworten bekommen "..."
+    // wie handleGeminiResponse() seit Widget 1.2.2: alle Text-Teile ohne Denk-Teile (BUGS B21)
+    const textParts = (cand?.content?.parts || []).filter(p => typeof p.text === "string" && !p.thought);
+    let text = textParts.map(p => p.text).join("");
+    // abgeschnittene Antworten bekommen "..."
     if (finishReason === "MAX_TOKENS" && text) text += "...";
-    return { text, finishReason, ms, usage };
+    return { text, finishReason, ms, usage, parts: textParts.length };
 }
 
 async function run() {
-    apiKey = $("api-key").value.trim();
-    if (!apiKey) { alert("Bitte zuerst den API-Schlüssel eingeben."); return; }
+    const missing = Array.from(new Set(state.models.map(id => parseModelId(id).provider))).filter(p => !providerKey(p));
+    if (missing.length) { alert("Bitte Schlüssel eintragen für: " + missing.map(p => PROVIDERS[p].label).join(", ")); return; }
     if (!state.contexts.length) { alert("Bitte zuerst einen Export als Kontext laden."); return; }
     if (!state.models.length) { alert("Bitte mindestens ein Modell auswählen."); return; }
     const jobs = buildJobs();
@@ -491,14 +605,19 @@ async function run() {
         while (!result && !stopRequested) {
             attempt++;
             try {
-                const r = await callModel(job.model, buildPayload(job.ctx, job.q));
+                const r = await callModel(job.model, job.ctx, job.q);
                 const raw = r.text;
                 const text = job.q.mode === "chat" ? cleanChatAnswer(raw) : raw;
                 result = { key: job.key, ctxId: job.ctx.id, qid: job.q.id, mode: job.q.mode, question: job.q.text, model: job.model, rep: job.rep,
-                           ok: !!text, raw, text, finishReason: r.finishReason, ms: r.ms, usage: r.usage, error: text ? null : "leere Antwort",
+                           ok: !!text, raw, text, finishReason: r.finishReason, parts: r.parts, ms: r.ms, usage: r.usage, error: text ? null : "leere Antwort",
                            at: new Date().toISOString() };
             } catch (e) {
                 const quota = e.httpStatus === 429 || e.apiStatus === "RESOURCE_EXHAUSTED";
+                if (!quota && isModelUnavailable(e)) {
+                    exhausted.add(job.model);
+                    log(`⛔ ${job.model}: Modell nicht verfügbar (${e.message.slice(0, 120)}) – wird in diesem Durchlauf übersprungen.`);
+                    break;
+                }
                 if (quota && isDailyQuota(e.message)) {
                     exhausted.add(job.model);
                     log(`⛔ ${job.model}: Tageskontingent erschöpft – Modell wird in diesem Durchlauf übersprungen. Später erneut starten.`);
@@ -537,8 +656,9 @@ async function run() {
 function autoFlags(r) {
     const f = [];
     if (!r.ok) { f.push("Fehler: " + (r.error || "?")); return f; }
-    if (r.finishReason === "MAX_TOKENS") f.push("abgeschnitten");
-    if (r.finishReason && r.finishReason !== "STOP" && r.finishReason !== "MAX_TOKENS") f.push("Ende: " + r.finishReason);
+    if (r.finishReason === "MAX_TOKENS" || r.finishReason === "length") f.push("abgeschnitten");
+    if (r.finishReason && !["STOP", "stop", "MAX_TOKENS", "length"].includes(r.finishReason)) f.push("Ende: " + r.finishReason);
+    if (r.parts > 1) f.push(r.parts + " Text-Teile");
     if (/\bheil\b/i.test(r.text)) f.push("„Heil“");
     if (r.mode === "chat") {
         if (r.text.length > 400) f.push("Chat über 400 Zeichen");
@@ -688,7 +808,7 @@ function renderAll() { renderContexts(); renderQuestions(); renderModels(); rend
 
 function bind() {
     $("btn-models").onclick = loadModels;
-    $("api-key").addEventListener("keydown", e => { if (e.key === "Enter") loadModels(); });
+    Object.values(PROVIDERS).forEach(p => $(p.keyInput).addEventListener("keydown", e => { if (e.key === "Enter") loadModels(); }));
     $("ctx-file").onchange = e => onContextFiles(Array.from(e.target.files));
     $("btn-ctx-text").onclick = onContextText;
     $("ctx-list").addEventListener("input", e => {
@@ -727,7 +847,8 @@ function bind() {
     });
     $("btn-model-add").onclick = () => {
         const n = $("model-manual").value.trim().replace(/^models\//, ""); if (!n) return;
-        state.models = Array.from(new Set([...state.models, n])); $("model-manual").value = ""; saveState(); renderModels();
+        const id = modelId($("model-manual-provider").value, n);
+        state.models = Array.from(new Set([...state.models, id])); $("model-manual").value = ""; saveState(); renderModels();
     };
     $("btn-run").onclick = run;
     $("btn-stop").onclick = () => { stopRequested = true; $("run-status").textContent = "Stoppe nach dem laufenden Aufruf …"; };

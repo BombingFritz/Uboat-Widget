@@ -8,7 +8,7 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 ## [Unreleased]
 
 ### Added
-- Benchmark-Werkzeug `bench/bench.html` (nicht Teil des Widgets): Testfragen gegen einen eingefrorenen Kontext (Export) an mehrere Gemini-Modelle, blinde Bewertung, Auswertung je Modell. Spec `docs/specs/benchmark.md`. Headless geprüft (50/50), u. a. Request-Body für alle 10 Standardfragen identisch zum Widget.
+- Benchmark-Werkzeug im Ordner `benchmark/` (nicht Teil des Widgets, `index.html` unverändert): Testfragen gegen einen eingefrorenen Kontext (Export) an mehrere Modelle von Gemini, Groq und Mistral, blinde Bewertung, Auswertung je Modell. Mit Beispielkontext `benchmark/beispiel-kontext.json` für alle, die noch keinen eigenen Funkverlauf haben. Spec `docs/specs/benchmark.md`. Headless geprüft (50/50 Gemini, 45/45 Groq/Mistral), u. a. Request-Body für alle 10 Standardfragen identisch zum Widget (`callGemini` ohne Cache bzw. `callUniversal`). Erster echter Durchlauf durch den Nutzer am 07.11.2026 (Gemini).
 
 ## [1.2.1] - 2026-11-07
 

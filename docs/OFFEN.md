@@ -7,11 +7,26 @@
 4. **Benchmark** der Gemini-Flash-Lite-Modelle (PR #7, `docs/specs/benchmark.md`), danach Kontext schärfen.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
-Ablauf nach `docs/specs/benchmark.md`, Werkzeug `bench/bench.html`:
+Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
 1. **Gemini Flash-Lite vergleichen** (3.5 gegen 2.5, ggf. weitere Flash-Lite-Variante) mit dem Export des Nutzers, 10 Testfragen × 2 Läufe, blind bewertet durch den Nutzer. Auswertung und Diagnose (Modell oder Kontext) durch den Assistenten.
 2. **Kontext schärfen** je nach Befund; Gegenprobe mit zweitem Export.
 3. **Mistral und Groq** über die OpenAI-kompatible Schnittstelle (Universal-Modus) ergänzen; dabei wird der Universal-Modus erstmals echt getestet. Zu prüfen: ob die Anbieter Aufrufe direkt aus dem Browser zulassen (CORS), sonst über den Companion-Server.
 Nicht verfolgt (Nutzerentscheidung): Claude (API wird getrennt vom Pro-Abo bezahlt), Ollama (Grafikspeicher wird vom Spiel gebraucht).
+
+**Ergebnis Lauf 1 (07.11.2026, Nutzer, blind bewertet, Kontext: Export vom 02.11., 10 Fragen × 2 Läufe):**
+| Modell | Ø Punkte (1–5) | Kaleu | Chat | stream-tauglich | Ø Dauer |
+|---|---|---|---|---|---|
+| `gemini-2.5-flash-lite` | 4,1 | 4,25 | 3,9 | 19 von 19 | 0,8 s |
+| `gemini-3.5-flash-lite` | 2,75 | 2,9 | 2,5 | 15 von 20 | 3,2 s |
+| `gemini-2.0-flash-lite` | – | – | – | nicht mehr verfügbar | – |
+
+Diagnose:
+- 2.5 war bei 9 von 10 Fragen besser oder gleich. Der Abstand ist größer als die Streuung zwischen den Läufen.
+- 3.5: 4 von 20 Antworten brachen mitten im Satz ab (BUGS B21, Fehler im Widget, behoben in 1.2.2). Ohne diese 4 liegt 3.5 bei Ø 2,9, also weiter klar hinter 2.5. Der Unterschied liegt also auch am Modell.
+- 3.5 im Chat: oft zu lang und zu verspielt („aus der Rolle“ 4×, „zu lang“ 4×), nimmt „trockener Humor, Augenzwinkern“ aus der Chat-Persönlichkeit stärker wörtlich. 2.5 antwortet knapper.
+- 3.5 wiederholt sich: bei 2 Fragen in beiden Läufen wortgleich, trotz `temperature` 1.0.
+- Bei beiden Modellen: Frage nach U-74 (Gedächtnis) ohne Bezug auf den Verlauf, weil die Zusammenfassung keine Einträge zu U-68 enthält (Vorbefund unten). Das liegt am Kontext, nicht am Modell. Schnorchel-Frage (Anachronismus) bei beiden unsicher.
+- Folgerung: Für den Nutzer bleibt `gemini-2.5-flash-lite` die Wahl, solange Google es anbietet. Für neue Nutzer ist 2.5 laut Google nicht mehr freigegeben, daher bleibt 3.5 der Standard im Widget. Nächste Schritte: 3.5 nach 1.2.2 erneut messen, Zusammenfassung erneuern und gegenprüfen, dann Groq und Mistral.
 
 Vorbefund aus dem Export des Nutzers (Stand 02.11.2026): Die Zusammenfassung beschreibt nur die Fahrten von U-4; U-38 und U-68 kommen darin nicht vor, obwohl `lastSummaryIndex` 96 von 100 Einträgen als zusammengefasst markiert. Die KI kennt von der laufenden Feindfahrt also nur Boot-Kontext, Status und die letzten 4 Einträge (Folge von B10 in der alten Fassung). Kandidat für Schritt 2: Zusammenfassung neu erzeugen oder für die neue Feindfahrt leeren.
 
