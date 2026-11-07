@@ -2747,19 +2747,33 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             console.log("[EXPORT] 📤", json.length, "Zeichen,", conversationHistory.length, "Verlaufseinträge");
         }
 
+        // Anleitung für OBS: dort gibt es keine Downloads (Nutzertest 07.11.2026)
+        function exportFileHint(fileName) {
+            return `Als Datei sichern: Text mit Strg+A, Strg+C kopieren, in einen Texteditor (z. B. Windows-Editor) einfügen und als „${fileName}“ speichern (Codierung UTF-8).`;
+        }
+
         function downloadExport() {
+            const fileName = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
+            // OBS-Browserquelle (erkennbar an window.obsstudio): kein Download möglich, stattdessen Text zum Kopieren bereitstellen
+            if (window.obsstudio) {
+                exportData().then(() => {
+                    const el = document.getElementById('transfer-status');
+                    setTransferStatus((el ? el.textContent : "✅ Exportiert") + ". In OBS gibt es keine Downloads. " + exportFileHint(fileName), '#ffb84d');
+                });
+                return;
+            }
             try {
                 const json = JSON.stringify(buildExportData(), null, 2);
                 const blob = new Blob([json], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setTransferStatus("💾 Datei-Download gestartet (in OBS nicht möglich – dort EXPORTIEREN und kopieren).", '#4dff4d');
+                setTransferStatus(`💾 Datei-Download gestartet. In OBS gibt es keine Downloads: dort EXPORTIEREN, dann ${exportFileHint(fileName).charAt(0).toLowerCase() + exportFileHint(fileName).slice(1)}`, '#4dff4d');
             } catch (e) {
                 setTransferStatus("❌ Download nicht möglich: " + e.message, '#ff4d4d');
             }
