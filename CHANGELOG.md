@@ -7,7 +7,7 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [1.2.1] - 2026-11-07
 
-Fehlerbehebung für den Betrieb in OBS, ohne neue Funktionen. Headless-Test ohne Browser-Dialoge wie in OBS (22/22), Regressionstests 26/26, Export/Import 25/25, Datei-Export in OBS und Browser 9/9. Import in OBS vom Nutzer bestätigt (07.11.2026). Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+Fehlerbehebung für den Betrieb in OBS, ohne neue Funktionen. Headless-Test ohne Browser-Dialoge wie in OBS (22/22), Regressionstests 26/26, Export/Import 25/25, Datei-Export in OBS und Browser 7/7. Import in OBS vom Nutzer bestätigt (07.11.2026). Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
 
 ### Fixed
 - In OBS taten „IMPORTIEREN“, „RESET“, „HISTORY LÖSCHEN“ und „LETZTE 5 LÖSCHEN“ nichts, weil OBS die Rückfrage-Fenster des Browsers nicht anzeigt (BUGS B20). Rückfragen erscheinen jetzt im Widget: erster Klick ändert den Button (z. B. „IMPORT BESTÄTIGEN“), zweiter Klick führt aus. Beim Import stehen Datum, Anzahl der Verlaufseinträge und Schlüssel-Hinweis im Statusfeld.
