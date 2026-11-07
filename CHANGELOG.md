@@ -5,10 +5,18 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
-## [Unreleased]
+## [1.3.0] - 2026-11-07
+
+Erste Version für alle seit 1.0.2, die auch ohne Companion-Server etwas bringt: Benchmark zur Modellwahl, einfachere Einstellungen, überarbeitete Anleitung und automatische Tests. Fasst für Nutzer ohne Server auch 1.1.0–1.2.2 zusammen (Export/Import, Fehlerbehebungen). Tests: `python tests/run_all.py`, alle bestanden (Regression 26, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Benchmark Gemini 50, Benchmark andere Anbieter 52). Prompt, `SAFETY_RULES`, Chat-Logik, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Added
+- Benchmark im Ordner `benchmark/` (nicht Teil des Widgets): dieselben 10 Testfragen und derselbe Kontext an mehrere Modelle, blinde Bewertung, Auswertung je Modell. Anbieter Gemini, Groq, OpenRouter (nur kostenlose Modelle), Mistral und jede eigene OpenAI-kompatible Adresse wie im Universal-Modus. Mit Beispielkontext `benchmark/beispiel-kontext.json` für alle ohne eigenen Funkverlauf. Anfrage identisch zum Widget. Spec `docs/specs/benchmark.md`. Erster echter Durchlauf durch den Nutzer am 07.11.2026 (Gemini 2.5 gegen 3.5 Flash-Lite).
+- Automatische Tests im Ordner `tests/` (Python, Playwright, simulierte APIs) mit Anleitung.
 
 ### Changed
-- Lizenzdatei `LICENSE-CC-BY-4.0.txt` heißt jetzt `LICENSE`, damit GitHub die Lizenz (CC-BY 4.0) erkennt. Inhalt unverändert.
+- Einstellungen: Der Chat-Modus steht in einem eingeklappten Bereich „Für Streamer: Chat-Modus“. Er öffnet sich von selbst, wenn der Chat-Modus eingeschaltet ist.
+- README: Kurzanleitung ganz oben, Base-URLs für Groq, OpenRouter, Mistral und OpenAI im Universal-Modus, Abschnitt zum Benchmark und zum Companion-Server (was er ist, für wen er sich lohnt, dass er mehr Einrichtung braucht).
+- Lizenzdatei `LICENSE-CC-BY-4.0.txt` heißt jetzt `LICENSE`. Inhalt unverändert.
 
 ## [1.2.2] - 2026-11-07
 

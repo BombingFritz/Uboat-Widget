@@ -16,6 +16,7 @@
 ## Pflichtchecks vor Auslieferung
 
 - Script extrahieren und mit einem echten JS-Parser prüfen (`node --check`); Klammerzählen reicht nicht.
+- `python tests/run_all.py` ausführen (alle Tests bestanden); neue Funktionen bekommen einen eigenen Test in `tests/`, eingetragen in `tests/run_all.py`.
 - Vollständigkeit: HTML-Body, Script, alle Funktionsdefinitionen und `window.onload` vorhanden.
 - Diff zur tatsächlichen Ausgangsdatei prüfen; unerwartete Änderungen ausschließen, besonders an CSS und Prompt-Texten.
 - WAV-Dateien und ihre URLs im Code unverändert (Hash- bzw. Textvergleich).

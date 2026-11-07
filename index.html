@@ -678,7 +678,8 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
             </div>
 
             <div class="setting-group">
-                <label>Chat-Modus (Twitch, über Companion-Server):</label>
+                <label id="chat-section-toggle" onclick="toggleChatSection()" style="cursor: pointer;" title="Nur für Twitch-Streamer mit eigenem Companion-Server">▸ Für Streamer: Chat-Modus (Twitch, über Companion-Server)</label>
+                <div id="chat-section" style="display: none;">
                 <div style="background: #1a1a1a; padding: 8px; border: 1px solid #333; border-radius: 3px; font-size: 11px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                         <input type="checkbox" id="chat-enabled-checkbox" style="width: auto; margin: 0;">
@@ -690,6 +691,7 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
                     <div style="margin-top: 5px;">Verbindung: <span id="chat-status" style="color: #888;">aus</span></div>
                 </div>
                 <small style="color:#666;">Nur mit eigenem Companion-Server. Nur mit einem Flash-Lite-Modell nutzen (größere Modelle haben im kostenlosen Kontingent nur wenige Anfragen pro Tag). In OBS per file:///-Adresse einbinden und „Quelle herunterfahren, wenn nicht sichtbar“ ausschalten.</small>
+                </div>
             </div>
 
             <div class="setting-group">
@@ -1295,6 +1297,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 const chatServerInput = document.getElementById('chat-server-input');
                 if (chatCheckbox) chatCheckbox.checked = chatEnabled;
                 if (chatServerInput) chatServerInput.value = chatServerUrl;
+                setChatSectionOpen(chatEnabled);
                 const chatPersonalityInput = document.getElementById('chat-personality-input');
                 if (chatPersonalityInput) chatPersonalityInput.value = chatPersonality;
                 if (geminiRadio && universalRadio) {
@@ -1417,6 +1420,19 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             const btn = document.getElementById(buttonId);
             if (btn) btn.innerHTML = p.label;
             delete pendingConfirms[buttonId];
+        }
+
+        // Chat-Modus-Bereich in den Einstellungen: eingeklappt, außer der Chat-Modus ist eingeschaltet (seit 1.3.0)
+        function setChatSectionOpen(open) {
+            const section = document.getElementById('chat-section');
+            const toggle = document.getElementById('chat-section-toggle');
+            if (!section || !toggle) return;
+            section.style.display = open ? 'block' : 'none';
+            toggle.textContent = (open ? "▾ " : "▸ ") + "Für Streamer: Chat-Modus (Twitch, über Companion-Server)";
+        }
+        function toggleChatSection() {
+            const section = document.getElementById('chat-section');
+            setChatSectionOpen(section && section.style.display === 'none');
         }
 
         // Kurzer Hinweis direkt auf einem Button (statt alert)
@@ -2324,6 +2340,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             const chatIn = document.getElementById('chat-server-input');
             if (chatCb) chatCb.checked = false;
             if (chatIn) chatIn.value = DEFAULT_CHAT_SERVER;
+            setChatSectionOpen(false);
             applyChatMode();
 
             // In-Memory-Werte zurücksetzen
