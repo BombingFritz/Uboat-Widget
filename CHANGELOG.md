@@ -5,6 +5,17 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.2.2] - 2026-11-07
+
+Fehlerbehebungen nach dem ersten Benchmark und dem Export-Test in OBS. Headless geprüft: mehrteilige Antworten, Denk-Teile und Download 9/9, ohne Browser-Dialoge 22/22, Regression 26/26, Export/Import 25/25. Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Fixed
+- Gemini: Antworten brachen bei `gemini-3.5-flash-lite` gelegentlich mitten im Satz ab (Benchmark: 4 von 20 Antworten). Gemini liefert die Antwort teils in mehreren Teilen; das Widget las nur den ersten. Jetzt werden alle Text-Teile zusammengesetzt (Denk-Teile ausgenommen). Betrifft auch Chat-Antworten (BUGS B21).
+- „ALS DATEI“ in OBS: Der Download funktioniert dort doch (die Datei landet ohne Hinweis im Download-Ordner, Nutzertest 07.11.2026). Der Sonderweg aus 1.2.1, der in OBS nur das Textfeld füllte, ist entfernt.
+
+### Changed
+- Export-Datei heißt jetzt einfach `Funk-Export.json` (vorher mit Datum).
+
 ## [1.2.1] - 2026-11-07
 
 Fehlerbehebung für den Betrieb in OBS, ohne neue Funktionen. Headless-Test ohne Browser-Dialoge wie in OBS (22/22), Regressionstests 26/26, Export/Import 25/25, Datei-Export in OBS und Browser 7/7. Import in OBS vom Nutzer bestätigt (07.11.2026). Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
