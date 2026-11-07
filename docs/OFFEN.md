@@ -1,18 +1,17 @@
 # Offene Punkte
 
-## Nächste Schritte (Stand 07.11.2026, spät)
-Releases `v1.2.1` und `v1.2.2` bleiben bewusst „Pre-release“ (nützen vor allem Nutzern des Companion-Servers). **1.3.0** wird wieder ein reguläres Release für alle („Latest“). Danach Umzug der Arbeit auf lokales Claude Code mit GitHub Desktop.
+## Nächste Schritte (Stand 08.11.2026)
+**Release `v1.3.0` veröffentlicht** (08.11.2026, reguläres Release, „Latest“; Anhänge `index.html`, `bench.html`, `beispiel-kontext.json` bytegleich mit `main`). `v1.2.1` und `v1.2.2` bleiben bewusst „Pre-release“.
 
-### 1.3.0 (umgesetzt, Test durch den Nutzer vor dem Release)
-1. ~~Benchmark~~ im Ordner `benchmark/` mit Gemini, Groq, OpenRouter, Mistral und eigener Adresse (Nutzer, 07.11.2026: andere Anbieter nicht ausgiebig testen, aber im Benchmark per Adresse testbar machen). Groq konnte der Nutzer nicht anmelden; Mistral gibt seit Oktober 2026 keine kostenlosen Schlüssel mehr aus.
-2. ~~Chat-Modus einklappen~~ („Für Streamer: Chat-Modus“, offen bei aktivem Chat-Modus). Kein eigener Branch (ADR 0002 bleibt).
-3. ~~README~~: Kurzanleitung oben, Base-URLs für den Universal-Modus, Abschnitt Companion-Server.
-4. ~~Tests ins Repository~~ (`tests/`, `python tests/run_all.py`).
-5. Lizenz: `LICENSE` umbenannt; GitHub erkennt sie noch als „Other“. Beim Release ersetzt der Nutzer den Inhalt über die GitHub-Vorlage „Creative Commons Attribution 4.0“.
+**Lizenz:** Beim Ersetzen von `LICENSE` über die GitHub-Vorlage wurde versehentlich die Mozilla Public License 2.0 gewählt; der Tag `v1.3.0` zeigt auf diesen Commit. Auf `main` wieder CC-BY 4.0 (wie README und alle früheren Releases). GitHub erkennt den CC-BY-Text weiter nur als „Other“ (Abweichungen von der Vorlage im Detail [UNGEKLÄRT]). Offen für den Nutzer: Tag `v1.3.0` auf den korrigierten Stand verschieben (in der Release-Seite Tag löschen und beim Bearbeiten des Releases neu auf `main` anlegen) oder als `v1.3.1` nachreichen; außerdem bei Bedarf die Vorlage „Creative Commons Attribution 4.0 International“ neu wählen, damit GitHub sie erkennt.
 
-### Danach
+Danach: Umzug der Arbeit auf lokales Claude Code mit GitHub Desktop.
 1. **Kontext schärfen:** 3.5 Flash-Lite mit 1.2.2 erneut messen; Zusammenfassung des Nutzers erneuern bzw. für die neue Feindfahrt leeren und gegenprüfen; ggf. Wortlaut der Chat-Persönlichkeit.
-2. **Andere Anbieter** im Benchmark mit echter API (Groq, OpenRouter, Gemma über Gemini). Erst wenn einer aus dem Browser funktioniert und gut abschneidet: Auswahlliste der Base-URLs im Universal-Modus (Nutzer: ja).
+2. **Andere Anbieter** im Benchmark mit echter API (Groq, OpenRouter, Gemma über Gemini, lokale Modelle). Erst wenn einer aus dem Browser funktioniert und gut abschneidet: Auswahlliste der Base-URLs im Universal-Modus (Nutzer: ja).
+3. **Universal-Modus ohne Schlüssel:** „SPEICHERN“ verlangt immer einen API-Schlüssel, auch für lokale Modelle, die keinen brauchen. Heute Platzhalter eintragen (README); später ggf. im Universal-Modus optional machen.
+
+### Erledigt mit 1.3.0
+Benchmark im Ordner `benchmark/` (Gemini, Groq, OpenRouter, Mistral, eigene Adresse), Chat-Modus eingeklappt, README mit Kurzanleitung und Companion-Server-Abschnitt, Tests in `tests/`, Lizenzdatei `LICENSE`.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
