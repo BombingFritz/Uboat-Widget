@@ -51,6 +51,7 @@
   .progress > div { height:100%; background:var(--accent); width:0; }
   .tag { display:inline-block; font-size:12px; padding:1px 6px; border-radius:9px; background:#2c3138; color:var(--muted); }
   .ok { color:var(--ok); } .bad { color:var(--bad); }
+  .pl { width:110px; flex:none; }
   .status { margin:6px 0; font-size:14px; }
   pre.req { max-height:300px; overflow:auto; background:#121417; padding:8px; font-size:12px; white-space:pre-wrap; }
 </style>
@@ -63,10 +64,13 @@
 
   <section id="s-key">
     <h2>1. API-Schlüssel</h2>
-    <p class="hint">Nur die Anbieter ausfüllen, die du testen willst. Alle drei haben ein kostenloses Kontingent: Gemini über Google AI Studio, Groq über console.groq.com, Mistral über console.mistral.ai (Gratis-Tarif „Experiment“; Eingaben können dort zum Training genutzt werden).</p>
-    <div class="row"><span style="width:70px">Gemini</span><input type="password" id="key-gemini" class="grow" placeholder="Gemini API-Schlüssel (AI Studio)" autocomplete="off"></div>
-    <div class="row"><span style="width:70px">Groq</span><input type="password" id="key-groq" class="grow" placeholder="Groq API-Schlüssel (gsk_…)" autocomplete="off"></div>
-    <div class="row"><span style="width:70px">Mistral</span><input type="password" id="key-mistral" class="grow" placeholder="Mistral API-Schlüssel" autocomplete="off"></div>
+    <p class="hint">Nur die Anbieter ausfüllen, die du testen willst. Kostenlos (Stand Nov. 2026): Gemini über Google AI Studio (auch Gemma-Modelle: „alle Gemini-Modelle zeigen“), Groq über console.groq.com, OpenRouter über openrouter.ai (nur Modelle mit „:free“, ohne Guthaben 50 Anfragen pro Tag). Mistral bietet seit Oktober 2026 keine kostenlosen API-Schlüssel mehr.<br>
+    <b>Eigene Adresse:</b> jede OpenAI-kompatible API, genau wie im Universal-Modus des Widgets (Base-URL ohne <code>/v1</code>).</p>
+    <div class="row"><span class="pl">Gemini</span><input type="password" id="key-gemini" class="grow" placeholder="Gemini API-Schlüssel (AI Studio)" autocomplete="off"></div>
+    <div class="row"><span class="pl">Groq</span><input type="password" id="key-groq" class="grow" placeholder="Groq API-Schlüssel (gsk_…)" autocomplete="off"></div>
+    <div class="row"><span class="pl">OpenRouter</span><input type="password" id="key-openrouter" class="grow" placeholder="OpenRouter API-Schlüssel (sk-or-…)" autocomplete="off"></div>
+    <div class="row"><span class="pl">Mistral</span><input type="password" id="key-mistral" class="grow" placeholder="Mistral API-Schlüssel (kostenpflichtig)" autocomplete="off"></div>
+    <div class="row"><span class="pl">Eigene Adresse</span><input type="text" id="custom-base-url" class="grow" placeholder="Base-URL, z. B. https://api.anbieter.example" autocomplete="off"><input type="password" id="key-custom" class="grow" placeholder="API-Schlüssel (falls nötig)" autocomplete="off"></div>
     <div class="row"><button id="btn-models">Modelle laden</button></div>
     <div id="key-status" class="status"></div>
   </section>
@@ -98,7 +102,7 @@
     <div class="row"><label><input type="checkbox" id="models-all"> alle Gemini-Modelle zeigen (sonst nur „flash-lite“)</label></div>
     <div id="model-list"><small>Erst Schlüssel eingeben und „Modelle laden“.</small></div>
     <div class="row">
-      <select id="model-manual-provider"><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="mistral">Mistral</option></select>
+      <select id="model-manual-provider"><option value="gemini">Gemini</option><option value="groq">Groq</option><option value="openrouter">OpenRouter</option><option value="mistral">Mistral</option><option value="custom">Eigene Adresse</option></select>
       <input type="text" id="model-manual" class="grow" placeholder="Modellname von Hand, z. B. gemini-2.5-flash-lite">
       <button id="btn-model-add">Hinzufügen</button>
     </div>
@@ -259,10 +263,28 @@ function buildUniversalPayload(ctx, question, model) {
 const PROVIDERS = {
     gemini:  { label: "Gemini",  keyInput: "key-gemini" },
     groq:    { label: "Groq",    keyInput: "key-groq",    baseUrl: "https://api.groq.com/openai" },
-    mistral: { label: "Mistral", keyInput: "key-mistral", baseUrl: "https://api.mistral.ai" }
+    openrouter: { label: "OpenRouter", keyInput: "key-openrouter", baseUrl: "https://openrouter.ai/api", freeOnly: true },
+    mistral: { label: "Mistral", keyInput: "key-mistral", baseUrl: "https://api.mistral.ai" },
+    custom:  { label: "Eigene Adresse", keyInput: "key-custom", baseUrlInput: "custom-base-url", keyOptional: true }
 };
+// wie normalizeBaseUrl() im Widget: Schrägstrich und /v1 am Ende entfernen
+function normalizeBaseUrl(raw) { return (raw || "").trim().replace(/\/+$/, "").replace(/\/v1$/, ""); }
+function providerBase(provider) {
+    const p = PROVIDERS[provider];
+    return p.baseUrlInput ? normalizeBaseUrl($(p.baseUrlInput).value) : p.baseUrl;
+}
+// Anbieter ist nutzbar: Schlüssel vorhanden bzw. bei eigener Adresse die Adresse
+function providerReady(provider) {
+    const p = PROVIDERS[provider];
+    if (p.baseUrlInput && !providerBase(provider)) return false;
+    return p.keyOptional || !!providerKey(provider);
+}
+function authHeaders(provider) {
+    const key = providerKey(provider);
+    return key ? { "Authorization": "Bearer " + key } : {};
+}
 function parseModelId(id) {
-    const m = /^(groq|mistral):(.+)$/.exec(id);
+    const m = /^(groq|mistral|openrouter|custom):(.+)$/.exec(id);
     return m ? { provider: m[1], model: m[2] } : { provider: "gemini", model: id };
 }
 function modelId(provider, model) { return provider === "gemini" ? model : provider + ":" + model; }
@@ -456,34 +478,35 @@ async function listGemini(key) {
     if (!r.ok || d.error) throw new Error(d.error?.message || ("HTTP " + r.status));
     return (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
 }
-// Groq/Mistral: OpenAI-kompatible Liste; Sprach-, Audio-, Embedding- und Prüfmodelle ausblenden
-async function listUniversal(provider, key) {
+// OpenAI-kompatible Liste; Sprach-, Audio-, Embedding- und Prüfmodelle ausblenden; OpenRouter nur kostenlose Modelle
+async function listUniversal(provider) {
     let r;
-    try { r = await fetch(PROVIDERS[provider].baseUrl + "/v1/models", { headers: { "Authorization": "Bearer " + key } }); }
+    try { r = await fetch(providerBase(provider) + "/v1/models", { headers: authHeaders(provider) }); }
     catch (e) { throw new Error(fetchErrorText(e)); }
     const d = await r.json().catch(() => ({}));
     if (!r.ok || d.error) throw new Error(errorMessage(d) || ("HTTP " + r.status));
     return (d.data || [])
         .filter(m => !(m.capabilities && m.capabilities.completion_chat === false))
         .map(m => m.id)
-        .filter(id => !/whisper|tts|guard|embed|moderation|ocr|playai|orpheus|transcri|voxtral/i.test(id));
+        .filter(id => !/whisper|tts|guard|embed|moderation|ocr|playai|orpheus|transcri|voxtral/i.test(id))
+        .filter(id => !PROVIDERS[provider].freeOnly || id.endsWith(":free"));
 }
 async function loadModels() {
     const lines = [];
     availableModels = [];
     let any = false;
     for (const provider of Object.keys(PROVIDERS)) {
+        if (!providerReady(provider) || (PROVIDERS[provider].keyOptional && !providerBase(provider))) continue;
         const key = providerKey(provider);
-        if (!key) continue;
         any = true;
         $("key-status").innerHTML = lines.join("<br>") + (lines.length ? "<br>" : "") + `Lade ${PROVIDERS[provider].label} …`;
         try {
-            const names = provider === "gemini" ? await listGemini(key) : await listUniversal(provider, key);
+            const names = provider === "gemini" ? await listGemini(key) : await listUniversal(provider);
             availableModels.push(...names.map(n => modelId(provider, n)));
-            lines.push(`<span class="ok">${PROVIDERS[provider].label}: Schlüssel funktioniert, ${names.length} Modelle.</span>`);
+            lines.push(`<span class="ok">${PROVIDERS[provider].label}: Verbindung funktioniert, ${names.length} Modelle${PROVIDERS[provider].freeOnly ? " (nur kostenlose)" : ""}.</span>`);
         } catch (e) { lines.push(`<span class="bad">${PROVIDERS[provider].label}: ${esc(e.message)}</span>`); }
     }
-    $("key-status").innerHTML = any ? lines.join("<br>") : "Bitte mindestens einen Schlüssel eingeben.";
+    $("key-status").innerHTML = any ? lines.join("<br>") : "Bitte mindestens einen Schlüssel bzw. eine eigene Adresse eingeben.";
     renderModels();
 }
 function renderModels() {
@@ -497,7 +520,7 @@ function renderModels() {
     $("model-list").innerHTML = Object.keys(PROVIDERS).map(provider => {
         const list = ids.filter(id => parseModelId(id).provider === provider).sort();
         if (!list.length) return "";
-        return `<div class="row"><b style="width:70px">${PROVIDERS[provider].label}</b>` + list.map(id => {
+        return `<div class="row"><b class="pl">${PROVIDERS[provider].label}</b>` + list.map(id => {
             const unknown = availableModels.some(a => parseModelId(a).provider === provider) && !availableModels.includes(id);
             return `<label class="tag" style="font-size:14px"><input type="checkbox" data-model="${esc(id)}"${state.models.includes(id) ? " checked" : ""}> ${esc(parseModelId(id).model)}${unknown ? " ⚠️ nicht in der Liste" : ""}</label>`;
         }).join(" ") + "</div>";
@@ -540,11 +563,11 @@ async function callModel(id, ctx, question) {
 }
 
 async function callUniversalModel(provider, model, payload) {
-    const url = PROVIDERS[provider].baseUrl + "/v1/chat/completions";
+    const url = providerBase(provider) + "/v1/chat/completions";
     const t0 = performance.now();
     let r;
     try {
-        r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + providerKey(provider) }, body: JSON.stringify(payload) });
+        r = await fetch(url, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, authHeaders(provider)), body: JSON.stringify(payload) });
     } catch (e) { const err = new Error(fetchErrorText(e)); err.ms = Math.round(performance.now() - t0); throw err; }
     const d = await r.json().catch(() => ({}));
     const ms = Math.round(performance.now() - t0);
@@ -585,8 +608,8 @@ async function callGeminiModel(model, payload) {
 }
 
 async function run() {
-    const missing = Array.from(new Set(state.models.map(id => parseModelId(id).provider))).filter(p => !providerKey(p));
-    if (missing.length) { alert("Bitte Schlüssel eintragen für: " + missing.map(p => PROVIDERS[p].label).join(", ")); return; }
+    const missing = Array.from(new Set(state.models.map(id => parseModelId(id).provider))).filter(p => !providerReady(p));
+    if (missing.length) { alert("Bitte Schlüssel bzw. Adresse eintragen für: " + missing.map(p => PROVIDERS[p].label).join(", ")); return; }
     if (!state.contexts.length) { alert("Bitte zuerst einen Export als Kontext laden."); return; }
     if (!state.models.length) { alert("Bitte mindestens ein Modell auswählen."); return; }
     const jobs = buildJobs();
@@ -610,6 +633,7 @@ async function run() {
                 const text = job.q.mode === "chat" ? cleanChatAnswer(raw) : raw;
                 result = { key: job.key, ctxId: job.ctx.id, qid: job.q.id, mode: job.q.mode, question: job.q.text, model: job.model, rep: job.rep,
                            ok: !!text, raw, text, finishReason: r.finishReason, parts: r.parts, ms: r.ms, usage: r.usage, error: text ? null : "leere Antwort",
+                           baseUrl: parseModelId(job.model).provider === "custom" ? providerBase("custom") : undefined,
                            at: new Date().toISOString() };
             } catch (e) {
                 const quota = e.httpStatus === 429 || e.apiStatus === "RESOURCE_EXHAUSTED";
@@ -808,7 +832,7 @@ function renderAll() { renderContexts(); renderQuestions(); renderModels(); rend
 
 function bind() {
     $("btn-models").onclick = loadModels;
-    Object.values(PROVIDERS).forEach(p => $(p.keyInput).addEventListener("keydown", e => { if (e.key === "Enter") loadModels(); }));
+    Object.values(PROVIDERS).forEach(p => [p.keyInput, p.baseUrlInput].filter(Boolean).forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") loadModels(); })));
     $("ctx-file").onchange = e => onContextFiles(Array.from(e.target.files));
     $("btn-ctx-text").onclick = onContextText;
     $("ctx-list").addEventListener("input", e => {

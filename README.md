@@ -1,6 +1,8 @@
 Enigma BdU Funk - U-Boot Funkverkehr Simulator
 Ein authentischer Funkverkehr-Simulator für U-Boot-Spiele
 
+Kurz gesagt: index.html aus dem neuesten Release herunterladen, im Browser öffnen, über das Zahnrad ⚙️ einen kostenlosen Gemini-API-Schlüssel eintragen (Google AI Studio) und die erste Meldung an den BdU senden. Mehr braucht es nicht. Alles Weitere – Benchmark zur Modellwahl und Chat-Modus für Twitch-Streamer – ist optional und steht weiter unten.
+
 1. Was ist das?
 Dieses HTML-Widget simuliert den Funkverkehr zwischen dem Befehlshaber der Uboote und einem U-Boot auf Feindfahrt. Es ist gedacht, um das Gameplay von Uboootsimulationen zu bereichern – kostenlos und einfach einzusetzen. Die Antworten sind KI-generiert, die KI wird aber mit ausführlichem Kontext aus realen Funkkladden der Zeit sowie mit Marine-Begriffen und technischen Details gefüttert, was sie deutlich authentischer antworten lässt. Dazu wird eine (beliebige) KI-API benötigt. Grundsätzlich geht das mit jeder KI, entwickelt und zugeschnitten wurde es aber für die kostenlosen Modelle der Google Gemini API (Flash-Lite).
 Das Widget läuft in einem separaten Browserfenster und kann parallel zum Spiel verwendet werden. Es funktioniert auch hervorragend auf Tablets oder Smartphones als zweiten Bildschirm.
@@ -16,7 +18,7 @@ Die wichtigsten Bootsdaten können gespeichert werden und die KI merkt sie sich.
 •	Kurzzeit & Langzeitgedächtnis bei längerem Einsatz
 
 3. Schnellstart
-A.	Datei herunterladen: Lade html herunter, die assets (Bild & Ton) können online bezogen werden
+A.	Datei herunterladen: Lade die index.html aus dem neuesten Release herunter (rechts unter „Releases“), die Assets (Bild & Ton) werden online bezogen
 B.	Im Browser öffnen: Einfach die HTML-Datei in einem Browser öffnen
 C.	API-Key einrichten:
 •	Klicke auf das Zahnrad-Symbol ⚙️
@@ -33,14 +35,16 @@ Google Gemini (Kostenlos)
 •	Erstelle einen kostenlosen API-Schlüssel
 •	Wähle über "MODELLE SUCHEN" ein aktuelles Flash-Lite-Modell, z. B. gemini-3.5-flash-lite (Standard). Ob es im kostenlosen Kontingent enthalten ist, legt Google fest.
 •	Die Modelle entwickeln sich stetig weiter, probiere ruhig andere textbasierte Modelle aus. Falls keine Antwort kommt, öffne die Konsole in deinem Browser und checke den Log. Nicht alle Modelle haben kostenlose Kontingente und diese Kontingente können sich natürlich ändern.
-Alternative Optionen
-•	OpenAI (kostenpflichtig)
-•	Lokale KI (Ollama, etc.)
-•	Jede OpenAI-kompatible API
-Hinweis: Das Widget ist nur mit Google Gemini ausführlich getestet. Andere APIs sollten funktionieren, sind aber nicht garantiert.
+Alternative Optionen (Zahnrad → API-Typ „Universal“, Base-URL eintragen, dann „MODELLE SUCHEN“)
+•	Groq (kostenloses Kontingent): Base-URL https://api.groq.com/openai
+•	OpenRouter (Modelle mit „:free“ kostenlos, ohne Guthaben nur 50 Anfragen pro Tag): Base-URL https://openrouter.ai/api
+•	Mistral (seit Oktober 2026 nur noch kostenpflichtig): Base-URL https://api.mistral.ai
+•	OpenAI (kostenpflichtig): Base-URL https://api.openai.com
+•	Lokale KI (Ollama, etc.) und jede andere OpenAI-kompatible API
+Hinweis: Das Widget ist nur mit Google Gemini ausführlich getestet. Andere APIs sollten funktionieren, sind aber nicht garantiert. Ob ein Anbieter Aufrufe direkt aus dem Browser zulässt, zeigt am schnellsten der Benchmark (siehe unten).
 
 Welches Modell passt? – Benchmark
-Im Ordner benchmark/ liegt eine eigene Seite (bench.html, gehört nicht zum Widget), mit der man mehrere kostenlose Modelle (Gemini, Groq, Mistral) mit denselben 10 Testfragen und demselben Kontext vergleicht und die Antworten blind bewertet. Als Kontext dient ein Export aus dem Widget; wer noch keinen eigenen Funkverlauf hat, lädt den Beispielkontext beispiel-kontext.json aus demselben Ordner. Anleitung: benchmark/README.md. Erster Vergleich (Nov. 2026): gemini-2.5-flash-lite klang deutlich authentischer als gemini-3.5-flash-lite; 2.5 bietet Google aber nur noch bisherigen Nutzern an.
+Im Ordner benchmark/ liegt eine eigene Seite (bench.html, gehört nicht zum Widget), mit der man mehrere Modelle (Gemini, Groq, OpenRouter, Mistral oder jede andere OpenAI-kompatible Adresse) mit denselben 10 Testfragen und demselben Kontext vergleicht und die Antworten blind bewertet. Als Kontext dient ein Export aus dem Widget; wer noch keinen eigenen Funkverlauf hat, lädt den Beispielkontext beispiel-kontext.json aus demselben Ordner. Anleitung: benchmark/README.md. Erster Vergleich (Nov. 2026): gemini-2.5-flash-lite klang deutlich authentischer als gemini-3.5-flash-lite; 2.5 bietet Google aber nur noch bisherigen Nutzern an.
 
 5. Verwendung
 Während des Spiels
@@ -110,15 +114,17 @@ Cache löschen:
 •	Browser-weit: F12 → Application → Storage → Clear All
 ⚠️ SICHERHEITSHINWEIS: API-Schlüssel sind sensible Daten und werden lokal gespeichert. Bei geteilten Computern nach Nutzung Cache löschen! 
 
-Chat-Modus (optional, für Streamer)
-Mit dem eigenen „Twitch Companion JS server“ kann der BdU auch Funksprüche aus dem Twitch-Chat beantworten: Zuschauer schreiben „!BdU <Meldung>“, das Widget erzeugt im Hintergrund die Antwort mit demselben Kontext, der Server postet die Antwort in den Chat (über einen eigenen Bot-Account, sonst als „FT vom BdU: …“ vom Streamer-Konto). Limits, Funkstille und Chat-Versand liegen im Server. Einschalten unter Zahnrad → „Chat-Modus“. Ohne Server bleibt der Schalter aus und das Widget funktioniert wie bisher. Details: docs/specs/chat-modus.md.
+Für Twitch-Streamer: Chat-Modus und Companion-Server (optional)
+Für alle anderen ist dieser Abschnitt nicht nötig – das Widget funktioniert ohne Server vollständig.
+Der „Twitch Companion JS server“ ist ein eigenes, kleines Node.js-Programm des Autors, das auf dem Streaming-PC läuft und Twitch mit Stream-Overlays verbindet (Chat-Befehle, Raids, Vorhersagen u. a.). Er ist öffentlich auf GitHub (BombingFritz/Twitch-Companion-JS-server), braucht aber deutlich mehr Einrichtung als das Widget: eine eigene Twitch-Anwendung mit Zugangsdaten, Node.js und etwas Konfiguration. Wer ihn nutzen möchte, spricht am besten zuerst den Autor (BombingFritz) an.
+Mit dem Server kann der BdU auch Funksprüche aus dem Twitch-Chat beantworten: Zuschauer schreiben „!BdU <Meldung>“, das Widget erzeugt im Hintergrund die Antwort mit demselben Kontext, der Server postet sie in den Chat (über einen eigenen Bot-Account, sonst als „FT vom BdU: …“ vom Streamer-Konto). Limits, Funkstille und Chat-Versand liegen im Server. Einschalten unter Zahnrad → „Für Streamer: Chat-Modus“ (der Bereich ist eingeklappt, solange der Chat-Modus aus ist). Details: docs/specs/chat-modus.md.
 
 11. Support
 Bei Fragen oder Problemen:
 •	Erstelle ein Issue auf GitHub
 •	Prüfe die Konsole des Browsers auf Fehlermeldungen
 •	Stelle sicher, dass dein API-Schlüssel korrekt ist
-Änderungen je Version stehen in CHANGELOG.md, technische Dokumentation und bekannte Fehler im Ordner docs/.
+Änderungen je Version stehen in CHANGELOG.md, technische Dokumentation und bekannte Fehler im Ordner docs/, automatische Tests im Ordner tests/.
 
 12. Credits
 Entwickelt von BombingFritz mit umfangreicher historischer Recherche basierend u.a. auf authentischen U-Boot-Kriegstagebüchern aus dem U-Boot-Archiv.
