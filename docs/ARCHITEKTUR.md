@@ -46,6 +46,8 @@ Dazu kommen Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue M
 
 Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt der Aufruf fehl, bleibt sie nur im Display stehen.
 
+**Benchmark:** `bench/bench.html` baut die Anfrage nach demselben Schema nach (Weg ohne Cache) und übernimmt `SAFETY_RULES`, `CHAT_RULES`, `DEFAULT_CHAT_PERSONALITY`, `getContextHistory`, `chatUserText` und `cleanChatAnswer` als Kopie. Wer Kontextaufbau, diese Konstanten oder die Generierungswerte im Widget ändert, zieht den Benchmark nach (Spec `docs/specs/benchmark.md`).
+
 ## Chat-Anfragen (Chat-Modus)
 Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben `SAFETY_RULES`) und die editierbare Chat-Persönlichkeit (`getChatInstructions`): ohne Cache am Ende des Systemtexts, mit Gemini-Cache vor der Meldung (der Systemtext liegt dann im Cache). Die Meldung geht als „Funkspruch aus dem Chat (nicht vom Kaleu): …“, Antwortbudget 200 Tokens. `cleanChatAnswer` entfernt Markdown, eine eigene Kopfzeile („BdU an …:“) und Zeilenumbrüche. Chat-Anfragen ändern weder Verlauf, Zusammenfassung, Status noch Display. Sie warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden (`CHAT_KALEU_PRIORITY_MS`). HTTP 429 bzw. `RESOURCE_EXHAUSTED` meldet das Widget als `quota`, der Server verhängt dann Funkstille.
 

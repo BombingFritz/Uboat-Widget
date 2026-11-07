@@ -5,6 +5,11 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [Unreleased]
+
+### Added
+- Benchmark-Werkzeug `bench/bench.html` (nicht Teil des Widgets): Testfragen gegen einen eingefrorenen Kontext (Export) an mehrere Gemini-Modelle, blinde Bewertung, Auswertung je Modell. Spec `docs/specs/benchmark.md`. Headless geprüft (50/50), u. a. Request-Body für alle 10 Standardfragen identisch zum Widget.
+
 ## [1.2.1] - 2026-11-07
 
 Fehlerbehebung für den Betrieb in OBS, ohne neue Funktionen. Headless-Test ohne Browser-Dialoge wie in OBS (22/22), Regressionstests 26/26, Export/Import 25/25, Datei-Export in OBS und Browser 7/7. Import in OBS vom Nutzer bestätigt (07.11.2026). Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.

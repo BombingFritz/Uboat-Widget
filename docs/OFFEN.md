@@ -6,6 +6,15 @@
 3. ~~Bot-Account „DerBdu“~~ im Server umgesetzt (Server 1.1.5, ADR 0017 dort): BdU-Antworten, Warnung und Funkstille-Ansage kommen vom Bot, ohne „FT vom BdU:“; Rückfall auf das Streamer-Konto mit Präfix. Am Widget hat sich dafür nichts geändert (Protokoll `{id, text}` → `{id, status, text}` unverändert).
 4. **Benchmark** der Gemini-Flash-Lite-Modelle (PR #7, `docs/specs/benchmark.md`), danach Kontext schärfen.
 
+## Benchmark und Modellwahl (geplant 07.11.2026)
+Ablauf nach `docs/specs/benchmark.md`, Werkzeug `bench/bench.html`:
+1. **Gemini Flash-Lite vergleichen** (3.5 gegen 2.5, ggf. weitere Flash-Lite-Variante) mit dem Export des Nutzers, 10 Testfragen × 2 Läufe, blind bewertet durch den Nutzer. Auswertung und Diagnose (Modell oder Kontext) durch den Assistenten.
+2. **Kontext schärfen** je nach Befund; Gegenprobe mit zweitem Export.
+3. **Mistral und Groq** über die OpenAI-kompatible Schnittstelle (Universal-Modus) ergänzen; dabei wird der Universal-Modus erstmals echt getestet. Zu prüfen: ob die Anbieter Aufrufe direkt aus dem Browser zulassen (CORS), sonst über den Companion-Server.
+Nicht verfolgt (Nutzerentscheidung): Claude (API wird getrennt vom Pro-Abo bezahlt), Ollama (Grafikspeicher wird vom Spiel gebraucht).
+
+Vorbefund aus dem Export des Nutzers (Stand 02.11.2026): Die Zusammenfassung beschreibt nur die Fahrten von U-4; U-38 und U-68 kommen darin nicht vor, obwohl `lastSummaryIndex` 96 von 100 Einträgen als zusammengefasst markiert. Die KI kennt von der laufenden Feindfahrt also nur Boot-Kontext, Status und die letzten 4 Einträge (Folge von B10 in der alten Fassung). Kandidat für Schritt 2: Zusammenfassung neu erzeugen oder für die neue Feindfahrt leeren.
+
 ## Chat-Modus (umgesetzt in 1.2.0)
 Umgesetzt nach `docs/specs/chat-modus.md`, ADR 0004 und `docs/specs/bdu-chat.md` im Server-Repository. Entscheidungen des Nutzers (02.11.2026): `!BdU` im Chat, Limits ohne Ausnahmen (1 je 3 min, 3 je Nutzer in 30 min, Warnung höchstens 1× je 10 min), anonyme Antworten, nicht im Verlauf und nicht im Display, 60 s Vorrang des Kaleu, Funkstille nur für den Chat. Mit Standardwerten umgesetzt (im Server als Konstanten änderbar): Funkstille bei Tageskontingent bis Streamstart, Tagesobergrenze 60, Anfragen an das zuletzt verbundene Widget.
 
