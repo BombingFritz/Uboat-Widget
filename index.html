@@ -672,8 +672,8 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
                 <div style="background: #1a1a1a; padding: 8px; border: 1px solid #333; border-radius: 3px; font-size: 11px;">
                     <div style="margin-bottom: 5px;">📊 Gespeicherte Nachrichten: <span id="history-count" style="color: #4dff4d;">0</span></div>
                     <div style="margin-bottom: 5px;">📝 Letzte Zusammenfassung: <span id="last-summary-info" style="color: #888;">Noch keine</span></div>
-                    <button onclick="clearLastFive()" style="margin-top: 5px; margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">➖ LETZTE 5 LÖSCHEN</button>
-                    <button onclick="clearHistory()" style="margin-top: 5px; font-size: 10px; border-color: #ff4d4d; color: #fcc;">🗑️ HISTORY LÖSCHEN</button>
+                    <button id="clear-last-five-btn" onclick="clearLastFive()" style="margin-top: 5px; margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">➖ LETZTE 5 LÖSCHEN</button>
+                    <button id="clear-history-btn" onclick="clearHistory()" style="margin-top: 5px; font-size: 10px; border-color: #ff4d4d; color: #fcc;">🗑️ HISTORY LÖSCHEN</button>
                 </div>
             </div>
 
@@ -701,7 +701,7 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
                     </div>
                     <button onclick="exportData()" style="margin-right: 5px; font-size: 10px; border-color: #4d9fff; color: #cde;">📤 EXPORTIEREN</button>
                     <button onclick="downloadExport()" style="margin-right: 5px; font-size: 10px;">💾 ALS DATEI</button>
-                    <button onclick="importData()" style="margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">📥 IMPORTIEREN</button>
+                    <button id="import-btn" onclick="importData()" style="margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">📥 IMPORTIEREN</button>
                     <button onclick="document.getElementById('import-file-input').click()" style="font-size: 10px;">📂 DATEI LADEN</button>
                     <input type="file" id="import-file-input" accept=".json,application/json,text/plain" style="display: none;" onchange="loadImportFile(this)">
                     <textarea id="transfer-text" style="height: 70px; margin-top: 6px;" placeholder="Export erscheint hier (kopieren mit Strg+A, Strg+C). Zum Import hier einfügen und IMPORTIEREN klicken."></textarea>
@@ -731,8 +731,8 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: auto;">
-                <button onclick="saveSettings()" style="border-color: #4dff4d; color: #cfc;">SPEICHERN</button>
-                <button onclick="clearSettings()" style="border-color: #ff4d4d; color: #fcc;">RESET</button>
+                <button id="save-settings-btn" onclick="saveSettings()" style="border-color: #4dff4d; color: #cfc;">SPEICHERN</button>
+                <button id="reset-btn" onclick="clearSettings()" style="border-color: #ff4d4d; color: #fcc;">RESET</button>
                 <button onclick="toggleSettings()">ZURÜCK</button>
             </div>
         </div>
@@ -1103,7 +1103,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             } catch (e) {
                 if (e.name === 'QuotaExceededError') {
                     console.error("[STORAGE] 💾 LocalStorage voll!");
-                    alert("Speicher voll! Ältere Nachrichten werden gelöscht.");
+                    appendLog("Funkmaat", "SPEICHER VOLL. ÄLTERE FUNKSPRÜCHE WERDEN GELÖSCHT.");
                     
                     // Lösche älteste History-Hälfte
                     trimHistory(50);
@@ -1382,8 +1382,55 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             }
         }
 
+        // OBS-Browserquellen zeigen keine Dialogfenster: confirm() liefert dort sofort false, alert() bleibt unsichtbar
+        // (Nutzertest 07.11.2026: Import in OBS tat nichts). Rückfragen und Hinweise daher im Widget selbst.
+        const CONFIRM_WINDOW_MS = 10000;
+        const CONFIRM_MIN_DELAY_MS = 400;   // versehentlicher Doppelklick bestätigt nicht
+        const pendingConfirms = {};
+
+        // Erster Aufruf: Button zeigt die Rückfrage, Ergebnis false. Zweiter Aufruf binnen windowMs mit gleichem token: true.
+        function confirmInWidget(buttonId, armedLabel, token = "", windowMs = CONFIRM_WINDOW_MS) {
+            const btn = document.getElementById(buttonId);
+            const p = pendingConfirms[buttonId];
+            if (p && p.token === token) {
+                if (Date.now() - p.armedAt < CONFIRM_MIN_DELAY_MS) return false;
+                clearTimeout(p.timer);
+                if (btn) btn.innerHTML = p.label;
+                delete pendingConfirms[buttonId];
+                return true;
+            }
+            if (!btn) return false;
+            const label = p ? p.label : btn.innerHTML;
+            if (p) clearTimeout(p.timer);
+            btn.textContent = armedLabel;
+            pendingConfirms[buttonId] = {
+                label, token, armedAt: Date.now(),
+                timer: setTimeout(() => { btn.innerHTML = label; delete pendingConfirms[buttonId]; }, windowMs)
+            };
+            return false;
+        }
+
+        function cancelConfirm(buttonId) {
+            const p = pendingConfirms[buttonId];
+            if (!p) return;
+            clearTimeout(p.timer);
+            const btn = document.getElementById(buttonId);
+            if (btn) btn.innerHTML = p.label;
+            delete pendingConfirms[buttonId];
+        }
+
+        // Kurzer Hinweis direkt auf einem Button (statt alert)
+        function flashButton(buttonId, text, ms = 3000) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+            btn.textContent = text;
+            clearTimeout(btn._flashTimer);
+            btn._flashTimer = setTimeout(() => { btn.innerHTML = btn.dataset.label; delete btn.dataset.label; }, ms);
+        }
+
         function clearHistory() {
-            if (!confirm("Wirklich gesamte Konversations-History löschen?")) return;
+            if (!confirmInWidget('clear-history-btn', "❓ WIRKLICH ALLES LÖSCHEN? NOCHMAL KLICKEN")) return;
             
             conversationHistory = [];
             historySummary = "";
@@ -1411,7 +1458,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         }
 
         function clearLastFive() {
-            if (!confirm("Wirklich die letzten 5 Nachrichten aus der History löschen?")) return;
+            if (!confirmInWidget('clear-last-five-btn', "❓ SICHER? NOCHMAL KLICKEN")) return;
 
             if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
                 appendLog("Funkmaat", "Keine History zum Kürzen vorhanden.");
@@ -2053,7 +2100,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             if (!text) return;
             if (!apiKey) {
-                alert("Bitte Einstellungen öffnen (Zahnrad) und API Key eingeben!");
+                appendLog("Funkmaat", "KEIN API-SCHLÜSSEL. BITTE ZAHNRAD ÖFFNEN UND SCHLÜSSEL EINTRAGEN.");
                 return;
             }
 
@@ -2177,7 +2224,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             const newCustomUrl = document.getElementById('custom-base-url-input').value.trim();
             const newCaching = document.getElementById('caching-enabled-checkbox').checked;
 
-            if (!newKey) { alert("API Key fehlt!"); return; }
+            if (!newKey) { flashButton('save-settings-btn', "❌ API-SCHLÜSSEL FEHLT"); return; }
 
             // Prüfe welche Felder sich geändert haben
             const keyChanged = apiKey !== newKey;
@@ -2247,7 +2294,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         }
 
         function clearSettings() {
-            if (!confirm("Alle Einstellungen löschen?")) return;
+            if (!confirmInWidget('reset-btn', "❓ ALLES LÖSCHEN? NOCHMAL")) return;
 
             // Nur eigene Keys gezielt löschen (robuster in OBS)
             localStorage.removeItem('bdu_api_key');
@@ -2351,7 +2398,9 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             const listDiv = document.getElementById('model-list-display');
             
             if(!tempKey) {
-                alert("Bitte erst API Key eingeben!");
+                listDiv.style.display = 'block';
+                listDiv.textContent = "Bitte erst den API-Schlüssel eintragen.";
+                listDiv.style.color = "#ff4d4d";
                 return;
             }
 
@@ -2698,19 +2747,33 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             console.log("[EXPORT] 📤", json.length, "Zeichen,", conversationHistory.length, "Verlaufseinträge");
         }
 
+        // Anleitung für OBS: dort gibt es keine Downloads (Nutzertest 07.11.2026)
+        function exportFileHint(fileName) {
+            return `Als Datei sichern: Text mit Strg+A, Strg+C kopieren, in einen Texteditor (z. B. Windows-Editor) einfügen und als „${fileName}“ speichern (Codierung UTF-8).`;
+        }
+
         function downloadExport() {
+            const fileName = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
+            // OBS-Browserquelle (erkennbar an window.obsstudio): kein Download möglich, stattdessen Text zum Kopieren bereitstellen
+            if (window.obsstudio) {
+                exportData().then(() => {
+                    const el = document.getElementById('transfer-status');
+                    setTransferStatus((el ? el.textContent : "✅ Exportiert") + ". In OBS gibt es keine Downloads. " + exportFileHint(fileName), '#ffb84d');
+                });
+                return;
+            }
             try {
                 const json = JSON.stringify(buildExportData(), null, 2);
                 const blob = new Blob([json], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `bdu-funk-export-${new Date().toISOString().slice(0, 10)}.json`;
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setTransferStatus("💾 Datei-Download gestartet (in OBS nicht möglich – dort EXPORTIEREN und kopieren).", '#4dff4d');
+                setTransferStatus(`💾 Datei-Download gestartet. In OBS gibt es keine Downloads: dort EXPORTIEREN, dann ${exportFileHint(fileName).charAt(0).toLowerCase() + exportFileHint(fileName).slice(1)}`, '#4dff4d');
             } catch (e) {
                 setTransferStatus("❌ Download nicht möglich: " + e.message, '#ff4d4d');
             }
@@ -2769,13 +2832,17 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
         function importData() {
             const raw = document.getElementById('transfer-text').value.trim();
-            if (!raw) { setTransferStatus("Bitte zuerst einen Export in das Feld einfügen.", '#ffb84d'); return; }
+            if (!raw) { cancelConfirm('import-btn'); setTransferStatus("Bitte zuerst einen Export in das Feld einfügen.", '#ffb84d'); return; }
             let d;
-            try { d = parseImportData(raw); } catch (e) { setTransferStatus("❌ " + e.message, '#ff4d4d'); return; }
+            try { d = parseImportData(raw); } catch (e) { cancelConfirm('import-btn'); setTransferStatus("❌ " + e.message, '#ff4d4d'); return; }
 
             const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('de-DE') : "unbekannt";
             const keyInfo = d.apiKey ? "inklusive API-Schlüssel" : "ohne API-Schlüssel (bisheriger bleibt erhalten)";
-            if (!confirm(`Export vom ${when} importieren?\n\n${d.history.length} Verlaufseinträge, ${keyInfo}.\n\nAktuelle Einstellungen, Persönlichkeit, Kontext und Verlauf werden ersetzt.`)) return;
+            // Rückfrage im Widget (confirm() funktioniert in OBS nicht): Angaben im Statusfeld, Bestätigen per zweitem Klick auf IMPORTIEREN
+            if (!confirmInWidget('import-btn', "✅ IMPORT BESTÄTIGEN", raw, 60000)) {
+                setTransferStatus(`Export vom ${when}: ${d.history.length} Verlaufseinträge, ${keyInfo}. Ersetzt Einstellungen, Persönlichkeit, Kontext und Verlauf. Zum Übernehmen „IMPORT BESTÄTIGEN“ klicken.`, '#ffb84d');
+                return;
+            }
 
             const set = (k, v) => saveToLocalStorage(k, String(v));
             if (d.apiKey) set('bdu_api_key', d.apiKey);

@@ -10,6 +10,12 @@
 
 Bereits zusammengefasste Funksprüche bleiben in der Zusammenfassung, auch wenn sie danach per „LETZTE 5 LÖSCHEN“ entfernt werden (erwartet, nicht korrigierbar ohne Neuberechnung).
 
+## Behoben in 1.2.1
+
+| Nr. | Symptom | Ursache | Behebung |
+|---|---|---|---|
+| B20 | In OBS („Interagieren“) tat „IMPORTIEREN“ nichts: Nach „DATEI LADEN“ stand der Export im Textfeld, übernommen wurde er nicht. Ebenso blieben „RESET“, „HISTORY LÖSCHEN“ und „LETZTE 5 LÖSCHEN“ ohne Wirkung; Hinweise wie „API Key fehlt!“ erschienen nicht (Nutzer, 07.11.2026). Im normalen Browser ging es (Import am 02.11.2026) | Rückfragen per `confirm()`, Hinweise per `alert()`. Die OBS-Browserquelle zeigt diese Fenster nicht an; `confirm()` gilt dort als abgelehnt | Rückfragen im Widget (`confirmInWidget`): Erster Klick ändert den Button („IMPORT BESTÄTIGEN“ bzw. „SICHER? NOCHMAL KLICKEN“), zweiter Klick frühestens nach 0,4 s und binnen 10 s (Import 60 s) führt aus. Beim Import stehen die Angaben im Statusfeld. Hinweise im Display, auf dem Button oder in der Modellliste statt `alert()` |
+
 ## Behoben in 1.0.2
 Nachweis: Verlaufsprotokoll im Headless-Chromium mit simulierter Gemini- und OpenAI-API über 10 Meldungen, je Anfrage Volltext-Einträge, Zusammenfassung und Index (02.11.2026). Gemini und Universal: jeder frühere Funkspruch ist genau einmal enthalten (Volltext oder Zusammenfassung). Dauerhaft scheiternde Zusammenfassung: 4 statt 10 Versuche, eine Meldung im Display. Einmal scheiternde Zusammenfassung: holt den Rückstand beim nächsten Versuch nach. Abgeschnittene Zusammenfassung (`MAX_TOKENS`) wird verworfen. Regressionstest von 1.0.1: 26/26. Noch nicht mit echter API getestet.
 

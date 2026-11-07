@@ -5,6 +5,17 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.2.1] - 2026-11-07
+
+Fehlerbehebung für den Betrieb in OBS, ohne neue Funktionen. Headless-Test ohne Browser-Dialoge wie in OBS (22/22), Regressionstests 26/26, Export/Import 25/25, Datei-Export in OBS und Browser 7/7. Import in OBS vom Nutzer bestätigt (07.11.2026). Design, Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Fixed
+- In OBS taten „IMPORTIEREN“, „RESET“, „HISTORY LÖSCHEN“ und „LETZTE 5 LÖSCHEN“ nichts, weil OBS die Rückfrage-Fenster des Browsers nicht anzeigt (BUGS B20). Rückfragen erscheinen jetzt im Widget: erster Klick ändert den Button (z. B. „IMPORT BESTÄTIGEN“), zweiter Klick führt aus. Beim Import stehen Datum, Anzahl der Verlaufseinträge und Schlüssel-Hinweis im Statusfeld.
+- Hinweise ohne API-Schlüssel (Senden, Speichern, Modellsuche) und bei vollem Speicher erscheinen im Widget statt als Browser-Fenster.
+
+### Changed
+- „ALS DATEI“ in OBS (dort sind keine Downloads möglich): stellt den Export im Textfeld bereit und erklärt, wie man ihn per Kopieren und Einfügen in einem Texteditor als `.json`-Datei speichert.
+
 ## [1.2.0] - 2026-11-02
 
 Neue Funktion Chat-Modus. Braucht den „Twitch Companion JS server“ mit BdU-Chat (ADR 0014 dort). Ende-zu-Ende-Test (echter Server, simuliertes Twitch, simulierte KI, Widget per `file://`): 22/22; Regressionstests 26/26 und 23/23, Verlaufsprotokoll unverändert. Vom Nutzer in OBS mit echtem Twitch-Chat erprobt. Design, Prompt, `SAFETY_RULES`, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
