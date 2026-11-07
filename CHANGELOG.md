@@ -7,6 +7,9 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [Unreleased]
 
+### Added
+- Benchmark-Werkzeug im Ordner `benchmark/` (nicht Teil des Widgets, `index.html` unverändert): Testfragen gegen einen eingefrorenen Kontext (Export) an mehrere Modelle von Gemini, Groq und Mistral, blinde Bewertung, Auswertung je Modell. Mit Beispielkontext `benchmark/beispiel-kontext.json` für alle, die noch keinen eigenen Funkverlauf haben. Spec `docs/specs/benchmark.md`. Headless geprüft (50/50 Gemini, 45/45 Groq/Mistral), u. a. Request-Body für alle 10 Standardfragen identisch zum Widget (`callGemini` ohne Cache bzw. `callUniversal`). Erster echter Durchlauf durch den Nutzer am 07.11.2026 (Gemini).
+
 ### Changed
 - Lizenzdatei `LICENSE-CC-BY-4.0.txt` heißt jetzt `LICENSE`, damit GitHub die Lizenz (CC-BY 4.0) erkennt. Inhalt unverändert.
 

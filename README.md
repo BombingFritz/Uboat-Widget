@@ -39,6 +39,9 @@ Alternative Optionen
 •	Jede OpenAI-kompatible API
 Hinweis: Das Widget ist nur mit Google Gemini ausführlich getestet. Andere APIs sollten funktionieren, sind aber nicht garantiert.
 
+Welches Modell passt? – Benchmark
+Im Ordner benchmark/ liegt eine eigene Seite (bench.html, gehört nicht zum Widget), mit der man mehrere kostenlose Modelle (Gemini, Groq, Mistral) mit denselben 10 Testfragen und demselben Kontext vergleicht und die Antworten blind bewertet. Als Kontext dient ein Export aus dem Widget; wer noch keinen eigenen Funkverlauf hat, lädt den Beispielkontext beispiel-kontext.json aus demselben Ordner. Anleitung: benchmark/README.md. Erster Vergleich (Nov. 2026): gemini-2.5-flash-lite klang deutlich authentischer als gemini-3.5-flash-lite; 2.5 bietet Google aber nur noch bisherigen Nutzern an.
+
 5. Verwendung
 Während des Spiels
 •	Öffne das Widget in einem separaten Browserfenster
