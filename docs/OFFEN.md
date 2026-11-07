@@ -2,7 +2,7 @@
 
 ## Nächste Schritte (Stand 07.11.2026)
 1. ~~Livestream-Test von 1.2.0~~ erledigt (03.11.2026, laut Server-Doku): 6 Anfragen (5 vom Broadcaster, 1 aus dem Publikum), Antworten nach 1–3 s, keine Fehler. Limits, Warnung und Funkstille wurden nicht erreicht, unter Last also weiter unerprobt.
-2. **Release `v1.2.0`** in der GitHub-Oberfläche anlegen (Tag auf `main`, Anhang `index.html`).
+2. **Release:** Import in OBS ging nicht (BUGS B20), behoben in 1.2.1. Vorschlag: nach Test des Nutzers in OBS Release `v1.2.1` statt `v1.2.0` anlegen (Tag auf `main`, Anhang `index.html`), 1.2.0 ohne eigenes Release. Entscheidung des Nutzers offen.
 3. ~~Bot-Account „DerBdu“~~ im Server umgesetzt (Server 1.1.5, ADR 0017 dort): BdU-Antworten, Warnung und Funkstille-Ansage kommen vom Bot, ohne „FT vom BdU:“; Rückfall auf das Streamer-Konto mit Präfix. Am Widget hat sich dafür nichts geändert (Protokoll `{id, text}` → `{id, status, text}` unverändert).
 4. **Benchmark** der Gemini-Flash-Lite-Modelle (PR #7, `docs/specs/benchmark.md`), danach Kontext schärfen.
 
