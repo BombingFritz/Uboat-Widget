@@ -108,7 +108,7 @@ Cache löschen:
 ⚠️ SICHERHEITSHINWEIS: API-Schlüssel sind sensible Daten und werden lokal gespeichert. Bei geteilten Computern nach Nutzung Cache löschen! 
 
 Chat-Modus (optional, für Streamer)
-Mit dem eigenen „Twitch Companion JS server“ kann der BdU auch Funksprüche aus dem Twitch-Chat beantworten: Zuschauer schreiben „!BdU <Meldung>“, das Widget erzeugt im Hintergrund die Antwort mit demselben Kontext, der Server postet „FT vom BdU: …“ in den Chat. Limits, Funkstille und Chat-Versand liegen im Server. Einschalten unter Zahnrad → „Chat-Modus“. Ohne Server bleibt der Schalter aus und das Widget funktioniert wie bisher. Details: docs/specs/chat-modus.md.
+Mit dem eigenen „Twitch Companion JS server“ kann der BdU auch Funksprüche aus dem Twitch-Chat beantworten: Zuschauer schreiben „!BdU <Meldung>“, das Widget erzeugt im Hintergrund die Antwort mit demselben Kontext, der Server postet die Antwort in den Chat (über einen eigenen Bot-Account, sonst als „FT vom BdU: …“ vom Streamer-Konto). Limits, Funkstille und Chat-Versand liegen im Server. Einschalten unter Zahnrad → „Chat-Modus“. Ohne Server bleibt der Schalter aus und das Widget funktioniert wie bisher. Details: docs/specs/chat-modus.md.
 
 11. Support
 Bei Fragen oder Problemen:
