@@ -108,25 +108,27 @@ with sync_playwright() as p:
     check("B3: Fehlgeschlagene Meldung nicht im Verlauf", len(hist) == 4 and all(h["text"] != "Aal läuft" for h in hist), str(len(hist)))
     mode["gemini_fail"] = False
 
-    # 4) Zusammenfassung nach 8 neuen Einträgen
+    # 4) Zusammenfassung erst nach 10 neuen Einträgen (seit 1.4.0, vorher 8)
     send(page, "Meldung 3"); send(page, "Meldung 4")
+    check("Bei 8 Einträgen noch keine Zusammenfassung", page.evaluate("conversationHistory.length") == 8 and page.evaluate("historySummary") == "" and not gen_calls("Fasse folgende"))
+    send(page, "Meldung 5")
     hist_len = page.evaluate("conversationHistory.length")
     summ = page.evaluate("historySummary")
     idx = page.evaluate("lastSummaryIndex")
-    check("Zusammenfassung nach 8 Einträgen", hist_len == 8 and "Kontakt gemeldet" in summ and idx == 4, f"len={hist_len} idx={idx} summ={summ!r}")
+    check("Zusammenfassung nach 10 Einträgen, 6 zusammengefasst", hist_len == 10 and "Kontakt gemeldet" in summ and idx == 6 and len(gen_calls("Fasse folgende")) == 1, f"len={hist_len} idx={idx} summ={summ!r}")
 
     # 5) Neuladen stellt Verlauf als Text wieder her
     page.reload(); page.wait_for_timeout(300)
     restored = page.locator("#chat-log .msg-bdu").first
     check("Wiederherstellung ohne HTML, mit <br>", restored.locator("b").count() == 0 and restored.locator("br").count() == 1 and "<b>X</b>" in restored.inner_text())
-    check("Wiederherstellung: 8 Einträge", page.locator("#chat-log > div").count() == 8)
+    check("Wiederherstellung: 10 Einträge", page.locator("#chat-log > div").count() == 10)
 
     # 6) Löschen (seit 1.3.2 paarweise: LETZTEN FUNKSPRUCH LÖSCHEN) hält Zusammenfassungsstand gültig
     page.evaluate("""() => { const del = () => new Promise(r => { clearLastExchange(); setTimeout(() => { clearLastExchange(); r(); }, 450); });
                              return del().then(del).then(del); }""")
     check("B10: Index nach Löschen <= Verlaufslänge", page.evaluate("lastSummaryIndex <= conversationHistory.length"),
           page.evaluate("[lastSummaryIndex, conversationHistory.length]"))
-    check("B10: Index gespeichert", page.evaluate("localStorage.getItem('bdu_last_summary_index')") == "2")
+    check("B10: Index gespeichert", page.evaluate("localStorage.getItem('bdu_last_summary_index')") == "4")
 
     # 7) trimHistory bei Überlauf
     page.evaluate("""conversationHistory = Array.from({length:100},(_,i)=>({role:i%2?'assistant':'user',text:'x'+i,timestamp:new Date().toISOString()}));

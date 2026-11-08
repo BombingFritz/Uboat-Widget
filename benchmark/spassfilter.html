@@ -43,22 +43,22 @@
 <body>
 <main>
 <h1>BdU-Spaßfilter-Test</h1>
-<p class="hint">Prüft, ob das Gedächtnis des BdU ernste Meldungen behält und Spaßmeldungen weglässt. Fasst einen festen Testsatz mit genau den Anweisungen des Widgets zusammen, einmal wie im laufenden Betrieb (alle 2 Funksprüche, angehängt) und einmal verdichtet. Mehrere Läufe, weil das Modell streut. Braucht einen Gemini-Schlüssel; der Schlüssel wird nicht gespeichert.</p>
+<p class="hint">Prüft, ob das Gedächtnis des BdU ernste Meldungen behält und Spaßmeldungen weglässt. Fasst einen festen Testsatz mit genau den Anweisungen des Widgets zusammen, einmal wie im laufenden Betrieb (alle 3 Funksprüche, angehängt) und einmal verdichtet. Mehrere Läufe, weil das Modell streut. Braucht einen Gemini-Schlüssel; der Schlüssel wird nicht gespeichert.</p>
 
 <section>
   <h2>1. Einstellungen</h2>
   <div class="row"><label class="grow">Gemini-API-Schlüssel<br><input type="password" id="key" class="grow" style="width:100%" autocomplete="off"></label></div>
   <div class="row">
     <label>Modell<br><input type="text" id="model" value="gemini-2.5-flash-lite"></label>
-    <label>Läufe<br><input type="number" id="runs" value="3" min="1" max="10" style="width:80px"></label>
+    <label>Läufe<br><input type="number" id="runs" value="2" min="1" max="10" style="width:80px"></label>
     <label>Pause zwischen Aufrufen (s)<br><input type="number" id="pause" value="5" min="0" step="0.5" style="width:80px"></label>
   </div>
-  <small>Je Lauf 7 Aufrufe (6 Zusammenfassungen à 2 Funksprüche, 1 Verdichtung). 3 Läufe mit 5 s Pause dauern etwa 2 Minuten.</small>
+  <small>Je Lauf 5 Aufrufe (4 Zusammenfassungen à 3 Funksprüche, 1 Verdichtung); 2 Läufe = 10 Aufrufe, etwa 1 Minute. Die Aufrufe zählen gegen dein Tageskontingent bei Google, wie die des Widgets.</small>
 </section>
 
 <section>
   <h2>2. Testsatz</h2>
-  <p class="hint">Erfundene Funksprüche zum Beispielboot U-68 (1941, vor Freetown). <span class="tag ernst">ernst</span> = diese Fakten müssen in der Zusammenfassung bleiben. <span class="tag spass">Spaß</span> = diese Begriffe dürfen nicht vorkommen. <span class="tag grenzfall">Grenzfall</span> = Humor in der Rolle mit Bezug zur Fahrt; wird nur angezeigt, nicht bewertet. Block 5 besteht nur aus Spaß und sollte „KEINE MELDUNG“ ergeben.</p>
+  <p class="hint">Erfundene Funksprüche zum Beispielboot U-68 (1941, vor Freetown). <span class="tag ernst">ernst</span> = diese Fakten müssen in der Zusammenfassung bleiben. <span class="tag spass">Spaß</span> = diese Begriffe dürfen nicht vorkommen. <span class="tag grenzfall">Grenzfall</span> = Humor in der Rolle mit Bezug zur Fahrt; wird nur angezeigt, nicht bewertet. Block 3 besteht nur aus Spaß und sollte „KEINE MELDUNG“ ergeben.</p>
   <div class="tablewrap"><table id="set-table"></table></div>
 </section>
 
@@ -128,7 +128,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 // Testboot wie benchmark/beispiel-kontext.json (erfunden)
 const TEST_BOOT = "U-Boot: U-68\nBootstyp: Typ IXc\nKommandant: Kptlt. Hansen\nStatus: Erste Feindfahrt\nDatum: Oktober 1941\nBoot neu im Frontdienst, ausgelaufen aus Lorient. Zugewiesener Kampfraum: vor der Westküste Afrikas (Raum Freetown).";
 
-// Testsatz: Paare aus Meldung des Kaleu und Antwort des BdU, in Blöcken zu 2 Funksprüchen (wie das Widget im Normalbetrieb).
+// Testsatz: Paare aus Meldung des Kaleu und Antwort des BdU, in Blöcken zu 3 Funksprüchen (wie das Widget im Normalbetrieb).
 // expect: Muster (regulärer Ausdruck, ohne Groß-/Kleinschreibung), die vorkommen (ernst, grenzfall) bzw. fehlen sollen (spass).
 const TEST_SET = [
     { id: "E1", kind: "ernst", kaleu: "Kampfraum vor Freetown erreicht. Planquadrat ET 42, See 3, keine Sichtungen.", bdu: "Verstanden. Im Planquadrat ET 42 auf Geleitzüge aus Freetown ansetzen.", expect: ["ET ?42"] },
@@ -138,14 +138,14 @@ const TEST_SET = [
     { id: "G1", kind: "grenzfall", kaleu: "Wache hat einen Wal für ein feindliches U-Boot gehalten. Alarmtauchen, keine Schäden, die Besatzung lacht noch.", bdu: "Lieber einmal zu oft getaucht. Wachsamkeit beibehalten.", expect: ["Wal\\b", "Alarmtauch"] },
     { id: "E3", kind: "ernst", kaleu: "Wasserbomben durch Zerstörer, Backbord-Diesel ausgefallen, Obersteuermann Kramer leicht verwundet.", bdu: "Verstanden. Diesel instand setzen, Kramer versorgen, Lage melden.", expect: ["Diesel", "Kramer"] },
     { id: "S3", kind: "spass", kaleu: "Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos.", bdu: "Rammen ist kein Angriffsverfahren für U-Boote. Das Kommando bleibt.", expect: ["ramm", "Enthebung|enthoben|abgesetzt|Absetzung"] },
-    { id: "E4", kind: "ernst", kaleu: "Brennstoff 45 %, erbitte Versorgung.", bdu: "Treffen mit Versorger Python am 20. November im Planquadrat GF 71.", expect: ["Python", "GF ?71"] },
     { id: "S4", kind: "spass", kaleu: "Smutje meldet: Gummibärchen-Vorrat erschöpft, Moral im Bugraum kritisch.", bdu: "Gummibärchen sind nicht vorgesehen. Der Smutje soll improvisieren.", expect: ["Gummib"] },
     { id: "S5", kind: "spass", kaleu: "Bitte um Wetterbericht für einen Grillabend an Oberdeck.", bdu: "Gegrillt wird in Lorient. Auf Station bleiben.", expect: ["Grill"] },
+    { id: "E4", kind: "ernst", kaleu: "Brennstoff 45 %, erbitte Versorgung.", bdu: "Treffen mit Versorger Python am 20. November im Planquadrat GF 71.", expect: ["Python", "GF ?71"] },
     { id: "G2", kind: "grenzfall", kaleu: "Besatzung hat die Versenkung der Kingston Star mit der letzten Flasche Rum gefeiert, Moral gut.", bdu: "Gönnen Sie den Männern den Moment. Funkdisziplin wahren.", expect: ["\\bRum\\b|gefeiert|Feier"] },
     { id: "E5", kind: "ernst", kaleu: "Geleitzug SL 89 gesichtet, Kurs Nord, 20 Schiffe. Greife bei Nacht an.", bdu: "Fühlung halten, Angriff bei Nacht freigegeben. Weitere Boote werden herangeführt.", expect: ["SL ?89", "Geleitzug"] },
 ];
-const BLOCK_SIZE = 2;          // Funksprüche je Zusammenfassung (Normalbetrieb des Widgets)
-const ONLY_FUN_BLOCK = 4;      // Index des Blocks nur aus Spaß (S4, S5)
+const BLOCK_SIZE = 3;          // Funksprüche je Zusammenfassung (Normalbetrieb des Widgets seit 1.4.0: SUMMARY_TRIGGER_ENTRIES 10)
+const ONLY_FUN_BLOCK = 2;      // Index des Blocks nur aus Spaß (S3, S4, S5)
 
 const $ = id => document.getElementById(id);
 let running = false, stopRequested = false, results = [];
@@ -230,7 +230,7 @@ async function runOnce(n) {
         await sleep(pause);
     }
     res.appended = summary;
-    // Verdichtung: Zusammenfassung bis Block 5 + letzter Block als neue Funksprüche (wie im Widget)
+    // Verdichtung: Zusammenfassung bis zum vorletzten Block + letzter Block als neue Funksprüche (wie im Widget)
     const last = bl[bl.length - 1];
     const prompt = buildSummaryPrompt(formatSummaryHistory(entriesFor(last, TEST_SET.length - last.length)), true, res.appendedBeforeLast, TEST_BOOT);
     $("run-status").textContent = `Lauf ${n}: Verdichtung`;

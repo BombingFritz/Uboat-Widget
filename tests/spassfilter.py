@@ -65,9 +65,9 @@ with sync_playwright() as p:
     errs = []; tool.on("pageerror", lambda e: errs.append(str(e)))
     tool.goto(TOOL); tool.wait_for_timeout(300)
     state["set"] = tool.evaluate("TEST_SET")
-    check("Testsatz: 5 ernst, 5 Spaß, 2 Grenzfälle, Block 5 nur Spaß",
+    check("Testsatz: 5 ernst, 5 Spaß, 2 Grenzfälle, Block 3 nur Spaß, Blöcke zu 3",
           [it["kind"] for it in state["set"]].count("ernst") == 5 and [it["kind"] for it in state["set"]].count("spass") == 5
-          and [it["kind"] for it in state["set"]].count("grenzfall") == 2 and tool.evaluate("blocks()[ONLY_FUN_BLOCK].every(it => it.kind === 'spass')"))
+          and [it["kind"] for it in state["set"]].count("grenzfall") == 2 and tool.evaluate("blocks()[ONLY_FUN_BLOCK].every(it => it.kind === 'spass') && blocks().length === 4 && blocks().every(b => b.length === 3)"))
     check("Testsatz in der Seite angezeigt", tool.locator("#set-table tr").count() == 13)
 
     # 2) Anfrage identisch zum Widget (normal und verdichtet)
@@ -88,15 +88,16 @@ with sync_playwright() as p:
     check("Verdichtung: Anfrage identisch zum Widget", widget_bodies[-1] == expected)
     w.close()
 
+    check("Standard: 2 Läufe", tool.input_value("#runs") == "2")
     # 3) Ablauf mit simulierter API: 2 Läufe, ein Minutenlimit mit Wiederholung
     tool.evaluate("sleep = () => Promise.resolve()")
     tool.fill("#key", "GEHEIM-TESTKEY"); tool.fill("#runs", "2"); tool.fill("#pause", "0")
     state["fail_first"] = True; tool_bodies.clear()
     tool.click("#btn-run")
     tool.wait_for_function("document.getElementById('run-status').textContent === 'Fertig.'", timeout=60000)
-    check("2 Läufe × 7 Aufrufe + 1 Wiederholung", len(tool_bodies) == 15, len(tool_bodies))
+    check("2 Läufe × 5 Aufrufe + 1 Wiederholung", len(tool_bodies) == 11, len(tool_bodies))
     check("Modell und Schlüssel in der Adresse", "models/gemini-2.5-flash-lite:generateContent" in tool_bodies[0][0] and "key=GEHEIM-TESTKEY" in tool_bodies[0][0])
-    check("Budgets: 6 × 300, 1 × 1500 je Lauf", [bd["generationConfig"]["maxOutputTokens"] for _, bd in tool_bodies[1:8]] == [300] * 6 + [1500])
+    check("Budgets: 4 × 300, 1 × 1500 je Lauf", [bd["generationConfig"]["maxOutputTokens"] for _, bd in tool_bodies[1:6]] == [300] * 4 + [1500])
     res = tool.evaluate("results")
     check("Angehängt: Fakten 5/5, Spaß 5/5, Grenzfälle 2/2",
           all(r["scoreAppended"]["ernst"] == {"ok": 5, "of": 5} and r["scoreAppended"]["spass"] == {"ok": 5, "of": 5} and r["scoreAppended"]["grenzfall"] == {"ok": 2, "of": 2} for r in res), res[0].get("scoreAppended"))

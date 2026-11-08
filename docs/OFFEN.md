@@ -10,7 +10,9 @@ Zweiter Nutzertest (08.11.2026, nach PR #19): keine Fehlermeldung, Verdichtung 5
 
 Entscheidungen des Nutzers (08.11.2026): Blöcke als Rückfall beim Verdichten (umgesetzt), B23 beheben wie vorgeschlagen (umgesetzt), Spaßfilter einmalig mit festem Testsatz und echter API prüfen (Werkzeug `benchmark/spassfilter.html`, gebaut; echter Durchlauf durch den Nutzer steht aus, Ergebnis hier eintragen).
 
-Beobachtung zur Zahl der Aufrufe: Im Normalfall fasst das Widget alle 2 Funksprüche zusammen (Schwelle 8 offene Einträge, die letzten 4 bleiben im Volltext, B14). Das ist ein zusätzlicher Aufruf je 2 Funksprüche. Möglich wäre eine höhere Schwelle (z. B. 10 Einträge, dann alle 3 Funksprüche), begrenzt durch `CONTEXT_MAX_ENTRIES` 10. Entscheidung offen.
+Zahl der Aufrufe: Bis 1.3.x fasste das Widget alle 2 Funksprüche zusammen (Schwelle 8 offene Einträge). Entscheidung des Nutzers (08.11.2026): Schwelle 10, also alle 3 Funksprüche (`SUMMARY_TRIGGER_ENTRIES`, umgesetzt in 1.4.0). Höher geht nicht ohne Änderung an `CONTEXT_MAX_ENTRIES` (10), sonst fehlen Funksprüche im Kontext (B14).
+
+Dritter Nutzertest (08.11.2026): Kopfzeile nicht mehr doppelt (B23 bestätigt). Zwei Meldungen: 3.986 bzw. 4.038 Tokens, jeweils 0 automatisch zwischengespeichert. Der Spaßfilter-Test brach am Tageskontingent ab („Generate content requests per day limit exceeded on Free Tier“, Neustart nach etwa 9,5 h, d. h. Mitternacht Pazifikzeit).
 
 Danach Release `v1.4.0` (regulär, „Latest“). **Release `v1.3.2`** veröffentlicht (08.11.2026, „Latest“, Anhang `index.html` bytegleich mit `main`).
 
@@ -41,6 +43,16 @@ Detailentscheidungen zum Plan 1.4.0 (Nutzer, 08.11.2026), umgesetzt in 1.4.0:
 - D2: Obergrenze der Zusammenfassung 2.000 Zeichen, Ziel nach dem Verdichten 1.200 Zeichen.
 - D3: Verdichtung bekommt den Boot-Kontext zur Einordnung; die Zusammenfassung wiederholt nichts, was dort schon steht.
 - D4: Wortlaut der Spaß-Regel wie vorgeschlagen.
+
+## Kontingent und Token-Verbrauch (Stand 08.11.2026)
+**Automatisches Caching (Entscheidung des Nutzers, 08.11.2026: festhalten):** Bei allen bisher gemessenen Anfragen mit `gemini-2.5-flash-lite` im kostenlosen Kontingent 0 automatisch zwischengespeicherte Tokens (5 Anfragen, 3.986–5.742 Tokens). Google bietet das implizite Caching dort offenbar nicht an. Kosten entstehen dadurch nicht.
+**Später erneut prüfen** (Auftrag des Nutzers): ob sich das automatische Caching doch nutzen lässt (Anzeige „Letzte Anfrage“ in den Einstellungen beobachten, auch mit `gemini-3.5-flash-lite`), und ob sich sonst Tokens sparen lassen, etwa durch einen kompakteren Persönlichkeits-Prompt mit Chronologie (rund 2.600 von 4.000 Tokens je Anfrage). Der Prompt ist Werk des Nutzers: Kürzen nur auf seinen Auftrag, Vorschläge zuerst als Entwurf, Wirkung mit dem Benchmark gegenprüfen.
+
+**Tageskontingent (Requests per Day, RPD):** Im kostenlosen Kontingent zählt vor allem die Zahl der Anfragen pro Tag je Modell und Projekt; sie wird um Mitternacht Pazifikzeit (9 Uhr deutscher Zeit) zurückgesetzt. Die genauen Werte sind [UNGEKLÄRT]: Googles Tabelle ist aus der Cloud nicht lesbar, Drittquellen widersprechen sich (für `gemini-2.5-flash-lite` zwischen 20 und 1.500 RPD; eine Quelle vom 21.10.2026, laut eigener Angabe aus AI Studio abgelesen: 2.5 Flash-Lite 10 RPM / 20 RPD, 3.5 Flash-Lite 15 RPM / 500 RPD). Verbindlich ist die Anzeige in Google AI Studio für das eigene Projekt. Dass der Nutzer am 08.11.2026 nach wenigen Dutzend Aufrufen das Tageslimit erreichte, passt zu einem niedrigen Wert.
+
+Aufrufe des Widgets seit 1.4.0: je eigenem Funkspruch 1, dazu alle 3 Funksprüche 1 Zusammenfassung (≈ 1,33 je Funkspruch); je `!BdU` 1 (Server-Grenze 60 je Tag, höchstens 1 je 3 min). Benchmark: 20 je Modell; Spaßfilter-Test: 10. Alle Werkzeuge mit demselben Schlüssel und Modell teilen sich das Kontingent.
+
+Offen: tatsächliche RPD des Nutzers in AI Studio ablesen und hier eintragen. Falls 2.5 Flash-Lite wirklich nur 20 RPD hat, reicht das für keinen Stream mit Chat-Modus; dann abwägen: `gemini-3.5-flash-lite` (mehr Anfragen, im Benchmark schwächer), Tagesobergrenze `BDU_DAILY_LIMIT` im Server senken, oder ein zweites Modell nur für Zusammenfassungen bzw. Chat.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
