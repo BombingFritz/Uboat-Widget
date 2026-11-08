@@ -28,3 +28,13 @@ Erster Vergleich (November 2026, eigener Funkverlauf, blind bewertet): `gemini-2
 - **Lokale Modelle:** Blockiert der Browser die Anfrage, in Ollama `OLLAMA_ORIGINS=*` setzen bzw. in LM Studio CORS einschalten.
 - **Speicher:** Ergebnisse und Bewertungen liegen im Browser (`localStorage`, Schlüssel `bdu_bench_state_v1`); regelmäßig exportieren.
 - **Verlauf:** Jede Frage wird unabhängig gegen den eingefrorenen Kontext gestellt; Antworten kommen nicht in den Verlauf.
+
+# Spaßfilter-Test
+
+`spassfilter.html` prüft einmalig mit echter API, ob das Gedächtnis des BdU ernste Meldungen behält und Spaßmeldungen (Spargel, Bier, Rammen …) weglässt. Hintergrund: [`docs/specs/benchmark.md`](../docs/specs/benchmark.md), Abschnitt „Spaßfilter-Test“.
+
+1. `spassfilter.html` im Browser öffnen (Doppelklick).
+2. Gemini-Schlüssel eintragen (wird nicht gespeichert), Modell prüfen (Standard `gemini-2.5-flash-lite`), Läufe (3) und Pause (5 s) lassen.
+3. „Start“. Je Lauf 7 Aufrufe, insgesamt etwa 2 Minuten.
+4. Auswertung lesen: „Fakten behalten“ und „Spaß entfernt“ sollten bei allen Läufen voll sein; „Grenzfälle behalten“ zeigt, ob Humor mit Bezug zur Fahrt erhalten bleibt. Darunter stehen alle Zusammenfassungen im Wortlaut.
+5. „Ergebnisse exportieren“ speichert eine JSON-Datei (ohne Schlüssel) im Download-Ordner.

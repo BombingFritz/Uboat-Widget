@@ -1542,15 +1542,10 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             return summaryText;
         }
 
-        async function summarizeHistory() {
-            const messagesToSummarize = conversationHistory.slice(lastSummaryIndex, -4);
-            
-            if (messagesToSummarize.length < 4) {
-                console.log("[SUMMARY] ⏭️ Noch nicht genug Nachrichten für Zusammenfassung");
-                return;
-            }
-            
-            const historyText = messagesToSummarize.map(msg => {
+        // Prompt-Aufbau der Zusammenfassung als reine Funktionen (seit 1.4.0). benchmark/spassfilter.html enthält
+        // eine wortgleiche Kopie; tests/spassfilter.py prüft, dass beide gleich bleiben.
+        function formatSummaryHistory(messages) {
+            return messages.map(msg => {
                 const sender = msg.role === "user" ? "KALEU" : "BdU";
                 const time = new Date(msg.timestamp).toLocaleTimeString('de-DE', {
                     hour: '2-digit', 
@@ -1558,12 +1553,10 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 });
                 return `[${time}] ${sender}: ${msg.text}`;
             }).join('\n');
-            
-            // Verdichten statt anhängen, wenn die Zusammenfassung sonst über SUMMARY_MAX_CHARS wüchse (seit 1.4.0)
-            const condense = !!historySummary && historySummary.length + SUMMARY_PART_ESTIMATE_CHARS > SUMMARY_MAX_CHARS;
-            console.log("[SUMMARY] 📝", condense ? "Verdichte Zusammenfassung mit" : "Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
-            
-            const summaryPrompt = condense
+        }
+
+        function buildSummaryPrompt(historyText, condense, previousSummary, boot) {
+            return condense
                 ? `Du führst das Gedächtnis des BdU über den Funkverkehr mit einem U-Boot. Erstelle aus der bisherigen Zusammenfassung und den neuen Funksprüchen EINE neue Gesamtzusammenfassung im Telegrammstil, höchstens ${SUMMARY_CONDENSE_TARGET_CHARS} Zeichen (etwa 10 kurze Sätze). Sie muss deutlich kürzer sein als die bisherige Zusammenfassung.
 - Die laufende Feindfahrt ausführlicher, abgeschlossene frühere Fahrten und erledigte Episoden knapp (je höchstens ein Satz).
 - Behalten: Versenkungen und Erfolge, Schäden und Verluste, Befehle des BdU, Positionen und Ziele, wiederkehrende Personen.
@@ -1571,10 +1564,10 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
 - ${SUMMARY_FUN_RULE}
 
 === BOOT-INFORMATIONEN (nur zur Einordnung, nicht wiederholen) ===
-${bootContext}
+${boot}
 
 === BISHERIGE ZUSAMMENFASSUNG ===
-${historySummary}
+${previousSummary}
 
 === NEUE FUNKSPRÜCHE ===
 ${historyText}
@@ -1586,6 +1579,23 @@ ${SUMMARY_FUN_RULE} Bestehen die Funksprüche nur aus solchen Meldungen, antwort
 ${historyText}
 
 Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
+        }
+
+        async function summarizeHistory() {
+            const messagesToSummarize = conversationHistory.slice(lastSummaryIndex, -4);
+            
+            if (messagesToSummarize.length < 4) {
+                console.log("[SUMMARY] ⏭️ Noch nicht genug Nachrichten für Zusammenfassung");
+                return;
+            }
+            
+            const historyText = formatSummaryHistory(messagesToSummarize);
+            
+            // Verdichten statt anhängen, wenn die Zusammenfassung sonst über SUMMARY_MAX_CHARS wüchse (seit 1.4.0)
+            const condense = !!historySummary && historySummary.length + SUMMARY_PART_ESTIMATE_CHARS > SUMMARY_MAX_CHARS;
+            console.log("[SUMMARY] 📝", condense ? "Verdichte Zusammenfassung mit" : "Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
+            
+            const summaryPrompt = buildSummaryPrompt(historyText, condense, historySummary, bootContext);
 
             try {
                 const summaryText = await requestSummary(summaryPrompt, condense ? SUMMARY_CONDENSE_MAX_TOKENS : SUMMARY_MAX_TOKENS);

@@ -8,7 +8,7 @@
 
 Zweiter Nutzertest (08.11.2026, nach PR #19): keine Fehlermeldung, Verdichtung 5.786 → 500 Zeichen, danach normal angehängt (925 Zeichen nach 5 Funksprüchen). „Letzte Anfrage“ weiter mit 0 automatisch zwischengespeicherten Tokens. Anzeige „Letzte Zusammenfassung“ wirkte eingefroren (siehe BUGS, behoben in 1.4.0).
 
-Entscheidungen des Nutzers (08.11.2026): Blöcke als Rückfall beim Verdichten (umgesetzt), B23 beheben wie vorgeschlagen (umgesetzt), Spaßfilter einmalig mit festem Testsatz und echter API prüfen (Werkzeug `benchmark/spassfilter.html`).
+Entscheidungen des Nutzers (08.11.2026): Blöcke als Rückfall beim Verdichten (umgesetzt), B23 beheben wie vorgeschlagen (umgesetzt), Spaßfilter einmalig mit festem Testsatz und echter API prüfen (Werkzeug `benchmark/spassfilter.html`, gebaut; echter Durchlauf durch den Nutzer steht aus, Ergebnis hier eintragen).
 
 Beobachtung zur Zahl der Aufrufe: Im Normalfall fasst das Widget alle 2 Funksprüche zusammen (Schwelle 8 offene Einträge, die letzten 4 bleiben im Volltext, B14). Das ist ein zusätzlicher Aufruf je 2 Funksprüche. Möglich wäre eine höhere Schwelle (z. B. 10 Einträge, dann alle 3 Funksprüche), begrenzt durch `CONTEXT_MAX_ENTRIES` 10. Entscheidung offen.
 

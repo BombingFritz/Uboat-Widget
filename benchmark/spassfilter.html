@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BdU-Spaßfilter-Test</title>
+<!--
+  Spaßfilter-Test für das Enigma-BdU-Funk-Widget (docs/specs/benchmark.md, Abschnitt „Spaßfilter-Test“).
+  Gehört nicht zum Widget. Fasst einen festen Testsatz aus ernsten Funksprüchen, Spaßmeldungen und Grenzfällen
+  mit genau den Anweisungen des Widgets zusammen (Gemini, echte API) und prüft automatisch, ob die Fakten
+  bleiben und der Spaß verschwindet. Die Funktionen und Konstanten zwischen den Markierungen KOPIE-ANFANG/-ENDE
+  sind wortgleich aus index.html übernommen; tests/spassfilter.py prüft das.
+-->
+<style>
+  :root { --bg:#16181b; --panel:#1f2227; --line:#33373e; --text:#e6e6e6; --muted:#9aa0a6; --accent:#e0b04d; --ok:#6fcf7f; --bad:#ff6b6b; --mid:#e0b04d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:16px; }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  h2 { font-size:17px; margin:0 0 10px; color:var(--accent); }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px; margin:14px 0; }
+  .hint, small { color:var(--muted); }
+  input[type=text], input[type=password], input[type=number] { background:#121417; color:var(--text); border:1px solid var(--line); border-radius:5px; padding:6px 8px; font:inherit; }
+  button { background:#2c3138; color:var(--text); border:1px solid #444b55; border-radius:5px; padding:6px 12px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:#5a4416; border-color:var(--accent); }
+  button:disabled { opacity:.5; cursor:default; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
+  .grow { flex:1; min-width:200px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { border-bottom:1px solid var(--line); padding:5px 6px; text-align:left; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .tablewrap { overflow-x:auto; }
+  .tag { display:inline-block; font-size:12px; padding:1px 7px; border-radius:9px; background:#2c3138; color:var(--muted); white-space:nowrap; }
+  .tag.ernst { color:var(--ok); } .tag.spass { color:var(--bad); } .tag.grenzfall { color:var(--mid); }
+  .ok { color:var(--ok); } .bad { color:var(--bad); } .mid { color:var(--mid); }
+  .summary { white-space:pre-wrap; background:#121417; border:1px solid var(--line); border-radius:6px; padding:8px; margin:6px 0; font-size:14px; }
+  #log { max-height:180px; overflow:auto; font:12px/1.4 ui-monospace, monospace; background:#121417; padding:8px; border-radius:5px; white-space:pre-wrap; }
+  details summary { cursor:pointer; color:var(--muted); }
+  .run { border:1px solid var(--line); border-radius:6px; padding:10px; margin:10px 0; background:#191c20; }
+</style>
+</head>
+<body>
+<main>
+<h1>BdU-Spaßfilter-Test</h1>
+<p class="hint">Prüft, ob das Gedächtnis des BdU ernste Meldungen behält und Spaßmeldungen weglässt. Fasst einen festen Testsatz mit genau den Anweisungen des Widgets zusammen, einmal wie im laufenden Betrieb (alle 2 Funksprüche, angehängt) und einmal verdichtet. Mehrere Läufe, weil das Modell streut. Braucht einen Gemini-Schlüssel; der Schlüssel wird nicht gespeichert.</p>
+
+<section>
+  <h2>1. Einstellungen</h2>
+  <div class="row"><label class="grow">Gemini-API-Schlüssel<br><input type="password" id="key" class="grow" style="width:100%" autocomplete="off"></label></div>
+  <div class="row">
+    <label>Modell<br><input type="text" id="model" value="gemini-2.5-flash-lite"></label>
+    <label>Läufe<br><input type="number" id="runs" value="3" min="1" max="10" style="width:80px"></label>
+    <label>Pause zwischen Aufrufen (s)<br><input type="number" id="pause" value="5" min="0" step="0.5" style="width:80px"></label>
+  </div>
+  <small>Je Lauf 7 Aufrufe (6 Zusammenfassungen à 2 Funksprüche, 1 Verdichtung). 3 Läufe mit 5 s Pause dauern etwa 2 Minuten.</small>
+</section>
+
+<section>
+  <h2>2. Testsatz</h2>
+  <p class="hint">Erfundene Funksprüche zum Beispielboot U-68 (1941, vor Freetown). <span class="tag ernst">ernst</span> = diese Fakten müssen in der Zusammenfassung bleiben. <span class="tag spass">Spaß</span> = diese Begriffe dürfen nicht vorkommen. <span class="tag grenzfall">Grenzfall</span> = Humor in der Rolle mit Bezug zur Fahrt; wird nur angezeigt, nicht bewertet. Block 5 besteht nur aus Spaß und sollte „KEINE MELDUNG“ ergeben.</p>
+  <div class="tablewrap"><table id="set-table"></table></div>
+</section>
+
+<section>
+  <h2>3. Durchführen</h2>
+  <div class="row">
+    <button class="primary" id="btn-run">Start</button>
+    <button id="btn-stop" disabled>Stopp</button>
+    <button id="btn-export" disabled>Ergebnisse exportieren</button>
+    <span id="run-status" class="hint"></span>
+  </div>
+  <div id="log"></div>
+</section>
+
+<section>
+  <h2>4. Auswertung</h2>
+  <div id="eval"><p class="hint">Noch keine Ergebnisse.</p></div>
+  <div id="runs-view"></div>
+</section>
+</main>
+
+<script>
+// ===== KOPIE-ANFANG (wortgleich aus index.html; bei Änderungen dort hier nachziehen) =====
+        const SUMMARY_MAX_TOKENS = 300;        // vorher 150: zu knapp, Ergebnisse konnten abbrechen
+        const SUMMARY_TEMPERATURE = 0.3;       // vorher 0.95: Zusammenfassungen sollen sachlich, nicht kreativ sein
+        const SUMMARY_CONDENSE_TARGET_CHARS = 1200;  // danach wieder Platz für einige angehängte Teile
+        const SUMMARY_CONDENSE_MAX_TOKENS = 1500;    // großzügig: abgeschnittene Ergebnisse sind unbrauchbar (600 reichte im Nutzertest 08.11.2026 nicht)
+        const SUMMARY_NOTHING = "KEINE MELDUNG";     // Antwort, wenn nur Spaßmeldungen zusammenzufassen waren
+        const SUMMARY_FUN_RULE = `Lass Spaß- und Scherzmeldungen ohne Bezug zur laufenden Feindfahrt weg, ebenso die Antworten darauf. Beispiele: „Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos“, „Spargelvorräte sind leer, wir benötigen dringend mehr Spargel“, „Bier ist alle, wir brauchen Hilfe!“. Erwähne nicht, dass etwas weggelassen wurde.`;
+        function formatSummaryHistory(messages) {
+            return messages.map(msg => {
+                const sender = msg.role === "user" ? "KALEU" : "BdU";
+                const time = new Date(msg.timestamp).toLocaleTimeString('de-DE', {
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+                return `[${time}] ${sender}: ${msg.text}`;
+            }).join('\n');
+        }
+        function buildSummaryPrompt(historyText, condense, previousSummary, boot) {
+            return condense
+                ? `Du führst das Gedächtnis des BdU über den Funkverkehr mit einem U-Boot. Erstelle aus der bisherigen Zusammenfassung und den neuen Funksprüchen EINE neue Gesamtzusammenfassung im Telegrammstil, höchstens ${SUMMARY_CONDENSE_TARGET_CHARS} Zeichen (etwa 10 kurze Sätze). Sie muss deutlich kürzer sein als die bisherige Zusammenfassung.
+- Die laufende Feindfahrt ausführlicher, abgeschlossene frühere Fahrten und erledigte Episoden knapp (je höchstens ein Satz).
+- Behalten: Versenkungen und Erfolge, Schäden und Verluste, Befehle des BdU, Positionen und Ziele, wiederkehrende Personen.
+- Nichts wiederholen, was schon in den Boot-Informationen steht.
+- ${SUMMARY_FUN_RULE}
+
+=== BOOT-INFORMATIONEN (nur zur Einordnung, nicht wiederholen) ===
+${boot}
+
+=== BISHERIGE ZUSAMMENFASSUNG ===
+${previousSummary}
+
+=== NEUE FUNKSPRÜCHE ===
+${historyText}
+
+Neue Gesamtzusammenfassung (nur Fakten):`
+                : `Fasse folgende Funksprüche SEHR KURZ zusammen (max. 3 Sätze, Telegrammstil):
+${SUMMARY_FUN_RULE} Bestehen die Funksprüche nur aus solchen Meldungen, antworte genau mit: ${SUMMARY_NOTHING}
+
+${historyText}
+
+Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
+        }
+// ===== KOPIE-ENDE =====
+
+// Testboot wie benchmark/beispiel-kontext.json (erfunden)
+const TEST_BOOT = "U-Boot: U-68\nBootstyp: Typ IXc\nKommandant: Kptlt. Hansen\nStatus: Erste Feindfahrt\nDatum: Oktober 1941\nBoot neu im Frontdienst, ausgelaufen aus Lorient. Zugewiesener Kampfraum: vor der Westküste Afrikas (Raum Freetown).";
+
+// Testsatz: Paare aus Meldung des Kaleu und Antwort des BdU, in Blöcken zu 2 Funksprüchen (wie das Widget im Normalbetrieb).
+// expect: Muster (regulärer Ausdruck, ohne Groß-/Kleinschreibung), die vorkommen (ernst, grenzfall) bzw. fehlen sollen (spass).
+const TEST_SET = [
+    { id: "E1", kind: "ernst", kaleu: "Kampfraum vor Freetown erreicht. Planquadrat ET 42, See 3, keine Sichtungen.", bdu: "Verstanden. Im Planquadrat ET 42 auf Geleitzüge aus Freetown ansetzen.", expect: ["ET ?42"] },
+    { id: "S1", kind: "spass", kaleu: "Spargelvorräte sind leer, wir benötigen dringend mehr Spargel.", bdu: "Spargel ist nicht kriegswichtig. Weitermachen.", expect: ["Spargel"] },
+    { id: "E2", kind: "ernst", kaleu: "Frachter Kingston Star, etwa 7.500 BRT, mit zwei Aalen versenkt. Noch 12 Aale an Bord.", bdu: "Gut gemacht. Versenkung der Kingston Star bestätigt.", expect: ["Kingston Star", "7[.\\s]?500"] },
+    { id: "S2", kind: "spass", kaleu: "Bier ist alle, wir brauchen Hilfe!", bdu: "Durchhalten, U-68. Nachschub gibt es in Lorient.", expect: ["Bier"] },
+    { id: "G1", kind: "grenzfall", kaleu: "Wache hat einen Wal für ein feindliches U-Boot gehalten. Alarmtauchen, keine Schäden, die Besatzung lacht noch.", bdu: "Lieber einmal zu oft getaucht. Wachsamkeit beibehalten.", expect: ["Wal\\b", "Alarmtauch"] },
+    { id: "E3", kind: "ernst", kaleu: "Wasserbomben durch Zerstörer, Backbord-Diesel ausgefallen, Obersteuermann Kramer leicht verwundet.", bdu: "Verstanden. Diesel instand setzen, Kramer versorgen, Lage melden.", expect: ["Diesel", "Kramer"] },
+    { id: "S3", kind: "spass", kaleu: "Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos.", bdu: "Rammen ist kein Angriffsverfahren für U-Boote. Das Kommando bleibt.", expect: ["ramm", "Enthebung|enthoben|abgesetzt|Absetzung"] },
+    { id: "E4", kind: "ernst", kaleu: "Brennstoff 45 %, erbitte Versorgung.", bdu: "Treffen mit Versorger Python am 20. November im Planquadrat GF 71.", expect: ["Python", "GF ?71"] },
+    { id: "S4", kind: "spass", kaleu: "Smutje meldet: Gummibärchen-Vorrat erschöpft, Moral im Bugraum kritisch.", bdu: "Gummibärchen sind nicht vorgesehen. Der Smutje soll improvisieren.", expect: ["Gummib"] },
+    { id: "S5", kind: "spass", kaleu: "Bitte um Wetterbericht für einen Grillabend an Oberdeck.", bdu: "Gegrillt wird in Lorient. Auf Station bleiben.", expect: ["Grill"] },
+    { id: "G2", kind: "grenzfall", kaleu: "Besatzung hat die Versenkung der Kingston Star mit der letzten Flasche Rum gefeiert, Moral gut.", bdu: "Gönnen Sie den Männern den Moment. Funkdisziplin wahren.", expect: ["\\bRum\\b|gefeiert|Feier"] },
+    { id: "E5", kind: "ernst", kaleu: "Geleitzug SL 89 gesichtet, Kurs Nord, 20 Schiffe. Greife bei Nacht an.", bdu: "Fühlung halten, Angriff bei Nacht freigegeben. Weitere Boote werden herangeführt.", expect: ["SL ?89", "Geleitzug"] },
+];
+const BLOCK_SIZE = 2;          // Funksprüche je Zusammenfassung (Normalbetrieb des Widgets)
+const ONLY_FUN_BLOCK = 4;      // Index des Blocks nur aus Spaß (S4, S5)
+
+const $ = id => document.getElementById(id);
+let running = false, stopRequested = false, results = [];
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function log(msg) { const el = $("log"); el.textContent += new Date().toLocaleTimeString("de-DE") + " " + msg + "\n"; el.scrollTop = el.scrollHeight; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Verlaufseinträge wie im Widget: {role, text, timestamp}; feste Uhrzeiten ab 20:00, alle 2 Minuten
+function entriesFor(items, offset) {
+    const out = [];
+    items.forEach((it, i) => {
+        const t = new Date(2026, 10, 8, 20, 2 * (offset + i)).toISOString();
+        out.push({ role: "user", text: it.kaleu, timestamp: t });
+        out.push({ role: "assistant", text: it.bdu, timestamp: t });
+    });
+    return out;
+}
+function blocks() {
+    const b = [];
+    for (let i = 0; i < TEST_SET.length; i += BLOCK_SIZE) b.push(TEST_SET.slice(i, i + BLOCK_SIZE));
+    return b;
+}
+
+// Anfrage wie requestSummary() im Widget (Gemini)
+function buildRequestBody(prompt, maxTokens) {
+    return { contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens, temperature: SUMMARY_TEMPERATURE } };
+}
+async function callSummary(prompt, maxTokens) {
+    const model = $("model").value.trim().replace(/^models\//, "");
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent($("key").value.trim())}`;
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildRequestBody(prompt, maxTokens)) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) { const e = new Error(d.error?.message || ("HTTP " + r.status)); e.httpStatus = d.error?.code || r.status; e.apiStatus = d.error?.status; throw e; }
+    const cand = d.candidates && d.candidates[0];
+    const u = d.usageMetadata || {};
+    const text = (cand?.content?.parts || []).filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("").trim();
+    return { text, finishReason: cand?.finishReason || "UNBEKANNT", promptTokens: u.promptTokenCount || 0, outTokens: u.candidatesTokenCount || 0 };
+}
+async function callWithRetry(prompt, maxTokens) {
+    try { return await callSummary(prompt, maxTokens); }
+    catch (e) {
+        if (e.httpStatus === 429 || e.apiStatus === "RESOURCE_EXHAUSTED") {
+            if (/per ?day|daily|RPD/i.test(e.message)) throw e;
+            log("⏳ Minutenlimit – warte 60 s und versuche es einmal erneut");
+            await sleep(60000);
+            return await callSummary(prompt, maxTokens);
+        }
+        throw e;
+    }
+}
+function isNothing(text) { return text.replace(/[.\s]+$/, "").toUpperCase() === SUMMARY_NOTHING; }
+
+// Bewertung einer Zusammenfassung
+function score(summary) {
+    const per = TEST_SET.map(it => {
+        const hits = it.expect.map(p => new RegExp(p, "i").test(summary));
+        const ok = it.kind === "spass" ? hits.every(h => !h) : hits.every(h => h);
+        return { id: it.id, kind: it.kind, ok, hits };
+    });
+    const count = kind => { const l = per.filter(p => p.kind === kind); return { ok: l.filter(p => p.ok).length, of: l.length }; };
+    return { per, ernst: count("ernst"), spass: count("spass"), grenzfall: count("grenzfall") };
+}
+
+async function runOnce(n) {
+    const pause = Math.max(0, parseFloat($("pause").value) || 0) * 1000;
+    const bl = blocks();
+    const res = { run: n, blocks: [], appended: "", appendedBeforeLast: "", condensed: null, error: null };
+    let summary = "", offset = 0;
+    for (let i = 0; i < bl.length; i++) {
+        if (stopRequested) throw new Error("abgebrochen");
+        if (i === bl.length - 1) res.appendedBeforeLast = summary;
+        const prompt = buildSummaryPrompt(formatSummaryHistory(entriesFor(bl[i], offset)), false, "", TEST_BOOT);
+        $("run-status").textContent = `Lauf ${n}: Block ${i + 1}/${bl.length}`;
+        const r = await callWithRetry(prompt, SUMMARY_MAX_TOKENS);
+        const nothing = isNothing(r.text);
+        const failed = r.finishReason === "MAX_TOKENS" || !r.text;
+        res.blocks.push({ ids: bl[i].map(it => it.id), text: r.text, nothing, failed, finishReason: r.finishReason, promptTokens: r.promptTokens, outTokens: r.outTokens });
+        if (!failed && !nothing) summary = summary ? summary + "\n\n" + r.text : r.text;
+        log(`Lauf ${n}, Block ${i + 1}: ${failed ? "FEHLSCHLAG " + r.finishReason : nothing ? "KEINE MELDUNG" : r.text.length + " Zeichen"}`);
+        offset += bl[i].length;
+        await sleep(pause);
+    }
+    res.appended = summary;
+    // Verdichtung: Zusammenfassung bis Block 5 + letzter Block als neue Funksprüche (wie im Widget)
+    const last = bl[bl.length - 1];
+    const prompt = buildSummaryPrompt(formatSummaryHistory(entriesFor(last, TEST_SET.length - last.length)), true, res.appendedBeforeLast, TEST_BOOT);
+    $("run-status").textContent = `Lauf ${n}: Verdichtung`;
+    const r = await callWithRetry(prompt, SUMMARY_CONDENSE_MAX_TOKENS);
+    res.condensed = { text: r.text, failed: r.finishReason === "MAX_TOKENS" || !r.text || isNothing(r.text), finishReason: r.finishReason, promptTokens: r.promptTokens, outTokens: r.outTokens };
+    log(`Lauf ${n}, Verdichtung: ${res.condensed.failed ? "FEHLSCHLAG " + r.finishReason : r.text.length + " Zeichen"}`);
+    res.scoreAppended = score(res.appended);
+    res.scoreCondensed = res.condensed.failed ? null : score(res.condensed.text);
+    res.onlyFunNothing = !!res.blocks[ONLY_FUN_BLOCK]?.nothing;
+    res.at = new Date().toISOString();
+    return res;
+}
+
+async function run() {
+    if (!$("key").value.trim()) { $("run-status").textContent = "Bitte zuerst einen Gemini-Schlüssel eintragen."; return; }
+    running = true; stopRequested = false; results = [];
+    $("btn-run").disabled = true; $("btn-stop").disabled = false; $("btn-export").disabled = true;
+    const runs = Math.max(1, Math.min(10, parseInt($("runs").value) || 1));
+    log(`▶ Start: ${runs} Läufe, Modell ${$("model").value.trim()}`);
+    for (let n = 1; n <= runs && !stopRequested; n++) {
+        try { results.push(await runOnce(n)); }
+        catch (e) { log(`❌ Lauf ${n}: ${e.message}`); results.push({ run: n, error: e.message }); if (e.httpStatus === 429 || /abgebrochen/.test(e.message)) break; }
+        render();
+        await sleep(Math.max(0, parseFloat($("pause").value) || 0) * 1000);
+    }
+    running = false;
+    $("btn-run").disabled = false; $("btn-stop").disabled = true; $("btn-export").disabled = !results.length;
+    $("run-status").textContent = stopRequested ? "Abgebrochen." : "Fertig.";
+    log("■ Ende");
+    render();
+}
+
+function fmtCount(c) { if (!c) return "–"; const cls = c.ok === c.of ? "ok" : (c.ok === 0 ? "bad" : "mid"); return `<span class="${cls}">${c.ok}/${c.of}</span>`; }
+function render() {
+    const done = results.filter(r => !r.error);
+    if (!results.length) { $("eval").innerHTML = '<p class="hint">Noch keine Ergebnisse.</p>'; $("runs-view").innerHTML = ""; return; }
+    const sum = (key, kind) => { const l = done.map(r => r[key]).filter(Boolean); return l.length ? { ok: l.reduce((a, s) => a + s[kind].ok, 0), of: l.reduce((a, s) => a + s[kind].of, 0) } : null; };
+    const perItem = TEST_SET.map(it => {
+        const cell = key => { const l = done.map(r => r[key]).filter(Boolean).map(s => s.per.find(p => p.id === it.id).ok); return l.length ? `${l.filter(Boolean).length}/${l.length}` : "–"; };
+        return `<tr><td>${it.id}</td><td><span class="tag ${it.kind}">${it.kind === "spass" ? "Spaß" : it.kind === "grenzfall" ? "Grenzfall" : "ernst"}</span></td><td>${esc(it.kaleu)}</td><td>${cell("scoreAppended")}</td><td>${cell("scoreCondensed")}</td></tr>`;
+    }).join("");
+    $("eval").innerHTML = `
+      <table>
+        <tr><th></th><th>Fakten behalten (ernst)</th><th>Spaß entfernt</th><th>Grenzfälle behalten</th></tr>
+        <tr><td>Angehängt (Normalbetrieb)</td><td>${fmtCount(sum("scoreAppended", "ernst"))}</td><td>${fmtCount(sum("scoreAppended", "spass"))}</td><td>${fmtCount(sum("scoreAppended", "grenzfall"))}</td></tr>
+        <tr><td>Verdichtet</td><td>${fmtCount(sum("scoreCondensed", "ernst"))}</td><td>${fmtCount(sum("scoreCondensed", "spass"))}</td><td>${fmtCount(sum("scoreCondensed", "grenzfall"))}</td></tr>
+      </table>
+      <p>Block nur aus Spaß ergab „KEINE MELDUNG“: ${done.filter(r => r.onlyFunNothing).length}/${done.length} Läufe ·
+         Fehlschläge (abgeschnitten/leer): ${done.reduce((a, r) => a + r.blocks.filter(b => b.failed).length + (r.condensed?.failed ? 1 : 0), 0)}</p>
+      <details><summary>Je Funkspruch (Treffer über alle Läufe; bei Spaß = korrekt weggelassen)</summary>
+        <div class="tablewrap"><table><tr><th>Nr.</th><th>Art</th><th>Meldung</th><th>angehängt</th><th>verdichtet</th></tr>${perItem}</table></div></details>`;
+    $("runs-view").innerHTML = results.map(r => r.error ? `<div class="run"><b>Lauf ${r.run}</b> <span class="bad">Fehler: ${esc(r.error)}</span></div>` : `
+      <div class="run"><b>Lauf ${r.run}</b>
+        <div>Angehängt (${r.appended.length} Zeichen):</div><div class="summary">${esc(r.appended)}</div>
+        <div>Verdichtet (${r.condensed.failed ? '<span class="bad">Fehlschlag ' + esc(r.condensed.finishReason) + '</span>' : r.condensed.text.length + " Zeichen"}):</div><div class="summary">${esc(r.condensed.text)}</div>
+        <details><summary>Einzelne Blöcke</summary>${r.blocks.map((b, i) => `<div class="hint">Block ${i + 1} (${b.ids.join(", ")}): ${b.failed ? '<span class="bad">' + esc(b.finishReason) + '</span>' : b.nothing ? "KEINE MELDUNG" : ""}</div><div class="summary">${esc(b.text)}</div>`).join("")}</details>
+      </div>`).join("");
+}
+
+function exportResults() {
+    const data = { format: "bdu-spassfilter", version: 1, model: $("model").value.trim(), exportedAt: new Date().toISOString(), testSet: TEST_SET, results };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "bdu-spassfilter-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+}
+
+function renderSet() {
+    $("set-table").innerHTML = "<tr><th>Block</th><th>Nr.</th><th>Art</th><th>Kaleu</th><th>BdU</th><th>Prüfung</th></tr>" +
+        TEST_SET.map((it, i) => `<tr><td>${Math.floor(i / BLOCK_SIZE) + 1}</td><td>${it.id}</td><td><span class="tag ${it.kind}">${it.kind === "spass" ? "Spaß" : it.kind === "grenzfall" ? "Grenzfall" : "ernst"}</span></td><td>${esc(it.kaleu)}</td><td>${esc(it.bdu)}</td><td><code>${esc(it.expect.join(" · "))}</code> ${it.kind === "spass" ? "fehlt" : "vorhanden"}</td></tr>`).join("");
+}
+
+$("btn-run").onclick = run;
+$("btn-stop").onclick = () => { stopRequested = true; $("run-status").textContent = "Stoppe nach dem laufenden Aufruf …"; };
+$("btn-export").onclick = exportResults;
+renderSet();
+</script>
+</body>
+</html>

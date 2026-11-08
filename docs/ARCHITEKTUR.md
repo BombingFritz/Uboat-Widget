@@ -47,7 +47,7 @@ Dazu kommen Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue M
 
 Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt der Aufruf fehl, bleibt sie nur im Display stehen.
 
-**Benchmark:** `benchmark/bench.html` baut die Anfrage nach demselben Schema nach (Gemini: `callGemini`; Groq/Mistral: `callUniversal`) und übernimmt `SAFETY_RULES`, `CHAT_RULES`, `DEFAULT_CHAT_PERSONALITY`, `getContextHistory`, `chatUserText` und `cleanChatAnswer` als Kopie. Wer Kontextaufbau, diese Konstanten oder die Generierungswerte im Widget ändert, zieht den Benchmark nach (Spec `docs/specs/benchmark.md`); `tests/benchmark_gemini.py` und `tests/benchmark_providers.py` prüfen, dass die Anfragen gleich bleiben.
+**Benchmark:** `benchmark/bench.html` baut die Anfrage nach demselben Schema nach (Gemini: `callGemini`; Groq/Mistral: `callUniversal`) und übernimmt `SAFETY_RULES`, `CHAT_RULES`, `DEFAULT_CHAT_PERSONALITY`, `getContextHistory`, `chatUserText` und `cleanChatAnswer` als Kopie. Wer Kontextaufbau, diese Konstanten oder die Generierungswerte im Widget ändert, zieht den Benchmark nach (Spec `docs/specs/benchmark.md`); `tests/benchmark_gemini.py` und `tests/benchmark_providers.py` prüfen, dass die Anfragen gleich bleiben. `benchmark/spassfilter.html` (seit 1.4.0) enthält `formatSummaryHistory`, `buildSummaryPrompt` und die `SUMMARY_*`-Konstanten wortgleich; `tests/spassfilter.py` prüft Wortlaut und Anfrage.
 
 **Tests:** `tests/` enthält Headless-Tests (Python, Playwright, Chromium) mit simulierten APIs; keine echten Aufrufe, kein privater Funkverlauf (Testdaten werden aus `benchmark/beispiel-kontext.json` erzeugt). Aufruf `python tests/run_all.py`, Anleitung `tests/README.md`.
 
