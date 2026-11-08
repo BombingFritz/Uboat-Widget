@@ -1055,7 +1055,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         const SUMMARY_MAX_CHARS = 2000;              // ≈ 500 Tokens
         const SUMMARY_CONDENSE_TARGET_CHARS = 1200;  // danach wieder Platz für einige angehängte Teile
         const SUMMARY_PART_ESTIMATE_CHARS = 400;     // erwartete Länge eines angehängten Teils (höchstens 3 Sätze)
-        const SUMMARY_CONDENSE_MAX_TOKENS = 600;
+        const SUMMARY_CONDENSE_MAX_TOKENS = 1500;    // großzügig: abgeschnittene Ergebnisse sind unbrauchbar (600 reichte im Nutzertest 08.11.2026 nicht)
         const SUMMARY_NOTHING = "KEINE MELDUNG";     // Antwort, wenn nur Spaßmeldungen zusammenzufassen waren
         // Spaßmeldungen kommen nicht ins Gedächtnis (Wortlaut und Beispiele vom Nutzer freigegeben, 08.11.2026)
         const SUMMARY_FUN_RULE = `Lass Spaß- und Scherzmeldungen ohne Bezug zur laufenden Feindfahrt weg, ebenso die Antworten darauf. Beispiele: „Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos“, „Spargelvorräte sind leer, wir benötigen dringend mehr Spargel“, „Bier ist alle, wir brauchen Hilfe!“. Erwähne nicht, dass etwas weggelassen wurde.`;
@@ -1491,6 +1491,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 });
                 const d = await resp.json().catch(() => ({}));
                 if (!resp.ok || d.error) throw new Error(d.error?.message || `API Error ${resp.status}`);
+                console.log("[SUMMARY] 📊 Abschluss:", d.choices?.[0]?.finish_reason, "– Prompt", d.usage?.prompt_tokens, "Tokens, Antwort", d.usage?.completion_tokens, "Tokens, Budget", maxTokens);
                 if (d.choices?.[0]?.finish_reason === "length") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
                 summaryText = (d.choices?.[0]?.message?.content || "").trim();
             } else {
@@ -1512,6 +1513,8 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 );
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message);
+                const u = data.usageMetadata || {};
+                console.log("[SUMMARY] 📊 Abschluss:", data.candidates?.[0]?.finishReason, "– Prompt", u.promptTokenCount, "Tokens, Antwort", u.candidatesTokenCount, "Tokens, Denken", u.thoughtsTokenCount || 0, "Tokens, Budget", maxTokens);
                 if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
                 summaryText = (data.candidates?.[0]?.content?.parts || [])
                     .filter(p => typeof p.text === "string" && !p.thought)
@@ -1543,7 +1546,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             console.log("[SUMMARY] 📝", condense ? "Verdichte Zusammenfassung mit" : "Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
             
             const summaryPrompt = condense
-                ? `Du führst das Gedächtnis des BdU über den Funkverkehr mit einem U-Boot. Erstelle aus der bisherigen Zusammenfassung und den neuen Funksprüchen EINE neue Gesamtzusammenfassung im Telegrammstil, höchstens ${SUMMARY_CONDENSE_TARGET_CHARS} Zeichen.
+                ? `Du führst das Gedächtnis des BdU über den Funkverkehr mit einem U-Boot. Erstelle aus der bisherigen Zusammenfassung und den neuen Funksprüchen EINE neue Gesamtzusammenfassung im Telegrammstil, höchstens ${SUMMARY_CONDENSE_TARGET_CHARS} Zeichen (etwa 10 kurze Sätze). Sie muss deutlich kürzer sein als die bisherige Zusammenfassung.
 - Die laufende Feindfahrt ausführlicher, abgeschlossene frühere Fahrten und erledigte Episoden knapp (je höchstens ein Satz).
 - Behalten: Versenkungen und Erfolge, Schäden und Verluste, Befehle des BdU, Positionen und Ziele, wiederkehrende Personen.
 - Nichts wiederholen, was schon in den Boot-Informationen steht.
@@ -1572,6 +1575,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
                 if (condense) {
                     if (nothing) throw new Error('Leere Gesamtzusammenfassung vom Modell erhalten.');
+                    // Nur übernehmen, wenn sie wirklich kürzer ist; sonst würde bei jeder Zusammenfassung erneut verdichtet
+                    if (summaryText.length >= historySummary.length) throw new Error(`Verdichtung nicht kürzer (${summaryText.length} statt ${historySummary.length} Zeichen).`);
                     historySummary = summaryText;
                     if (historySummary.length > SUMMARY_MAX_CHARS) {
                         console.warn("[SUMMARY] ⚠️ Verdichtete Zusammenfassung länger als", SUMMARY_MAX_CHARS, "Zeichen:", historySummary.length);

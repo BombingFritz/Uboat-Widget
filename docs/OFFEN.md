@@ -1,7 +1,11 @@
 # Offene Punkte
 
 ## Nächste Schritte (Stand 08.11.2026)
-**1.4.0 umgesetzt** (Branch, noch nicht veröffentlicht): explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nächster Schritt: Nutzertest in OBS (Senden, Chat, Anzeige „Letzte Anfrage“, erste Verdichtung der alten Zusammenfassung), dann Release `v1.4.0` (regulär, „Latest“). **Release `v1.3.2`** veröffentlicht (08.11.2026, „Latest“, Anhang `index.html` bytegleich mit `main`).
+**1.4.0 umgesetzt** (Branch, noch nicht veröffentlicht): explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nutzertest in OBS (08.11.2026, `gemini-2.5-flash-lite`, kostenloses Kontingent):
+- Anzeige: „Letzte Anfrage: 5.628 Tokens, davon 0 automatisch zwischengespeichert“ (Zusammenfassung 5.786 Zeichen). Googles automatisches Caching griff bei dieser Anfrage nicht; weitere Beobachtungen bei mehreren Anfragen kurz hintereinander nötig.
+- Erste Verdichtung der alten Zusammenfassung scheiterte: „Zusammenfassung abgeschnitten (Token-Budget)“ bei 600 Tokens. Behoben im selben Branch: Budget 1.500, Vorgabe „etwa 10 kurze Sätze“, Übernahme nur, wenn kürzer; Konsole meldet Abschlussgrund und Verbrauch. Erneuter Nutzertest offen.
+- Doppelte Kopfzeile in einer Antwort (BUGS B23), nicht durch 1.4.0 verursacht.
+Danach Release `v1.4.0` (regulär, „Latest“). **Release `v1.3.2`** veröffentlicht (08.11.2026, „Latest“, Anhang `index.html` bytegleich mit `main`).
 
 **Release `v1.3.0` veröffentlicht** (08.11.2026, reguläres Release, „Latest“; Anhänge `index.html`, `bench.html`, `beispiel-kontext.json` bytegleich mit `main`). `v1.2.1` und `v1.2.2` bleiben bewusst „Pre-release“.
 
