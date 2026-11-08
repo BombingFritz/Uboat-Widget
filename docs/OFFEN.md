@@ -15,12 +15,15 @@ Benchmark im Ordner `benchmark/` (Gemini, Groq, OpenRouter, Mistral, eigene Adre
 
 ## Caching, Gedächtnis und Verlauf (Entscheidungen 08.11.2026)
 Entscheidungen des Nutzers (08.11.2026):
-1. **Explizites Gemini-Caching wird ausgebaut** (geplant für 1.4.0, ADR 0006 folgt). Gründe: im kostenlosen Kontingent laut Googles Preisseite nicht verfügbar, vom Standardmodell `gemini-3.5-flash-lite` ohnehin nicht genutzt, für bezahlte Nutzer wegen Speichergebühr und B18 kaum Ersparnis, nie mit echter API getestet, Nutzer verwendet es selbst nicht mehr. Ersatz ist Googles automatisches (implizites) Caching ab Gemini 2.5, das einen gleichbleibenden Anfang der Anfrage braucht. Damit entfallen B18 und Punkt 3 unter „Weitere Punkte“.
-2. **Zusammenfassung verdichten** statt unbegrenzt anhängen (Punkt 2 unter „Weitere Punkte“, geplant für 1.4.0, Spec folgt).
+1. **Explizites Gemini-Caching wird ausgebaut** (geplant für 1.4.0, ADR 0006). Gründe: im kostenlosen Kontingent laut Googles Preisseite nicht verfügbar, vom Standardmodell `gemini-3.5-flash-lite` ohnehin nicht genutzt, für bezahlte Nutzer wegen Speichergebühr und B18 kaum Ersparnis, nie mit echter API getestet, Nutzer verwendet es selbst nicht mehr. Ersatz ist Googles automatisches (implizites) Caching ab Gemini 2.5, das einen gleichbleibenden Anfang der Anfrage braucht. Damit entfallen B18 und Punkt 3 unter „Weitere Punkte“.
+2. **Zusammenfassung verdichten** statt unbegrenzt anhängen (Punkt 2 unter „Weitere Punkte“, geplant für 1.4.0).
 3. **Chronologie bleibt vollständig** im Persönlichkeits-Prompt; kein Kürzen nach Jahr. Sie steht am festen Anfang der Anfrage und profitiert vom impliziten Caching.
 4. **Paarweise löschen (B19):** umgesetzt in 1.3.2 als „LETZTEN FUNKSPRUCH LÖSCHEN“ (ein Paar je Klick; der Nutzer verwendet den Button selten).
-5. **Neuer Button „älteste Hälfte der History löschen“** zum Ausmisten (Idee des Nutzers, geplant für 1.4.0, Spec folgt).
-6. Frage des Nutzers: „Spaßanfragen“ per Knopfdruck erkennen und entfernen. Einschätzung und Vorschlag in der Spec zu 1.4.0; Entscheidung offen.
+5. ~~Button „älteste Hälfte der History löschen“~~: verworfen (Nutzer, 08.11.2026), nicht nötig, wenn Spaßmeldungen beim Verdichten wegfallen.
+6. **Spaßmeldungen:** nur Stufe 1 (Nutzer, 08.11.2026): Zusammenfassen und Verdichten lassen sie weg, ohne zusätzliche Anfrage. Kein KI-Knopf zum Ausmisten. Beispiele des Nutzers im Plan.
+7. B19 vom Nutzer in OBS bestätigt (08.11.2026).
+
+Plan und offene Detailentscheidungen D1–D4: `docs/specs/plan-1.4.0.md`; Caching-Ausbau: ADR 0006.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
