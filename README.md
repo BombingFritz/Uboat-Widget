@@ -78,7 +78,7 @@ Das Widget ist vollständig anpassbar:
 •	Historischer Zeitraum: Verschiedene Kriegsphasen
 
 8. Lizenz
-Dieses Projekt steht unter der Creative Commons Attribution 4.0 International (CC-BY 4.0) Lizenz, Volltext in der Datei LICENSE.
+Dieses Projekt steht ab Version 1.3.1 unter der MIT-Lizenz (Volltext in der Datei LICENSE): frei nutzbar, veränderbar und weitergebbar, solange der Copyright-Hinweis erhalten bleibt. Die Releases bis einschließlich v1.2.2 wurden unter der Creative Commons Attribution 4.0 (CC-BY 4.0) veröffentlicht; wer sie so bezogen hat, behält diese Rechte.
 Das bedeutet:
 ✅ Kostenlos	verwenden
 ✅ Anpassen	und erweitern
