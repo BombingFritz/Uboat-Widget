@@ -7,6 +7,7 @@ Headless-Tests für Widget und Benchmark. Sie laufen in Chromium (Playwright) ge
 pip install playwright
 python -m playwright install chromium
 ```
+Ist Chromium schon vorinstalliert (z. B. in Claude Code in der Cloud: Playwright 1.63.0), stattdessen die passende Paketversion installieren (`pip install playwright==1.63.0`) und `playwright install` weglassen.
 
 ## Ausführen
 Im Hauptordner des Repositorys:
@@ -24,6 +25,7 @@ Einzelne Tests: `python tests/<name>.py`.
 | `obs_dialogs.py` | Alles ohne Browser-Dialoge wie in OBS: Import, Reset, Verlauf löschen, Hinweise (BUGS B20) |
 | `gemini_parts.py` | Gemini-Antworten aus mehreren Teilen, Denk-Teile, Download-Name (BUGS B21) |
 | `chat_section.py` | Chat-Modus-Bereich ein- und ausklappen |
+| `history_pairs.py` | „LETZTEN FUNKSPRUCH LÖSCHEN“ entfernt Meldung und Antwort als Paar (BUGS B19) |
 | `benchmark_gemini.py` | Benchmark: Anfrage identisch zum Widget (Gemini), Kontingent, Fortsetzen, Blindbewertung, Export |
 | `benchmark_providers.py` | Benchmark: Groq, OpenRouter, Mistral, eigene Adresse; Anfrage identisch zu `callUniversal` |
 

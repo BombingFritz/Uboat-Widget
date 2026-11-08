@@ -6,9 +6,15 @@
 |---|---|---|---|---|
 | B8 | Eigene Prompt-Anpassungen werden nach einem Update ohne Rückfrage durch den Standard ersetzt | `WIDGET_VERSION`-Abgleich in `loadSettings` | Seit 1.1.0 abgemildert: alter Prompt wird gesichert und ist in den Einstellungen zurückholbar. Grundsätzliche Lösung siehe `docs/OFFEN.md`, Punkt „Prompt-Version“ | P3 |
 | B18 | Bei Gemini 1.5/2.5 mit explizitem Caching wird der Cache etwa jede zweite Meldung neu erstellt; das Caching spart dann kaum etwas und alte Caches laufen kostenpflichtig bis zum TTL-Ende weiter | Die Zusammenfassung steht im gecachten Systemtext; jede neue Zusammenfassung invalidiert den Cache | Zusammenfassung aus dem gecachten Teil nehmen (z. B. als erster Eintrag in `contents`), dann bleibt der Cache bis zu einer Stunde gültig. Das Standardmodell `gemini-3.5-flash-lite` ist nicht betroffen | P3 |
-| B19 | Nach „LETZTE 5 LÖSCHEN“ endet der Verlauf mit einer Meldung ohne Antwort; die nächste Anfrage enthält zwei Nutzer-Einträge hintereinander | Verlauf besteht seit 1.0.1 nur aus Paaren; 5 ist ungerade | Paarweise löschen (z. B. „LETZTE 2 FUNKSPRÜCHE“ = 4 Einträge). Ob Gemini zwei aufeinanderfolgende Nutzer-Einträge ablehnt, ist [UNGEKLÄRT] | P3 |
 
-Bereits zusammengefasste Funksprüche bleiben in der Zusammenfassung, auch wenn sie danach per „LETZTE 5 LÖSCHEN“ entfernt werden (erwartet, nicht korrigierbar ohne Neuberechnung).
+Bereits zusammengefasste Funksprüche bleiben in der Zusammenfassung, auch wenn sie danach per „LETZTEN FUNKSPRUCH LÖSCHEN“ entfernt werden (erwartet, nicht korrigierbar ohne Neuberechnung).
+
+## Behoben in 1.3.2
+Nachweis: `tests/history_pairs.py` (Headless-Chromium, simulierte Gemini-API), 15/15. Noch nicht vom Nutzer in OBS geprüft.
+
+| Nr. | Symptom | Ursache | Behebung |
+|---|---|---|---|
+| B19 | Nach „LETZTE 5 LÖSCHEN“ endete der Verlauf mit einer Meldung ohne Antwort; die nächste Anfrage enthielt zwei Nutzer-Einträge hintereinander | Verlauf besteht seit 1.0.1 nur aus Paaren; 5 ist ungerade | Button „LETZTEN FUNKSPRUCH LÖSCHEN“ (`clearLastExchange`) entfernt Meldung und Antwort als Paar; unbeantwortete Meldungen am Verlaufsende (aus älteren Fassungen) werden mit entfernt. Ob Gemini zwei aufeinanderfolgende Nutzer-Einträge abgelehnt hätte, bleibt [UNGEKLÄRT], ist aber nicht mehr relevant |
 
 ## Behoben in 1.2.2
 

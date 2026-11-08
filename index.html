@@ -672,7 +672,7 @@ Am 4. Mai befiehlt Dönitz „Regenbogen“ (Selbstversenkung aller Boote), wide
                 <div style="background: #1a1a1a; padding: 8px; border: 1px solid #333; border-radius: 3px; font-size: 11px;">
                     <div style="margin-bottom: 5px;">📊 Gespeicherte Nachrichten: <span id="history-count" style="color: #4dff4d;">0</span></div>
                     <div style="margin-bottom: 5px;">📝 Letzte Zusammenfassung: <span id="last-summary-info" style="color: #888;">Noch keine</span></div>
-                    <button id="clear-last-five-btn" onclick="clearLastFive()" style="margin-top: 5px; margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">➖ LETZTE 5 LÖSCHEN</button>
+                    <button id="clear-last-exchange-btn" onclick="clearLastExchange()" style="margin-top: 5px; margin-right: 5px; font-size: 10px; border-color: #ffa64d; color: #ffd9b3;">➖ LETZTEN FUNKSPRUCH LÖSCHEN</button>
                     <button id="clear-history-btn" onclick="clearHistory()" style="margin-top: 5px; font-size: 10px; border-color: #ff4d4d; color: #fcc;">🗑️ HISTORY LÖSCHEN</button>
                 </div>
             </div>
@@ -1473,16 +1473,29 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             appendLog("Funkmaat", "HISTORY GELÖSCHT. CACHE INVALIDIERT.");
         }
 
-        function clearLastFive() {
-            if (!confirmInWidget('clear-last-five-btn', "❓ SICHER? NOCHMAL KLICKEN")) return;
+        // Löscht den letzten Funkspruch als Paar (Meldung des Kaleu + Antwort des BdU), damit der Verlauf
+        // nicht mit einer unbeantworteten Meldung endet (B19). Unbeantwortete Meldungen am Ende
+        // (aus älteren Fassungen) werden mit entfernt.
+        function clearLastExchange() {
+            if (!confirmInWidget('clear-last-exchange-btn', "❓ SICHER? NOCHMAL KLICKEN")) return;
 
             if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
                 appendLog("Funkmaat", "Keine History zum Kürzen vorhanden.");
                 return;
             }
 
-            const removeCount = Math.min(5, conversationHistory.length);
-            conversationHistory.splice(conversationHistory.length - removeCount, removeCount);
+            let removeCount = 0;
+            // Bis einschließlich der letzten Kaleu-Meldung entfernen
+            while (conversationHistory.length > 0) {
+                const removed = conversationHistory.pop();
+                removeCount++;
+                if (removed && removed.role === 'user') break;
+            }
+            // Danach übrig gebliebene Meldungen ohne Antwort ebenfalls entfernen
+            while (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role !== 'assistant') {
+                conversationHistory.pop();
+                removeCount++;
+            }
             // Zusammenfassungsstand darf nicht hinter dem Verlaufsende liegen
             lastSummaryIndex = Math.min(lastSummaryIndex, conversationHistory.length);
 
@@ -1496,7 +1509,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             updateHistoryDisplay();
             updateCacheStatus();
 
-            appendLog("Funkmaat", `Letzte ${removeCount} Nachrichten aus der History gelöscht.`);
+            appendLog("Funkmaat", `Letzter Funkspruch aus der History gelöscht (${removeCount} Einträge).`);
         }
 
         // ==============================================

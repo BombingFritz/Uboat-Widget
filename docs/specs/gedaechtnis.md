@@ -8,7 +8,7 @@ Der BdU bezieht frühere Funksprüche ein, ohne dass der Kontext unbegrenzt wäc
 - An die API gehen alle noch nicht zusammengefassten Einträge im Volltext, mindestens die letzten 4, höchstens die letzten 10 (beide API-Typen). Jeder frühere Funkspruch steht genau einmal im Kontext.
 - Sind seit der letzten Zusammenfassung mindestens 8 Einträge dazugekommen, werden alle bis auf die letzten 4 im Telegrammstil zusammengefasst (höchstens 3 Sätze) und an die bestehende Zusammenfassung angehängt. Die Zusammenfassung steht im Systemtext.
 - Scheitert die Zusammenfassung (Fehler, leer oder abgeschnitten), folgt der nächste Versuch nach 2 weiteren Funksprüchen; „ZUSAMMENFASSUNG FEHLGESCHLAGEN“ erscheint einmal je Fehlerserie.
-- „LETZTE 5 LÖSCHEN“ entfernt die letzten fünf Einträge aus dem Verlauf; „HISTORY LÖSCHEN“ leert Verlauf und Zusammenfassung und invalidiert den Cache.
+- „LETZTEN FUNKSPRUCH LÖSCHEN“ entfernt die letzte Meldung samt Antwort (seit 1.3.2; vorher „LETZTE 5 LÖSCHEN“ mit fünf Einträgen, BUGS B19). Unbeantwortete Meldungen am Verlaufsende fallen mit weg, der Verlauf endet danach immer mit einer Antwort; „HISTORY LÖSCHEN“ leert Verlauf und Zusammenfassung und invalidiert den Cache.
 
 ## Nicht-Ziele
 Zusammenfassung der Zusammenfassung; serverseitige Speicherung (siehe `docs/OFFEN.md`).
@@ -18,10 +18,11 @@ Zusammenfassung der Zusammenfassung; serverseitige Speicherung (siehe `docs/OFFE
 - Nach Neuladen sind Verlauf und Zusammenfassung vorhanden.
 - Über 10 Meldungen fehlt in keiner Anfrage ein früherer Funkspruch, und keiner steht doppelt drin.
 - Dauerhaft scheiternde Zusammenfassung: höchstens ein Versuch je 2 Funksprüche, eine Meldung im Display.
+- Nach „LETZTEN FUNKSPRUCH LÖSCHEN“ wechseln sich in der nächsten Anfrage Kaleu und BdU ab (keine zwei Meldungen hintereinander).
 - Nach „HISTORY LÖSCHEN“ zeigt das Display die Begrüßung, die Zusammenfassung ist leer.
 
 ## Berührte Dateien/Funktionen
-`index.html`: `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive`, `restoreChatLog`.
+`index.html`: `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastExchange`, `restoreChatLog`.
 
 ## Status
-umgesetzt (1.0.0), Fehlerbehebungen in 1.0.1 und 1.0.2; offene Schwächen in `docs/OFFEN.md`.
+umgesetzt (1.0.0), Fehlerbehebungen in 1.0.1, 1.0.2 und 1.3.2; offene Schwächen in `docs/OFFEN.md`.
