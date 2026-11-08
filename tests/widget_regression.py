@@ -67,6 +67,10 @@ with sync_playwright() as p:
       localStorage.setItem('bdu_api_key','TEST-KEY');
       localStorage.setItem('bdu_current_model','gemini-2.5-flash-lite');
       localStorage.setItem('bdu_widget_version','3.0');
+      // Reste des expliziten Cachings bis 1.3.x (werden seit 1.4.0 beim Laden entfernt)
+      localStorage.setItem('bdu_caching_enabled','true');
+      localStorage.setItem('bdu_cache_name','cachedContents/alt');
+      localStorage.setItem('bdu_cache_expires','2099-01-01T00:00:00Z');
       window.confirm = () => true; window.alert = (m) => console.log('ALERT ' + m);
     """)
     page.goto(PAGE)
@@ -85,11 +89,12 @@ with sync_playwright() as p:
     hist = page.evaluate("JSON.parse(localStorage.getItem('bdu_conversation_history'))")
     check("Verlauf: Meldung + Antwort gespeichert", [h["role"] for h in hist] == ["user", "assistant"])
 
-    # 2) Cache-Fehlschlag nur einmal versucht
-    n_cache = len([c for c in calls if "cachedContents" in c[1]])
+    # 2) Seit 1.4.0 kein explizites Caching (ADR 0006): alte Schlüssel entfernt, kein Aufruf von cachedContents
+    legacy = page.evaluate("['bdu_caching_enabled','bdu_cache_name','bdu_cache_expires'].map(k => localStorage.getItem(k))")
+    check("Alte Cache-Schlüssel beim Laden entfernt", legacy == [None, None, None], str(legacy))
     send(page, "Fühlung halten")
-    n_cache2 = len([c for c in calls if "cachedContents" in c[1]])
-    check("Cache nach Fehlschlag nicht erneut versucht", n_cache == 1 and n_cache2 == 1, f"{n_cache} -> {n_cache2}")
+    check("Kein Aufruf von cachedContents (2.5-Modell)", not [c for c in calls if "cachedContents" in c[1]])
+    check("Anfrage ohne cachedContent, mit systemInstruction", "cachedContent" not in json.loads(gen_calls()[-1][2]) and "systemInstruction" in json.loads(gen_calls()[-1][2]))
     req2 = json.loads(gen_calls()[-1][2])
     roles = [c["role"] for c in req2["contents"]]
     check("Zweite Anfrage: 2 Verlaufseinträge + neue Meldung", roles == ["user", "model", "user"], str(roles))
@@ -128,11 +133,11 @@ with sync_playwright() as p:
                      lastSummaryIndex = 90; addToHistory('user','neu');""")
     check("B10: Index wandert beim Kürzen mit", page.evaluate("[conversationHistory.length, lastSummaryIndex]") == [100, 89])
 
-    # 8) Einstellungen speichern zeigt Bestätigung, erlaubt neuen Cache-Versuch
+    # 8) Einstellungen speichern zeigt Bestätigung
     page.evaluate("toggleSettings()")
     page.evaluate("saveSettings()")
     check("B1: KONFIGURATION GESPEICHERT sichtbar", page.locator("#chat-log .msg-sys", has_text="KONFIGURATION GESPEICHERT").count() == 1)
-    check("Cache-Sperre nach Speichern aufgehoben", page.evaluate("typeof cacheCreationFailed === 'undefined' ? null : cacheCreationFailed") is False)
+    check("Kein Caching-Schalter mehr in den Einstellungen", page.locator("#caching-enabled-checkbox").count() == 0 and page.locator("#cache-indicator").count() == 0)
 
     # 9) RESET
     page.evaluate("() => { clearSettings(); return new Promise(r => setTimeout(() => { clearSettings(); r(); }, 450)) }")
@@ -163,6 +168,7 @@ with sync_playwright() as p:
     page.evaluate("fetchModels()"); page.wait_for_timeout(300)
     check("Modellsuche Universal", "llama3" in page.locator("#model-list-display").inner_text() and any(c[1] == "http://localhost:11434/v1/models" for c in calls))
 
+    check("Über den ganzen Lauf kein Aufruf von cachedContents", not [c for c in calls if "cachedContents" in c[1]])
     errs = [l for l in logs if l.startswith("PAGEERROR")]
     check("Keine JS-Fehler", not errs, str(errs))
     check("Ton-Fehler blockiert nicht (Warnung geloggt)", any("Sende-Ton nicht abspielbar" in l for l in logs) or True)

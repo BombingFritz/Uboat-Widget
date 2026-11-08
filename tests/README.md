@@ -20,11 +20,12 @@ Einzelne Tests: `python tests/<name>.py`.
 
 | Test | Prüft |
 |---|---|
-| `widget_regression.py` | Senden/Empfangen mit Ton, Verlauf, Status-Meldungen, Gemini mit und ohne Cache, Universal-Modus, Reset |
+| `widget_regression.py` | Senden/Empfangen mit Ton, Verlauf, Status-Meldungen, kein explizites Caching (Reste werden entfernt), Universal-Modus, Reset |
 | `export_import.py` | Export/Import zwischen zwei Herkünften (zwei lokale Server auf Port 8701/8702), Update von älterer Version, Prompt-Sicherung, Download `Funk-Export.json` |
 | `obs_dialogs.py` | Alles ohne Browser-Dialoge wie in OBS: Import, Reset, Verlauf löschen, Hinweise (BUGS B20) |
 | `gemini_parts.py` | Gemini-Antworten aus mehreren Teilen, Denk-Teile, Download-Name (BUGS B21) |
 | `chat_section.py` | Chat-Modus-Bereich ein- und ausklappen |
+| `summary_condense.py` | Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige automatisch zwischengespeicherter Tokens, fester Anfang des Systemtexts, Export ohne `cachingEnabled` |
 | `history_pairs.py` | „LETZTEN FUNKSPRUCH LÖSCHEN“ entfernt Meldung und Antwort als Paar (BUGS B19) |
 | `benchmark_gemini.py` | Benchmark: Anfrage identisch zum Widget (Gemini), Kontingent, Fortsetzen, Blindbewertung, Export |
 | `benchmark_providers.py` | Benchmark: Groq, OpenRouter, Mistral, eigene Adresse; Anfrage identisch zu `callUniversal` |

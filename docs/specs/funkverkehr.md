@@ -5,7 +5,7 @@ Meldung des Kaleu an den BdU senden und die Antwort als Funkspruch ausgeben.
 
 ## Verhalten
 - Enter oder „SENDEN“ ruft `sendMessage` auf. Ohne API-Schlüssel erscheint ein Hinweis, es wird nichts gesendet.
-- Beginnt die Meldung mit „Status:“ (Groß-/Kleinschreibung egal), wird der Rest als aktueller Status gespeichert, im Display bestätigt und der Cache invalidiert. Die Meldung wird trotzdem an den BdU gesendet.
+- Beginnt die Meldung mit „Status:“ (Groß-/Kleinschreibung egal), wird der Rest als aktueller Status gespeichert, und im Display bestätigt. Die Meldung wird trotzdem an den BdU gesendet.
 - Die Meldung erscheint als `> …`, Statuslicht blinkt, der Sende-Ton läuft vollständig ab, dann folgt der API-Aufruf.
 - Die Antwort wird mit Kopf „FT von BdU an <Boot>:“ zeichenweise (45 ms) ausgegeben, solange läuft der Empfangs-Ton (optional als Loop). Der Bootsname stammt aus der Zeile `U-Boot:` im Boot-Kontext.
 - Bei Fehlern: rote Systemmeldung „FUNKSTÖRUNG: …“, bei „not found“ zusätzlich Hinweis auf die Modellsuche. Die Meldung bleibt im Display, kommt aber nicht in den Verlauf.

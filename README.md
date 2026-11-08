@@ -99,9 +99,9 @@ Grundlegende Technik
 •	Lokale Speicherung - alle Einstellungen bleiben im Browser
 Token-Verbrauch & Kostenoptimierung
 Das Widget wurde speziell für kostenlosen Einsatz optimiert. Folgende Faktoren beeinflussen den Token-Verbrauch:
-•	Kontextlänge: Der historische Kontext (~11.000 Zeichen) wird bei jeder Anfrage berücksichtigt, aber ggbf. gecached. 
-•	Nachrichtenverlauf: Begrenzt auf die letzten Nachrichten und Zusammenfassungen, um Kosten niedrig zu halten
-•	Context Caching: Gemini 2.0+ kann wiederkehrende Kontexte zwischenspeichern (spart bis zu 50% Tokens, leider aktuell nur in der kostenpflichtigen Version)
+•	Kontextlänge: Der historische Kontext (~11.000 Zeichen) wird bei jeder Anfrage mitgeschickt. Er steht immer am Anfang der Anfrage; Gemini ab 2.5 und manche andere Anbieter speichern solche gleichbleibenden Anfänge automatisch zwischen. Wie viel davon bei der letzten Anfrage zwischengespeichert war, zeigt die Token-Schätzung in den Einstellungen.
+•	Nachrichtenverlauf: Begrenzt auf die letzten Nachrichten und eine Zusammenfassung. Wird die Zusammenfassung zu lang (über 2.000 Zeichen), verdichtet die KI sie zu einer kürzeren Gesamtzusammenfassung. Spaßmeldungen ohne Bezug zur Feindfahrt kommen nicht in die Zusammenfassung.
+•	Kein eigenes Caching mehr: Das frühere „Explizite Caching“ gab es im kostenlosen Kontingent nicht und wurde mit Version 1.4.0 entfernt.
 Anpassungsmöglichkeiten: Für intensivere Nutzung können Kontextlänge und Nachrichtenverlauf im Code leicht erweitert werden. Durch das Abspielen des Audios ist ein etwas langsamerer Nachrichtenverkehr schon vorgegeben. Kostenlos klappt es wunderbar, wenn – historisch akkurat – gelegentlich eine Nachricht gesendet wird und nicht alle 10 Sekunden.
 Status-System
 Das Widget erkennt automatisch Meldungen, die mit "Status:" begonnen werden und aktualisiert damit den Boot-Status:

@@ -10,14 +10,14 @@ Einstellungen, Kontexte, Verlauf und Zusammenfassung in einen anderen Browser od
 - **API-Schlüssel** nur, wenn das Häkchen gesetzt ist (Standard aus). Ohne Schlüssel behält der Import den vorhandenen Schlüssel.
 - **IMPORTIEREN:** liest das Textfeld; **DATEI LADEN** liest eine Datei und importiert sie. Nach Rückfrage im Widget (Angaben im Statusfeld, Button wird zu „IMPORT BESTÄTIGEN“, zweiter Klick binnen 60 s) werden die Werte gespeichert und das Widget neu geladen. Seit 1.2.1 ohne Browser-Dialog, weil OBS `confirm()` nicht anzeigt (BUGS B20); ändert sich der Text oder ist er ungültig, wird die Rückfrage aufgehoben.
 - Der importierte Persönlichkeits-Prompt gilt als aktuell (`bdu_widget_version` = aktuelle `WIDGET_VERSION`), er wird beim Neuladen nicht durch den Standard ersetzt.
-- Ungültiges JSON, fremdes Format oder ein Export einer neueren Formatversion wird mit Meldung abgelehnt; nichts wird verändert. Verlaufseinträge werden geprüft (Rolle, Text), auf 100 gekürzt, der Zusammenfassungsstand passend begrenzt. Gemini-Cache wird nicht übertragen.
+- Ungültiges JSON, fremdes Format oder ein Export einer neueren Formatversion wird mit Meldung abgelehnt; nichts wird verändert. Verlaufseinträge werden geprüft (Rolle, Text), auf 100 gekürzt, der Zusammenfassungsstand passend begrenzt. Ein `cachingEnabled` aus Exporten bis 1.3.x wird ignoriert; neue Exporte enthalten es nicht mehr (seit 1.4.0, `formatVersion` bleibt 1).
 - **Prompt-Sicherung:** Ersetzt der Versionsabgleich beim Laden einen eigenen Prompt durch den Standard, wird der alte vorher in `bdu_system_prompt_backup` gesichert. Ein Hinweis mit „GESICHERTEN PROMPT ÜBERNEHMEN“ setzt ihn ins Feld „Persönlichkeit“ (bestätigen mit SPEICHERN). Die Sicherung ist im Export enthalten; RESET löscht sie.
 
 ### Format (Version 1)
 ```json
 {
   "format": "enigma-bdu-funk", "formatVersion": 1, "exportedAt": "…", "promptVersion": "3.0",
-  "settings": { "apiType", "customBaseUrl", "model", "cachingEnabled", "loopSound", "volume",
+  "settings": { "apiType", "customBaseUrl", "model", "loopSound", "volume",
                 "systemPrompt", "bootContext", "currentStatus", "chatEnabled", "chatServerUrl", "chatPersonality", "apiKey (optional)" },
   "memory": { "history": [{ "role", "text", "timestamp" }], "summary", "lastSummaryIndex" },
   "promptBackup": "optional"

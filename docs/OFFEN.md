@@ -1,6 +1,8 @@
 # Offene Punkte
 
 ## Nächste Schritte (Stand 08.11.2026)
+**1.4.0 umgesetzt** (Branch, noch nicht veröffentlicht): explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nächster Schritt: Nutzertest in OBS (Senden, Chat, Anzeige „Letzte Anfrage“, erste Verdichtung der alten Zusammenfassung), dann Release `v1.4.0` (regulär, „Latest“). **Release `v1.3.2`** veröffentlicht (08.11.2026, „Latest“, Anhang `index.html` bytegleich mit `main`).
+
 **Release `v1.3.0` veröffentlicht** (08.11.2026, reguläres Release, „Latest“; Anhänge `index.html`, `bench.html`, `beispiel-kontext.json` bytegleich mit `main`). `v1.2.1` und `v1.2.2` bleiben bewusst „Pre-release“.
 
 **Lizenz:** Ab 1.3.1 MIT (Entscheidung des Nutzers, 08.11.2026; alle Inhalte inkl. Töne von ihm). Der Tag `v1.3.0` enthält versehentlich die MPL-2.0 (Auswahl in der GitHub-Vorlage); Releases bis v1.2.2 unter CC-BY 4.0. Release `v1.3.1` (nur Lizenz und Doku) legt der Nutzer an.
@@ -15,15 +17,19 @@ Benchmark im Ordner `benchmark/` (Gemini, Groq, OpenRouter, Mistral, eigene Adre
 
 ## Caching, Gedächtnis und Verlauf (Entscheidungen 08.11.2026)
 Entscheidungen des Nutzers (08.11.2026):
-1. **Explizites Gemini-Caching wird ausgebaut** (geplant für 1.4.0, ADR 0006). Gründe: im kostenlosen Kontingent laut Googles Preisseite nicht verfügbar, vom Standardmodell `gemini-3.5-flash-lite` ohnehin nicht genutzt, für bezahlte Nutzer wegen Speichergebühr und B18 kaum Ersparnis, nie mit echter API getestet, Nutzer verwendet es selbst nicht mehr. Ersatz ist Googles automatisches (implizites) Caching ab Gemini 2.5, das einen gleichbleibenden Anfang der Anfrage braucht. Damit entfallen B18 und Punkt 3 unter „Weitere Punkte“.
-2. **Zusammenfassung verdichten** statt unbegrenzt anhängen (Punkt 2 unter „Weitere Punkte“, geplant für 1.4.0).
+1. **Explizites Gemini-Caching ausgebaut** (umgesetzt in 1.4.0, ADR 0006). Gründe: im kostenlosen Kontingent laut Googles Preisseite nicht verfügbar, vom Standardmodell `gemini-3.5-flash-lite` ohnehin nicht genutzt, für bezahlte Nutzer wegen Speichergebühr und B18 kaum Ersparnis, nie mit echter API getestet, Nutzer verwendet es selbst nicht mehr. Ersatz ist Googles automatisches (implizites) Caching ab Gemini 2.5, das einen gleichbleibenden Anfang der Anfrage braucht. Damit entfallen B18 und Punkt 3 unter „Weitere Punkte“.
+2. **Zusammenfassung verdichten** statt unbegrenzt anhängen (umgesetzt in 1.4.0, `docs/specs/gedaechtnis.md`).
 3. **Chronologie bleibt vollständig** im Persönlichkeits-Prompt; kein Kürzen nach Jahr. Sie steht am festen Anfang der Anfrage und profitiert vom impliziten Caching.
 4. **Paarweise löschen (B19):** umgesetzt in 1.3.2 als „LETZTEN FUNKSPRUCH LÖSCHEN“ (ein Paar je Klick; der Nutzer verwendet den Button selten).
 5. ~~Button „älteste Hälfte der History löschen“~~: verworfen (Nutzer, 08.11.2026), nicht nötig, wenn Spaßmeldungen beim Verdichten wegfallen.
-6. **Spaßmeldungen:** nur Stufe 1 (Nutzer, 08.11.2026): Zusammenfassen und Verdichten lassen sie weg, ohne zusätzliche Anfrage. Kein KI-Knopf zum Ausmisten. Beispiele des Nutzers im Plan.
+6. **Spaßmeldungen:** nur Stufe 1 (Nutzer, 08.11.2026): Zusammenfassen und Verdichten lassen sie weg, ohne zusätzliche Anfrage. Kein KI-Knopf zum Ausmisten. Umgesetzt in 1.4.0 mit den Beispielen des Nutzers (`SUMMARY_FUN_RULE`).
 7. B19 vom Nutzer in OBS bestätigt (08.11.2026).
 
-Plan: `docs/specs/plan-1.4.0.md` mit den Entscheidungen D1–D4 (alle wie vorgeschlagen, 08.11.2026; D3 ergänzt: Zusammenfassung wiederholt nichts aus dem Boot-Kontext); Caching-Ausbau: ADR 0006.
+Detailentscheidungen zum Plan 1.4.0 (Nutzer, 08.11.2026), umgesetzt in 1.4.0:
+- D1: Token-Schätzung zeigt den Verbrauch der letzten Anfrage und den automatisch zwischengespeicherten Anteil.
+- D2: Obergrenze der Zusammenfassung 2.000 Zeichen, Ziel nach dem Verdichten 1.200 Zeichen.
+- D3: Verdichtung bekommt den Boot-Kontext zur Einordnung; die Zusammenfassung wiederholt nichts, was dort schon steht.
+- D4: Wortlaut der Spaß-Regel wie vorgeschlagen.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
@@ -65,7 +71,7 @@ Der Nutzer arbeitet lokal mit einer älteren Fassung (`WIDGET_VERSION = "2.1"`, 
 
 ## Weitere Punkte
 1. ~~**Lizenzdatei:**~~ `LICENSE`, ab 1.3.1 MIT (08.11.2026).
-2. **Wachsende Zusammenfassung:** `historySummary` wird nur angehängt, nie verdichtet. Bei langen Einsätzen steigt der Token-Verbrauch. Mögliche Lösung: Zusammenfassung ab einer Länge selbst zusammenfassen.
-3. **Caching-Erkennung über Modellnamen** („1.5“, „2.5“) passt nicht zu neueren Modellen: Das neue Standardmodell `gemini-3.5-flash-lite` nutzt kein explizites Caching. Besser: Caching für alle Gemini-Modelle versuchen und den Fehlschlag auswerten (seit 1.0.1 wird ein Fehlschlag nicht mehr bei jeder Meldung wiederholt).
+2. ~~**Wachsende Zusammenfassung**~~: erledigt in 1.4.0 (Verdichten ab 2.000 Zeichen).
+3. ~~**Caching-Erkennung über Modellnamen**~~: entfallen mit 1.4.0 (explizites Caching entfernt, ADR 0006).
 4. **Release-Anhänge:** Das Release `v1.0` enthält zusätzlich `Enigma.Bdu.Readme.1.docx`. Künftig README als einzige Anleitung, Release nur mit `index.html`.
 5. **Externe Abhängigkeiten:** Hintergrundbild (Unsplash) und Schriften (Google Fonts) werden online geladen. Ohne Internet fehlen sie; die Funktion bleibt.

@@ -19,7 +19,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(); c=b.new_context(accept_downloads=True); pg=c.new_page(); pg.route("**/*",h)
     errs=[]; pg.on("pageerror",lambda e: errs.append(str(e))); dl=[]; pg.on("download",lambda d: dl.append(d.suggested_filename))
     pg.goto(W); pg.wait_for_timeout(300)
-    pg.evaluate("localStorage.setItem('bdu_api_key','K'); localStorage.setItem('bdu_caching_enabled','false')"); pg.reload(); pg.wait_for_timeout(300)
+    pg.evaluate("localStorage.setItem('bdu_api_key','K')"); pg.reload(); pg.wait_for_timeout(300)
     t=pg.evaluate("callApi('Test')")
     check("Zwei Text-Teile werden zusammengesetzt", t=="Rückmarsch wird genehmigt. Kurs Lorient.", t)
     resp["parts"]=[{"text":"Ich überlege...","thought":True},{"text":"Verstanden."},{"thoughtSignature":"abc"}]

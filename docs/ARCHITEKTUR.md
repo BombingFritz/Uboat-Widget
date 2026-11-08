@@ -16,12 +16,12 @@ Gehäuse 520×520 px, transparenter Body. DOM: `radio-device` mit Metallecken un
 ## Funktionsbereiche
 | Bereich | Funktionen | Aufgabe |
 |---|---|---|
-| Start | `window.onload`, `loadSettings`, `restoreChatLog` | Einstellungen, Verlauf, Zusammenfassung und Cache-Info aus `localStorage` laden; Verlauf ohne Schreibmaschinen-Effekt anzeigen |
-| Senden | `sendMessage` | „Status:“ erkennen, Meldung anzeigen, Ton, API-Aufruf; nur bei Erfolg Meldung und Antwort speichern, Antwort ausgeben, Zusammenfassung und Cache-Erneuerung anstoßen |
+| Start | `window.onload`, `loadSettings`, `restoreChatLog` | Einstellungen, Verlauf und Zusammenfassung aus `localStorage` laden, Reste des früheren Cachings entfernen; Verlauf ohne Schreibmaschinen-Effekt anzeigen |
+| Senden | `sendMessage` | „Status:“ erkennen, Meldung anzeigen, Ton, API-Aufruf; nur bei Erfolg Meldung und Antwort speichern, Antwort ausgeben, Zusammenfassung anstoßen |
 | API | `callApi`, `callGemini`, `callUniversal`, `handleGeminiResponse`, `normalizeBaseUrl` | Je nach `apiType` Gemini oder OpenAI-kompatibel aufrufen, Antwort und Token-Verbrauch auswerten |
-| Caching | `createOrUpdateCache`, `updateCacheStatus`, `updateTokenEstimate` | Explizites Gemini-Caching des Systemkontexts, Statusanzeige, Token-Schätzung (Zeichen ÷ 4) |
-| Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastExchange` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
-| Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern mit Cache-Invalidierung, Zurücksetzen, Modellliste |
+| Token-Anzeige | `updateTokenEstimate`, `updateLastUsage` | Token-Schätzung (Zeichen ÷ 4); Verbrauch der letzten Anfrage und davon automatisch zwischengespeicherter Anteil (seit 1.4.0, nur im RAM) |
+| Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `requestSummary`, `updateHistoryDisplay`, `clearHistory`, `clearLastExchange` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
+| Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern, Zurücksetzen, Modellliste |
 | Chat-Bereich | `setChatSectionOpen`, `toggleChatSection` | Gruppe „Chat-Modus“ in den Einstellungen ein-/ausklappen; offen, wenn der Chat-Modus an ist (seit 1.3.0) |
 | Rückfragen | `confirmInWidget`, `cancelConfirm`, `flashButton` | Rückfragen und Hinweise im Widget statt `confirm()`/`alert()`, die eine OBS-Browserquelle nicht anzeigt (seit 1.2.1): erster Klick fragt auf dem Button, zweiter bestätigt |
 | Ton | `playSendSound`, `playReceiveSound`, `stopReceiveSound` | Sende-Ton abwarten, Empfangs-Ton (optional Loop) während der Ausgabe; nicht ladbare Töne werden übersprungen |
@@ -47,21 +47,20 @@ Dazu kommen Verlaufseinträge im Volltext (vor der neuen Meldung) und die neue M
 
 Die neue Meldung kommt erst nach erfolgreicher Antwort in den Verlauf. Schlägt der Aufruf fehl, bleibt sie nur im Display stehen.
 
-**Benchmark:** `benchmark/bench.html` baut die Anfrage nach demselben Schema nach (Gemini: `callGemini` ohne Cache; Groq/Mistral: `callUniversal`) und übernimmt `SAFETY_RULES`, `CHAT_RULES`, `DEFAULT_CHAT_PERSONALITY`, `getContextHistory`, `chatUserText` und `cleanChatAnswer` als Kopie. Wer Kontextaufbau, diese Konstanten oder die Generierungswerte im Widget ändert, zieht den Benchmark nach (Spec `docs/specs/benchmark.md`); `tests/benchmark_gemini.py` und `tests/benchmark_providers.py` prüfen, dass die Anfragen gleich bleiben.
+**Benchmark:** `benchmark/bench.html` baut die Anfrage nach demselben Schema nach (Gemini: `callGemini`; Groq/Mistral: `callUniversal`) und übernimmt `SAFETY_RULES`, `CHAT_RULES`, `DEFAULT_CHAT_PERSONALITY`, `getContextHistory`, `chatUserText` und `cleanChatAnswer` als Kopie. Wer Kontextaufbau, diese Konstanten oder die Generierungswerte im Widget ändert, zieht den Benchmark nach (Spec `docs/specs/benchmark.md`); `tests/benchmark_gemini.py` und `tests/benchmark_providers.py` prüfen, dass die Anfragen gleich bleiben.
 
 **Tests:** `tests/` enthält Headless-Tests (Python, Playwright, Chromium) mit simulierten APIs; keine echten Aufrufe, kein privater Funkverlauf (Testdaten werden aus `benchmark/beispiel-kontext.json` erzeugt). Aufruf `python tests/run_all.py`, Anleitung `tests/README.md`.
 
 ## Chat-Anfragen (Chat-Modus)
-Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben `SAFETY_RULES`) und die editierbare Chat-Persönlichkeit (`getChatInstructions`): ohne Cache am Ende des Systemtexts, mit Gemini-Cache vor der Meldung (der Systemtext liegt dann im Cache). Die Meldung geht als „Funkspruch aus dem Chat (nicht vom Kaleu): …“, Antwortbudget 200 Tokens. `cleanChatAnswer` entfernt Markdown, eine eigene Kopfzeile („BdU an …:“) und Zeilenumbrüche. Chat-Anfragen ändern weder Verlauf, Zusammenfassung, Status noch Display. Sie warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden (`CHAT_KALEU_PRIORITY_MS`). HTTP 429 bzw. `RESOURCE_EXHAUSTED` meldet das Widget als `quota`, der Server verhängt dann Funkstille.
+Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben `SAFETY_RULES`) und die editierbare Chat-Persönlichkeit (`getChatInstructions`): am Ende des Systemtexts. Die Meldung geht als „Funkspruch aus dem Chat (nicht vom Kaleu): …“, Antwortbudget 200 Tokens. `cleanChatAnswer` entfernt Markdown, eine eigene Kopfzeile („BdU an …:“) und Zeilenumbrüche. Chat-Anfragen ändern weder Verlauf, Zusammenfassung, Status noch Display. Sie warten, solange ein eigener Funkspruch läuft, und bis 60 s nach dem letzten eigenen Senden (`CHAT_KALEU_PRIORITY_MS`). HTTP 429 bzw. `RESOURCE_EXHAUSTED` meldet das Widget als `quota`, der Server verhängt dann Funkstille.
 
-## Caching (nur Gemini)
-- Nur wenn `cachingEnabled` und der Modellname „1.5“ oder „2.5“ enthält. Andere Modelle laufen ohne explizites Caching; bei „2.0“ wird implizites Caching angenommen.
-- `createOrUpdateCache` legt den Systemtext als `cachedContents` mit TTL 3600 s an und speichert Name und Ablaufzeit. Fehler (z. B. weniger als 2.048 Tokens) führen ohne Abbruch zum Aufruf ohne Cache und setzen `cacheCreationFailed`: Bis zum nächsten Speichern der Einstellungen, „RESET“ oder Neuladen gibt es keinen weiteren Versuch (sonst kostet jede Meldung einen zusätzlichen Aufruf).
-- Invalidiert wird bei geänderten Einstellungen, „Status:“-Meldung, neuer Zusammenfassung, gelöschtem Verlauf und nach 8 Antworten. Der alte Cache wird nicht gelöscht, er läuft bei Google aus.
+## Caching
+Kein explizites Caching (seit 1.4.0, ADR 0006; vorher `cachedContents` für Modelle mit „1.5“/„2.5“ im Namen). Gemini ab 2.5 und einige OpenAI-kompatible Anbieter cachen gleichbleibende Anfänge von Anfragen automatisch. Deshalb gilt für den Kontextaufbau: **Festes vorne, Wechselndes hinten** (Reihenfolge oben). Wer etwas einfügt, das sich oft ändert, setzt es hinter den Boot-Kontext. Den Verbrauch der letzten Anfrage und den automatisch zwischengespeicherten Anteil zeigt die Token-Schätzung in den Einstellungen (Gemini `cachedContentTokenCount`, OpenAI-kompatibel `prompt_tokens_details.cached_tokens`). Ob Googles automatisches Caching im kostenlosen Kontingent greift, ist [UNGEKLÄRT].
 
 ## Gedächtnis
 - Verlauf: Einträge `{role: "user"|"assistant", text, timestamp}`, höchstens 100 (`MAX_HISTORY_ITEMS`). Kürzen läuft über `trimHistory`, das `lastSummaryIndex` um die Zahl entfernter Einträge verringert; „LETZTEN FUNKSPRUCH LÖSCHEN“ (`clearLastExchange`, seit 1.3.2) entfernt Meldung und Antwort als Paar, so dass der Verlauf immer mit einer Antwort endet, und begrenzt den Index auf die Verlaufslänge.
-- Nach jeder Antwort: Sind seit `lastSummaryIndex` mindestens 8 Einträge dazugekommen, fasst `summarizeHistory` alles ab `lastSummaryIndex` bis auf die letzten 4 Einträge zusammen (gleiches Modell, `temperature` 0.3, Budget 300 Tokens; abgeschnittene oder leere Ergebnisse gelten als Fehlschlag) und hängt das Ergebnis an `historySummary` an. Die Zusammenfassung wächst damit unbegrenzt.
+- Nach jeder Antwort: Sind seit `lastSummaryIndex` mindestens 8 Einträge dazugekommen, fasst `summarizeHistory` alles ab `lastSummaryIndex` bis auf die letzten 4 Einträge zusammen (gleiches Modell, `temperature` 0.3, Budget 300 Tokens; abgeschnittene oder leere Ergebnisse gelten als Fehlschlag) und hängt das Ergebnis an `historySummary` an. Spaßmeldungen ohne Bezug zur Feindfahrt und die Antworten darauf lässt die KI weg (`SUMMARY_FUN_RULE`, Wortlaut vom Nutzer freigegeben); bestehen die Funksprüche nur daraus, antwortet sie „KEINE MELDUNG“, dann wird nichts angehängt und der Stand trotzdem weitergesetzt.
+- **Verdichten** (seit 1.4.0): Würde die Zusammenfassung mit dem nächsten Teil (geschätzt `SUMMARY_PART_ESTIMATE_CHARS` = 400 Zeichen) länger als `SUMMARY_MAX_CHARS` (2.000 Zeichen), geht in derselben einen Anfrage die bisherige Zusammenfassung mit den neuen Funksprüchen und dem Boot-Kontext (nur zur Einordnung, nicht wiederholen) an die KI. Ergebnis: eine Gesamtzusammenfassung mit Ziel `SUMMARY_CONDENSE_TARGET_CHARS` (1.200 Zeichen), Budget 600 Tokens, aktuelle Feindfahrt ausführlicher, frühere Fahrten knapp, ohne Spaßmeldungen. Sie **ersetzt** `historySummary`. Abgeschnitten, leer oder „KEINE MELDUNG“ gilt als Fehlschlag.
 - Schlägt die Zusammenfassung fehl, bleibt der Verlauf unverändert. Der nächste Versuch folgt erst nach 4 weiteren Einträgen (`summaryPauseEntries`, 2 Funksprüche); die Fehlermeldung erscheint einmal je Fehlerserie im Display. Bis dahin gehen bis zu 10 Einträge im Volltext mit; bei längerem Ausfall fallen die ältesten heraus. Pause und Meldungsmerker liegen nur im RAM.
 
 ## Datenhaltung (`localStorage`)
@@ -71,18 +70,18 @@ Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben
 | `bdu_api_type` | `gemini` oder `universal` |
 | `bdu_custom_base_url` | Base-URL im Universal-Modus |
 | `bdu_current_model` | Modellname |
-| `bdu_caching_enabled` | Explizites Caching an/aus |
 | `bdu_system_prompt` | Persönlichkeits-Prompt |
 | `bdu_boot_context` | Boot-Kontext |
 | `bdu_current_status` | Aktueller Status |
 | `bdu_loop_sound`, `bdu_sound_volume` | Ton-Einstellungen |
 | `bdu_conversation_history` | Verlauf (JSON) |
 | `bdu_history_summary`, `bdu_last_summary_index` | Zusammenfassung und Stand |
-| `bdu_cache_name`, `bdu_cache_expires` | Gemini-Cache |
 | `bdu_widget_version` | Zuletzt geladene `WIDGET_VERSION` |
 | `bdu_system_prompt_backup` | Eigener Prompt, gesichert bevor der Versionsabgleich ihn ersetzt hat |
 | `bdu_chat_enabled`, `bdu_chat_server_url` | Chat-Modus an/aus, Adresse des Companion-Servers (Standard `http://localhost:3000`) |
 | `bdu_chat_personality` | Ton nur für Chat-Antworten (Standard `DEFAULT_CHAT_PERSONALITY`) |
+
+Entfallen seit 1.4.0 (werden beim Laden entfernt, `LEGACY_CACHE_KEYS`): `bdu_caching_enabled`, `bdu_cache_name`, `bdu_cache_expires`.
 
 Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`http://absolute`) und eine `file:///`-URL verschiedene Herkünfte; ein Wechsel der Einbindung startet mit leeren Einstellungen. Übertragen lässt sich der Stand mit Export/Import (`docs/specs/export-import.md`).
 
@@ -90,14 +89,13 @@ Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`
 `DEFAULT_PROMPT`, `DEFAULT_CONTEXT`, `DEFAULT_STATUS`, `DEFAULT_MODEL` (`gemini-3.5-flash-lite`), `DEFAULT_LOOP_SOUND` (an) und `DEFAULT_VOLUME` (0,5) gelten für den Erststart und für „RESET“ gleichermaßen.
 
 ## Versionierung im Code
-`loadSettings` vergleicht `bdu_widget_version` mit `WIDGET_VERSION`. Bei Abweichung wird der gespeicherte Persönlichkeits-Prompt durch `DEFAULT_PROMPT` ersetzt, der Cache wird invalidiert. Seit 1.1.0 wird ein eigener Prompt vorher in `bdu_system_prompt_backup` gesichert und lässt sich in den Einstellungen zurückholen. Ein Import setzt `bdu_widget_version` auf die aktuelle Version, damit der importierte Prompt bleibt.
+`loadSettings` vergleicht `bdu_widget_version` mit `WIDGET_VERSION`. Bei Abweichung wird der gespeicherte Persönlichkeits-Prompt durch `DEFAULT_PROMPT` ersetzt. Seit 1.1.0 wird ein eigener Prompt vorher in `bdu_system_prompt_backup` gesichert und lässt sich in den Einstellungen zurückholen. Ein Import setzt `bdu_widget_version` auf die aktuelle Version, damit der importierte Prompt bleibt.
 
 ## Schnittstellen
 | Ziel | Aufruf | Zweck |
 |---|---|---|
 | Gemini | `GET /v1beta/models` | Modellliste (auch im Universal-Modus, siehe `docs/BUGS.md`) |
 | Gemini | `POST /v1beta/models/{model}:generateContent` | Antwort und Zusammenfassung |
-| Gemini | `POST /v1beta/cachedContents` | Kontext-Cache anlegen |
 | OpenAI-kompatibel | `POST {base}/v1/chat/completions` | Antwort und Zusammenfassung |
 | Companion-Server (nur Chat-Modus) | `GET {server}/api/bdu/stream` (Server-Sent Events, Ereignis `request` mit `{id, text}`) | Chat-Anfragen empfangen |
 | Companion-Server (nur Chat-Modus) | `POST {server}/api/bdu/answer` mit `{id, status: ok/quota/error, text?, error?}` | Antwort oder Fehler melden |
