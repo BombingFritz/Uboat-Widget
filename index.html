@@ -1057,6 +1057,8 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         const SUMMARY_PART_ESTIMATE_CHARS = 400;     // erwartete Länge eines angehängten Teils (höchstens 3 Sätze)
         const SUMMARY_CONDENSE_MAX_TOKENS = 1500;    // großzügig: abgeschnittene Ergebnisse sind unbrauchbar (600 reichte im Nutzertest 08.11.2026 nicht)
         const SUMMARY_NOTHING = "KEINE MELDUNG";     // Antwort, wenn nur Spaßmeldungen zusammenzufassen waren
+        // Zeitpunkt und Art der letzten Zusammenfassung, nur für die Anzeige in den Einstellungen (seit 1.4.0)
+        const SUMMARY_META_KEY = 'bdu_last_summary_meta';
         // Spaßmeldungen kommen nicht ins Gedächtnis (Wortlaut und Beispiele vom Nutzer freigegeben, 08.11.2026)
         const SUMMARY_FUN_RULE = `Lass Spaß- und Scherzmeldungen ohne Bezug zur laufenden Feindfahrt weg, ebenso die Antworten darauf. Beispiele: „Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos“, „Spargelvorräte sind leer, wir benötigen dringend mehr Spargel“, „Bier ist alle, wir brauchen Hilfe!“. Erwähne nicht, dass etwas weggelassen wurde.`;
 
@@ -1298,7 +1300,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                     log.appendChild(msgDiv);
                 } else {
                     const msgDiv = createBduMessageDiv();
-                    appendTextWithBreaks(msgDiv, msg.text);
+                    appendTextWithBreaks(msgDiv, stripAnswerHeader(msg.text));
                     log.appendChild(msgDiv);
                 }
             });
@@ -1339,8 +1341,15 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             
             if (summaryDisplay) {
                 if (historySummary) {
+                    // Seit 1.4.0: Zeitpunkt, Art und Länge statt „Vor N Nachrichten (N neue)“ (pendelte nur zwischen 4 und 6)
                     const unsummarized = conversationHistory.length - lastSummaryIndex;
-                    summaryDisplay.textContent = `Vor ${conversationHistory.length - lastSummaryIndex} Nachrichten (${unsummarized} neue)`;
+                    const open = Math.max(0, Math.floor(unsummarized / 2));
+                    let meta = null;
+                    try { meta = JSON.parse(localStorage.getItem(SUMMARY_META_KEY) || "null"); } catch (e) { meta = null; }
+                    const when = meta && meta.at
+                        ? new Date(meta.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + " (" + meta.type + ")"
+                        : "Zeitpunkt unbekannt";
+                    summaryDisplay.textContent = `${when}, ${historySummary.length} Zeichen; ${open} Funkspr${open === 1 ? "uch" : "üche"} noch nicht zusammengefasst`;
                     summaryDisplay.style.color = unsummarized >= 8 ? '#ffb84d' : '#4dff4d';
                 } else {
                     summaryDisplay.textContent = "Noch keine";
@@ -1421,6 +1430,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             localStorage.removeItem('bdu_conversation_history');
             localStorage.removeItem('bdu_history_summary');
             localStorage.removeItem('bdu_last_summary_index');
+            localStorage.removeItem(SUMMARY_META_KEY);
             
             const log = document.getElementById('chat-log');
             log.innerHTML = '<div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>';
@@ -1473,6 +1483,14 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         // ==============================================
         // HISTORY SUMMARIZATION
         // ==============================================
+        // Inhaltlich unbrauchbares Ergebnis (abgeschnitten, leer, nicht kürzer) – im Unterschied zu API-Fehlern
+        // wie Kontingent oder Netz. Nur dann greift beim Verdichten der Rückfall (älteste Abschnitte entfernen).
+        function summaryContentError(message) {
+            const e = new Error(message);
+            e.summaryContent = true;
+            return e;
+        }
+
         // Fragt das aktuelle Modell nach einer Zusammenfassung (beide API-Typen). Abgeschnittene oder leere
         // Ergebnisse gelten als Fehlschlag.
         async function requestSummary(prompt, maxTokens) {
@@ -1492,7 +1510,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 const d = await resp.json().catch(() => ({}));
                 if (!resp.ok || d.error) throw new Error(d.error?.message || `API Error ${resp.status}`);
                 console.log("[SUMMARY] 📊 Abschluss:", d.choices?.[0]?.finish_reason, "– Prompt", d.usage?.prompt_tokens, "Tokens, Antwort", d.usage?.completion_tokens, "Tokens, Budget", maxTokens);
-                if (d.choices?.[0]?.finish_reason === "length") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                if (d.choices?.[0]?.finish_reason === "length") throw summaryContentError('Zusammenfassung abgeschnitten (Token-Budget).');
                 summaryText = (d.choices?.[0]?.message?.content || "").trim();
             } else {
                 let summaryModelName = currentModel;
@@ -1515,12 +1533,12 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 if (data.error) throw new Error(data.error.message);
                 const u = data.usageMetadata || {};
                 console.log("[SUMMARY] 📊 Abschluss:", data.candidates?.[0]?.finishReason, "– Prompt", u.promptTokenCount, "Tokens, Antwort", u.candidatesTokenCount, "Tokens, Denken", u.thoughtsTokenCount || 0, "Tokens, Budget", maxTokens);
-                if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw summaryContentError('Zusammenfassung abgeschnitten (Token-Budget).');
                 summaryText = (data.candidates?.[0]?.content?.parts || [])
                     .filter(p => typeof p.text === "string" && !p.thought)
                     .map(p => p.text).join("").trim();
             }
-            if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
+            if (!summaryText) throw summaryContentError('Leere Zusammenfassung vom Modell erhalten.');
             return summaryText;
         }
 
@@ -1574,9 +1592,9 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 const nothing = summaryText.replace(/[.\s]+$/, "").toUpperCase() === SUMMARY_NOTHING;
                 
                 if (condense) {
-                    if (nothing) throw new Error('Leere Gesamtzusammenfassung vom Modell erhalten.');
+                    if (nothing) throw summaryContentError('Leere Gesamtzusammenfassung vom Modell erhalten.');
                     // Nur übernehmen, wenn sie wirklich kürzer ist; sonst würde bei jeder Zusammenfassung erneut verdichtet
-                    if (summaryText.length >= historySummary.length) throw new Error(`Verdichtung nicht kürzer (${summaryText.length} statt ${historySummary.length} Zeichen).`);
+                    if (summaryText.length >= historySummary.length) throw summaryContentError(`Verdichtung nicht kürzer (${summaryText.length} statt ${historySummary.length} Zeichen).`);
                     historySummary = summaryText;
                     if (historySummary.length > SUMMARY_MAX_CHARS) {
                         console.warn("[SUMMARY] ⚠️ Verdichtete Zusammenfassung länger als", SUMMARY_MAX_CHARS, "Zeichen:", historySummary.length);
@@ -1595,6 +1613,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
                 saveToLocalStorage('bdu_history_summary', historySummary);
                 saveToLocalStorage('bdu_last_summary_index', lastSummaryIndex.toString());
+                saveSummaryMeta(condense ? "verdichtet" : (nothing ? "nichts angehängt" : "angehängt"));
                 
                 console.log("[SUMMARY] ✅", condense ? "Zusammenfassung verdichtet (" + historySummary.length + " Zeichen):" : "Zusammenfassung erstellt:", summaryText.substring(0, 60) + "...");
                 
@@ -1603,14 +1622,45 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 
             } catch (error) {
                 console.error("[SUMMARY] ❌ Fehler:", error);
+                // Rückfall beim Verdichten (Nutzerentscheidung 08.11.2026): Ist das Ergebnis unbrauchbar, fallen die
+                // ältesten Abschnitte weg – ohne weiteren Aufruf. Der nächste Versuch hängt dann wieder normal an.
+                let trimmedNote = "";
+                if (condense && error.summaryContent) {
+                    const before = historySummary.length;
+                    historySummary = trimSummaryBlocks(historySummary, SUMMARY_MAX_CHARS - SUMMARY_PART_ESTIMATE_CHARS);
+                    saveToLocalStorage('bdu_history_summary', historySummary);
+                    saveSummaryMeta("gekürzt (älteste Abschnitte entfernt)");
+                    trimmedNote = ` – älteste Abschnitte entfernt (${before} → ${historySummary.length} Zeichen)`;
+                    console.log("[SUMMARY] ✂️ Rückfall:", before, "→", historySummary.length, "Zeichen");
+                    updateTokenEstimate();
+                }
                 // Nicht nach jeder Antwort erneut versuchen (kostet je einen Aufruf), sondern erst nach 2 weiteren Funksprüchen
                 summaryPauseEntries = SUMMARY_RETRY_AFTER_ENTRIES;
                 // Im Display nur einmal je Fehlerserie melden, danach nur Konsole
                 if (!summaryFailureShown) {
-                    appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}`);
+                    appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}${trimmedNote}`);
                     summaryFailureShown = true;
                 }
+                updateHistoryDisplay();
             }
+        }
+
+        // Kürzt die Zusammenfassung von vorn auf höchstens maxChars: ganze Abschnitte (durch Leerzeilen getrennt)
+        // fallen weg, die neuesten bleiben. Ist schon der neueste Abschnitt zu lang, bleibt sein Ende ab einem Satzanfang.
+        function trimSummaryBlocks(summary, maxChars) {
+            const blocks = String(summary).split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+            while (blocks.length > 1 && blocks.join("\n\n").length > maxChars) blocks.shift();
+            let result = blocks.join("\n\n");
+            if (result.length > maxChars) {
+                const tail = result.slice(result.length - maxChars);
+                const m = tail.match(/[.!?]\s+/);
+                result = (m ? tail.slice(m.index + m[0].length) : tail).trim();
+            }
+            return result;
+        }
+
+        function saveSummaryMeta(type) {
+            saveToLocalStorage(SUMMARY_META_KEY, JSON.stringify({ at: new Date().toISOString(), type }));
         }
 
         // ==============================================
@@ -1924,7 +1974,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             try {
                 // Meldung erst NACH dem Aufruf in den Verlauf: callApi hängt sie selbst an
                 // (vorher doppelt gesendet), und bei Fehlern bleibt keine unbeantwortete Meldung stehen.
-                const responseText = await callApi(text);
+                const responseText = stripAnswerHeader(await callApi(text));
                 addToHistory("user", text);
                 addToHistory("assistant", responseText);
                 
@@ -2039,6 +2089,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             localStorage.removeItem('bdu_conversation_history');
             localStorage.removeItem('bdu_history_summary');
             localStorage.removeItem('bdu_last_summary_index');
+            localStorage.removeItem(SUMMARY_META_KEY);
             localStorage.removeItem('bdu_api_type');
             localStorage.removeItem('bdu_custom_base_url');
             LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
@@ -2224,6 +2275,14 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             msgDiv.appendChild(head);
             msgDiv.appendChild(document.createTextNode(" "));
             return msgDiv;
+        }
+
+        // Entfernt eine eigene Kopfzeile des Modells am Antwortanfang („**BdU an U-68:**“), weil das Widget
+        // „FT von BdU an …:“ selbst davorsetzt (BUGS B23). Nur der Anfang; Zeilenumbrüche im Text bleiben.
+        function stripAnswerHeader(text) {
+            const t = String(text);
+            const stripped = t.replace(/^\s*(\*\*|__)?\s*(FT\s+)?((vom|von)\s+)?BdU(\s+an\s+[^:\n*_]{1,40})?\s*:\s*(\*\*|__)?[ \t]*\n*/i, "");
+            return stripped.trim() ? stripped : t;
         }
 
         // Text mit Zeilenumbrüchen als Textknoten und <br> anhängen
@@ -2574,6 +2633,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             saveToLocalStorage('bdu_conversation_history', JSON.stringify(d.history));
             set('bdu_history_summary', d.summary);
             set('bdu_last_summary_index', d.lastSummaryIndex);
+            localStorage.removeItem(SUMMARY_META_KEY); // Zeitpunkt der letzten Zusammenfassung unbekannt
             console.log("[IMPORT] 📥 Import abgeschlossen:", d.history.length, "Verlaufseinträge – lade neu");
             setTransferStatus("✅ Importiert – Widget wird neu geladen …", '#4dff4d');
             setTimeout(() => location.reload(), 600);

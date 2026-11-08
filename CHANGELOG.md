@@ -7,12 +7,17 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [1.4.0] - 2026-11-08
 
-Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 29, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 31, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.
+Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 29, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.
 
 ### Added
-- **Zusammenfassung verdichten:** Wird die Zusammenfassung des Funkverlaufs länger als 2.000 Zeichen, fasst die KI sie zusammen mit den neuen Funksprüchen zu einer kürzeren Gesamtzusammenfassung (Ziel 1.200 Zeichen) zusammen, statt sie endlos zu verlängern. Übernommen wird sie nur, wenn sie vollständig und kürzer als die bisherige ist; sonst bleibt die alte stehen. Die laufende Feindfahrt bleibt ausführlicher, frühere Fahrten werden knapp; was schon im Boot-Kontext steht, wird nicht wiederholt. Kein zusätzlicher API-Aufruf. Bestehende lange Zusammenfassungen werden beim nächsten Mal automatisch verdichtet.
+- **Zusammenfassung verdichten:** Wird die Zusammenfassung des Funkverlaufs länger als 2.000 Zeichen, fasst die KI sie zusammen mit den neuen Funksprüchen zu einer kürzeren Gesamtzusammenfassung (Ziel 1.200 Zeichen) zusammen, statt sie endlos zu verlängern. Übernommen wird sie nur, wenn sie vollständig und kürzer als die bisherige ist. Klappt das nicht, fallen stattdessen die ältesten Abschnitte der Zusammenfassung weg (ohne weiteren Aufruf), damit sie nicht unbegrenzt wächst. Die laufende Feindfahrt bleibt ausführlicher, frühere Fahrten werden knapp; was schon im Boot-Kontext steht, wird nicht wiederholt. Kein zusätzlicher API-Aufruf. Bestehende lange Zusammenfassungen werden beim nächsten Mal automatisch verdichtet.
 - **Spaßmeldungen** ohne Bezug zur Feindfahrt (z. B. leere Spargel- oder Biervorräte) und die Antworten darauf kommen nicht mehr in die Zusammenfassung. Der Verlauf selbst bleibt unverändert.
 - Einstellungen, Token-Schätzung: neue Zeile „Letzte Anfrage: … Tokens, davon … automatisch zwischengespeichert“. Zeigt, ob der Anbieter den festen Teil der Anfrage automatisch zwischenspeichert. Die Token-Schätzung ist jetzt auch im Universal-Modus sichtbar.
+
+- Einstellungen, „Letzte Zusammenfassung“: zeigt jetzt Zeitpunkt, Art (angehängt, verdichtet, gekürzt), Länge und wie viele Funksprüche noch nicht zusammengefasst sind. Vorher stand dort „Vor 4 Nachrichten (4 neue)“, was sich scheinbar nie änderte.
+
+### Fixed
+- Antworten zeigten teils eine doppelte Kopfzeile („FT von BdU an U-68: **BdU an U-68:**“). Eine eigene Kopfzeile des Modells am Antwortanfang wird jetzt entfernt, auch bei älteren Antworten im Display (BUGS B23).
 
 ### Removed
 - **Explizites Gemini-Caching** samt Schalter und Statusanzeige (ADR 0006). Es war im kostenlosen Kontingent nicht verfügbar, kostete dort nach jedem Neuladen einen erfolglosen Aufruf und wurde vom Standardmodell nicht genutzt. Ersatz ist das automatische Caching der Anbieter; der feste Teil der Anfrage (Sicherheitsregeln, Persönlichkeit, Boot-Kontext) steht dafür immer vorne. Alte Einstellungen dazu werden beim Laden entfernt; Exporte älterer Versionen lassen sich weiter importieren.
