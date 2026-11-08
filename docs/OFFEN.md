@@ -52,7 +52,9 @@ Detailentscheidungen zum Plan 1.4.0 (Nutzer, 08.11.2026), umgesetzt in 1.4.0:
 
 Aufrufe des Widgets seit 1.4.0: je eigenem Funkspruch 1, dazu alle 3 Funksprüche 1 Zusammenfassung (≈ 1,33 je Funkspruch); je `!BdU` 1 (Server-Grenze 60 je Tag, höchstens 1 je 3 min). Benchmark: 20 je Modell; Spaßfilter-Test: 10. Alle Werkzeuge mit demselben Schlüssel und Modell teilen sich das Kontingent.
 
-Offen: tatsächliche RPD des Nutzers in AI Studio ablesen und hier eintragen. Falls 2.5 Flash-Lite wirklich nur 20 RPD hat, reicht das für keinen Stream mit Chat-Modus; dann abwägen: `gemini-3.5-flash-lite` (mehr Anfragen, im Benchmark schwächer), Tagesobergrenze `BDU_DAILY_LIMIT` im Server senken, oder ein zweites Modell nur für Zusammenfassungen bzw. Chat.
+Offen: tatsächliche RPD des Nutzers in AI Studio ablesen und hier eintragen.
+
+**Entscheidung des Nutzers (08.11.2026): zweites Modell**, umgesetzt in 1.4.0 (`bdu_secondary_model`): Chat-Antworten und Zusammenfassungen über `gemini-3.5-flash-lite`, eigene Funksprüche weiter über `gemini-2.5-flash-lite`. Getrennte Tageskontingente geben Puffer. Bekanntes Risiko: Im Benchmark vom 07.11.2026 war 3.5 gerade im Chat am schwächsten (Ø 2,5, oft zu lang und zu verspielt; teils durch B21, seit 1.2.2 behoben). Nächster Schritt des Nutzers: Benchmark mit 3.5 (vor allem die 4 Chat-Fragen) und Spaßfilter-Test mit 3.5 für die Zusammenfassungen. Bei schlechtem Ergebnis Feld leeren (zurück auf 2.5) oder Chat-Persönlichkeit für 3.5 nachschärfen (Wortlaut durch den Nutzer).
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
