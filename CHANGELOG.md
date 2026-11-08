@@ -5,10 +5,15 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
-## [Unreleased]
+## [1.3.1] - 2026-11-08
+
+Nur Lizenz und Dokumentation; `index.html`, Benchmark und Tests unverändert gegenüber 1.3.0.
+
+### Changed
+- **Lizenz: MIT statt CC-BY 4.0** (Entscheidung des Autors, 08.11.2026). CC-Lizenzen sind nicht für Software gedacht; MIT erlaubt wie bisher freie Nutzung, Änderung und Weitergabe mit Namensnennung (Copyright-Hinweis) und entspricht der Lizenz von SpargelPoll. Alle Inhalte des Repositorys (Code, Prompt-Texte, Töne) stammen vom Autor. Releases bis v1.2.2 bleiben unter CC-BY 4.0 bezogen.
 
 ### Fixed
-- `LICENSE`: Beim Ersetzen über die GitHub-Vorlage war versehentlich die Mozilla Public License 2.0 eingetragen worden (Commit „Create LICENSE“ vom 08.11.2026, im Tag `v1.3.0` enthalten). Wieder der Text der CC-BY 4.0 wie in README und allen früheren Releases. Das Projekt stand und steht unter CC-BY 4.0.
+- `LICENSE` im Tag `v1.3.0` enthielt versehentlich die Mozilla Public License 2.0 (Auswahl in der GitHub-Vorlage). Ab v1.3.1 gilt die MIT-Lizenz.
 
 ### Documentation
 - README und Benchmark-Anleitung: Hinweis, dass kostenlose Modelle stärker eingeschränkt sind und im ersten Vergleich schwächere Ergebnisse lieferten; lokale Modelle (Ollama, LM Studio) als kostenlose Alternative mit Einrichtungshinweisen (Platzhalter-Schlüssel, CORS).

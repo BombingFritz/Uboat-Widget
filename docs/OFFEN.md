@@ -3,7 +3,7 @@
 ## Nächste Schritte (Stand 08.11.2026)
 **Release `v1.3.0` veröffentlicht** (08.11.2026, reguläres Release, „Latest“; Anhänge `index.html`, `bench.html`, `beispiel-kontext.json` bytegleich mit `main`). `v1.2.1` und `v1.2.2` bleiben bewusst „Pre-release“.
 
-**Lizenz:** Beim Ersetzen von `LICENSE` über die GitHub-Vorlage wurde versehentlich die Mozilla Public License 2.0 gewählt; der Tag `v1.3.0` zeigt auf diesen Commit. Auf `main` wieder CC-BY 4.0 (wie README und alle früheren Releases). GitHub erkennt den CC-BY-Text weiter nur als „Other“ (Abweichungen von der Vorlage im Detail [UNGEKLÄRT]). Offen für den Nutzer: Tag `v1.3.0` auf den korrigierten Stand verschieben (in der Release-Seite Tag löschen und beim Bearbeiten des Releases neu auf `main` anlegen) oder als `v1.3.1` nachreichen; außerdem bei Bedarf die Vorlage „Creative Commons Attribution 4.0 International“ neu wählen, damit GitHub sie erkennt.
+**Lizenz:** Ab 1.3.1 MIT (Entscheidung des Nutzers, 08.11.2026; alle Inhalte inkl. Töne von ihm). Der Tag `v1.3.0` enthält versehentlich die MPL-2.0 (Auswahl in der GitHub-Vorlage); Releases bis v1.2.2 unter CC-BY 4.0. Release `v1.3.1` (nur Lizenz und Doku) legt der Nutzer an.
 
 Danach: Umzug der Arbeit auf lokales Claude Code mit GitHub Desktop.
 1. **Kontext schärfen:** 3.5 Flash-Lite mit 1.2.2 erneut messen; Zusammenfassung des Nutzers erneuern bzw. für die neue Feindfahrt leeren und gegenprüfen; ggf. Wortlaut der Chat-Persönlichkeit.
@@ -52,7 +52,7 @@ Noch offen:
 Der Nutzer arbeitet lokal mit einer älteren Fassung (`WIDGET_VERSION = "2.1"`, ohne Universal-Modus und Caching-Schalter). `index.html` 1.0.0 enthält deren Funktionen vollständig; Unterschiede sind Titel, Standard-Boot-Kontext und die Auslagerung der Sicherheitsregeln in `SAFETY_RULES`. Für die Weiterentwicklung ist `index.html` aus `main` die Basis. Beim Umstieg: Datei am selben Pfad und mit derselben OBS-Einbindung ersetzen, sonst sind Einstellungen weg; der Versionsabgleich ersetzt den gespeicherten Prompt durch den neuen Standard, sichert ihn seit 1.1.0 aber vorher. Für den Wechsel auf `file:///` Export/Import nutzen.
 
 ## Weitere Punkte
-1. ~~**Lizenzdatei:**~~ `LICENSE-CC-BY-4.0.txt` in `LICENSE` umbenannt (07.11.2026); GitHub zeigt noch „Other“, Inhalt wird beim Release 1.3.0 über die GitHub-Vorlage ersetzt.
+1. ~~**Lizenzdatei:**~~ `LICENSE`, ab 1.3.1 MIT (08.11.2026).
 2. **Wachsende Zusammenfassung:** `historySummary` wird nur angehängt, nie verdichtet. Bei langen Einsätzen steigt der Token-Verbrauch. Mögliche Lösung: Zusammenfassung ab einer Länge selbst zusammenfassen.
 3. **Caching-Erkennung über Modellnamen** („1.5“, „2.5“) passt nicht zu neueren Modellen: Das neue Standardmodell `gemini-3.5-flash-lite` nutzt kein explizites Caching. Besser: Caching für alle Gemini-Modelle versuchen und den Fehlschlag auswerten (seit 1.0.1 wird ein Fehlschlag nicht mehr bei jeder Meldung wiederholt).
 4. **Release-Anhänge:** Das Release `v1.0` enthält zusätzlich `Enigma.Bdu.Readme.1.docx`. Künftig README als einzige Anleitung, Release nur mit `index.html`.
