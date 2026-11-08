@@ -1,7 +1,7 @@
 # Plan 1.4.0: Caching ausbauen, Zusammenfassung verdichten
 
 ## Status
-Entwurf zur Prüfung durch den Nutzer (08.11.2026), noch kein Code. Nach der Umsetzung gehen die Inhalte in `docs/specs/gedaechtnis.md` und `docs/specs/api-anbindung.md` auf, diese Datei entfällt dann.
+Vom Nutzer geprüft, Entscheidungen D1–D4 getroffen (08.11.2026); Umsetzung folgt. Nach der Umsetzung gehen die Inhalte in `docs/specs/gedaechtnis.md` und `docs/specs/api-anbindung.md` auf, diese Datei entfällt dann.
 
 ## Ziel
 1. Weniger Code und keine erfolglosen Aufrufe: explizites Gemini-Caching entfernen (ADR 0006).
@@ -18,7 +18,7 @@ Nicht Teil von 1.4.0 (Nutzerentscheidungen 08.11.2026): Button „älteste Hälf
 - Export ohne `cachingEnabled`; Import älterer Exporte mit dem Feld funktioniert weiter.
 - Konsole: Token-Verbrauch wie bisher, `cachedContentTokenCount` als „automatisch zwischengespeichert“.
 
-**Entscheidung D1 (offen):** Soll die Anzahl automatisch zwischengespeicherter Tokens der letzten Anfrage zusätzlich in der Token-Schätzung der Einstellungen stehen (eine Zeile, z. B. „Letzte Anfrage: 3.410 Tokens, davon 2.950 automatisch zwischengespeichert“)? Vorteil: Ohne Browser-Konsole (OBS) sichtbar, ob Googles implizites Caching im kostenlosen Kontingent greift. Vorschlag: ja.
+**Entscheidung D1 (Nutzer, 08.11.2026: ja):** Die Anzahl automatisch zwischengespeicherter Tokens der letzten Anfrage zusätzlich in der Token-Schätzung der Einstellungen stehen (eine Zeile, z. B. „Letzte Anfrage: 3.410 Tokens, davon 2.950 automatisch zwischengespeichert“). So ist ohne Browser-Konsole (OBS) sichtbar, ob Googles implizites Caching im kostenlosen Kontingent greift.
 
 ## B. Zusammenfassung verdichten
 Heute: Alle 8 neuen Einträge fasst `summarizeHistory` die älteren zu höchstens 3 Sätzen zusammen und hängt sie an `historySummary` an. Die Zusammenfassung wächst unbegrenzt.
@@ -30,9 +30,9 @@ Neu:
 - Inhaltliche Vorgabe für die Verdichtung: Aktuelle Feindfahrt ausführlicher, abgeschlossene frühere Fahrten und erledigte Episoden knapp (je höchstens ein Satz). Erhalten bleiben: Versenkungen und Erfolge, Schäden und Verluste, Befehle des BdU, Positionen und Ziele, wiederkehrende Personen.
 - Wirkung bei bestehenden langen Zusammenfassungen (z. B. der des Nutzers mit den U-4-Fahrten): Die nächste fällige Zusammenfassung verdichtet automatisch. Ein eigener Knopf ist nicht nötig.
 
-**Entscheidung D2 (offen):** Obergrenze 2.000 Zeichen und Ziel 1.200 Zeichen so übernehmen?
+**Entscheidung D2 (Nutzer, 08.11.2026: ja):** Obergrenze 2.000 Zeichen, Ziel nach dem Verdichten ca. 1.200 Zeichen.
 
-**Entscheidung D3 (offen):** Soll die Verdichtung den Boot-Kontext mitbekommen, damit die KI weiß, welche Feindfahrt die aktuelle ist (z. B. U-68 statt U-4)? Vorschlag: ja; kostet nur die Zeichen des Boot-Kontexts in dieser einen Anfrage.
+**Entscheidung D3 (Nutzer, 08.11.2026: ja):** Die Verdichtung bekommt den Boot-Kontext mit. Damit erkennt die KI die aktuelle Feindfahrt (z. B. U-68 statt U-4), und die Zusammenfassung wiederholt nichts, was schon im Boot-Kontext steht (Boot, Typ, Kommandant, Einsatzgebiet usw.). Kostet nur die Zeichen des Boot-Kontexts in dieser einen Anfrage.
 
 ## C. Spaßmeldungen weglassen
 Sowohl die normale Zusammenfassung als auch die Verdichtung bekommen die Anweisung, Spaßmeldungen ohne Bezug zur Feindfahrt und die Antworten darauf wegzulassen, ohne darauf hinzuweisen. Der Verlauf selbst bleibt unverändert (Anzeige, Export); die zuletzt 4–6 Einträge im Volltext gehen weiterhin mit, auch wenn sie Spaß enthalten.
@@ -41,7 +41,7 @@ Vorgeschlagener Wortlaut (zur Freigabe durch den Nutzer, Beispiele vom Nutzer, 0
 
 > Lass Spaß- und Scherzmeldungen ohne Bezug zur laufenden Feindfahrt weg, ebenso die Antworten darauf. Beispiele: „Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos“, „Spargelvorräte sind leer, wir benötigen dringend mehr Spargel“, „Bier ist alle, wir brauchen Hilfe!“. Erwähne nicht, dass etwas weggelassen wurde.
 
-**Entscheidung D4 (offen):** Wortlaut so übernehmen oder anpassen? Risiko: Ein Rollenspiel-Witz mit Bedeutung für die Geschichte kann mit wegfallen; dann über den Wortlaut nachschärfen.
+**Entscheidung D4 (Nutzer, 08.11.2026: Wortlaut so übernehmen).** Risiko: Ein Rollenspiel-Witz mit Bedeutung für die Geschichte kann mit wegfallen; dann über den Wortlaut nachschärfen.
 
 ## Kontextaufbau (Regel aus ADR 0006)
 Reihenfolge bleibt: `SAFETY_RULES` → Persönlichkeit (vollständige Chronologie) → Boot-Kontext → Status → Zusammenfassung → Verlauf → neue Meldung. Damit bleibt der lange, feste Anfang für Googles implizites Caching gleich; Status und Zusammenfassung ändern sich nur am Ende des Systemtexts.

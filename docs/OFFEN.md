@@ -23,7 +23,7 @@ Entscheidungen des Nutzers (08.11.2026):
 6. **Spaßmeldungen:** nur Stufe 1 (Nutzer, 08.11.2026): Zusammenfassen und Verdichten lassen sie weg, ohne zusätzliche Anfrage. Kein KI-Knopf zum Ausmisten. Beispiele des Nutzers im Plan.
 7. B19 vom Nutzer in OBS bestätigt (08.11.2026).
 
-Plan und offene Detailentscheidungen D1–D4: `docs/specs/plan-1.4.0.md`; Caching-Ausbau: ADR 0006.
+Plan: `docs/specs/plan-1.4.0.md` mit den Entscheidungen D1–D4 (alle wie vorgeschlagen, 08.11.2026; D3 ergänzt: Zusammenfassung wiederholt nichts aus dem Boot-Kontext); Caching-Ausbau: ADR 0006.
 
 ## Benchmark und Modellwahl (geplant 07.11.2026)
 Ablauf nach `docs/specs/benchmark.md`, Werkzeug `benchmark/bench.html`:
