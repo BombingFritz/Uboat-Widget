@@ -22,7 +22,7 @@ Erster Vergleich (November 2026, eigener Funkverlauf, blind bewertet): `gemini-2
 6. „Auflösen“ zeigt die Auswertung mit Modellnamen. „Ergebnisse exportieren“ speichert alles als JSON (ohne Schlüssel).
 
 ## Hinweise
-- **Gleiche Anfrage wie im Widget:** Gemini wie im Widget ohne Cache, alle anderen wie im Universal-Modus. Was im Benchmark gut klingt, klingt im Widget genauso. Base-URLs für den Universal-Modus: Groq `https://api.groq.com/openai`, OpenRouter `https://openrouter.ai/api`, Mistral `https://api.mistral.ai`.
+- **Gleiche Anfrage wie im Widget:** Gemini wie im Widget, alle anderen wie im Universal-Modus. Was im Benchmark gut klingt, klingt im Widget genauso. Base-URLs für den Universal-Modus: Groq `https://api.groq.com/openai`, OpenRouter `https://openrouter.ai/api`, Mistral `https://api.mistral.ai`.
 - **Browser-Aufrufe:** Ob Groq, OpenRouter und Mistral Aufrufe direkt aus einer lokal geöffneten Seite zulassen, ist noch nicht erprobt. Meldet der Benchmark eine blockierte Anfrage (CORS), funktioniert der Anbieter auch im Widget nicht direkt.
 - **Kontingente:** Flash-Lite-Modelle erlauben im Gratis-Kontingent etwa 10 Anfragen pro Minute; größere Modelle teils nur wenige pro Tag. Kostenlose Modelle sind generell stärker eingeschränkt und lieferten im ersten Vergleich schwächere Ergebnisse; größere, kostenpflichtige Modelle wurden nicht verglichen.
 - **Lokale Modelle:** Blockiert der Browser die Anfrage, in Ollama `OLLAMA_ORIGINS=*` setzen bzw. in LM Studio CORS einschalten.

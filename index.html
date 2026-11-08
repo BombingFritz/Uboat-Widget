@@ -437,15 +437,6 @@
                 <small style="color:#666;">Leer lassen für OpenAI Standard. Ollama: http://localhost:11434</small>
             </div>
 
-            <div class="setting-group" id="caching-group">
-                <label>Explizites Caching (kann tokens sparen ab Gemini 2.0):</label>
-                <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px;">
-                    <input type="checkbox" id="caching-enabled-checkbox" checked style="width: auto; margin: 0; accent-color: #4dff4d;">
-                    <span style="color: #ccc; font-size: 12px;">Aktiviert (schlägt bei Free-Keys still fehl, Widget läuft trotzdem)</span>
-                </div>
-                <small style="color:#666;">Falls es im Free Account fehlschlägt (Konsole checken), spart das Deaktivieren einen überflüssigen API-Call.</small>
-            </div>
-
             <div class="setting-group">
                 <label>Aktives Modell (Bitte beim ersten Mal suchen und auswählen):</label>
                 <div style="display:flex; gap:5px;">
@@ -453,9 +444,6 @@
                     <button onclick="fetchModels()" style="width: auto; font-size: 10px; cursor:pointer;">🔍 MODELLE<br>SUCHEN</button>
                 </div>
                 <div id="model-list-display"></div>
-                <div id="cache-status" style="margin-top: 8px; padding: 6px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; font-size: 10px; color: #888;">
-                    <span id="cache-indicator">⚪ Context Caching: Nicht verfügbar</span>
-                </div>
                 <div id="token-estimate" style="margin-top: 8px; padding: 6px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; font-size: 10px; color: #888;">
                     <div style="margin-bottom: 4px; font-weight: bold; color: #aaa;">📊 Geschätzte Token-Größe:</div>
                     <div id="token-breakdown" style="line-height: 1.6;">
@@ -464,8 +452,8 @@
                         Status: <span id="token-status">0</span> Zeichen (~<span id="token-status-est">0</span> Tokens)<br>
                         Summary: <span id="token-summary">0</span> Zeichen (~<span id="token-summary-est">0</span> Tokens)<br>
                         <span style="border-top: 1px dashed #444; display: block; margin: 4px 0;"></span>
-                        <strong>GESAMT: <span id="token-total">0</span> Zeichen (~<span id="token-total-est" style="color: #ff4d4d;">0</span> Tokens)</strong><br>
-                        <small style="color: #666;">Minimum für Caching: ~8.000 Zeichen (2.048 Tokens)</small>
+                        <strong>GESAMT: <span id="token-total">0</span> Zeichen (~<span id="token-total-est" style="color: #ccc;">0</span> Tokens)</strong><br>
+                        <span id="token-last-usage" style="color: #888;">Letzte Anfrage: noch keine seit dem Laden</span>
                     </div>
                 </div>
                 <small style="color:#666;">Der Kontext ist frei editierbar. Ergänzt gerne und teilt eure besten Ergänzungen.</small>
@@ -1033,18 +1021,13 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         // API-Typ & URL
         let apiType = "gemini";      // "gemini" | "universal"
         let customBaseUrl = "";      // z.B. "https://api.openai.com" oder "http://localhost:11434"
-        let cachingEnabled = true;   // Explizites Caching an/aus
-
-        // Caching
-        let cachedContentName = null;
-        let cacheExpiresAt = null;
-        let cacheCreationFailed = false; // Nach Fehlschlag kein neuer Versuch bis zum nächsten Speichern/Neuladen
+        // Explizites Gemini-Caching gibt es seit 1.4.0 nicht mehr (ADR 0006). Diese Schlüssel älterer Fassungen werden beim Laden entfernt.
+        const LEGACY_CACHE_KEYS = ['bdu_caching_enabled', 'bdu_cache_name', 'bdu_cache_expires'];
 
         // History Management
         let conversationHistory = [];
         let historySummary = "";
         let lastSummaryIndex = 0;
-        let messagesSinceLastCache = 0;
         let summaryPauseEntries = 0;     // Nach fehlgeschlagener Zusammenfassung: so viele neue Einträge abwarten
         let summaryFailureShown = false; // Fehlermeldung im Display nur einmal je Fehlerserie
 
@@ -1067,6 +1050,15 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         const SUMMARY_RETRY_AFTER_ENTRIES = 4; // = 2 Funksprüche
         const SUMMARY_MAX_TOKENS = 300;        // vorher 150: zu knapp, Ergebnisse konnten abbrechen
         const SUMMARY_TEMPERATURE = 0.3;       // vorher 0.95: Zusammenfassungen sollen sachlich, nicht kreativ sein
+        // Verdichten (seit 1.4.0): Würde die Zusammenfassung mit dem nächsten Teil länger als SUMMARY_MAX_CHARS,
+        // ersetzt eine neue Gesamtzusammenfassung (Ziel SUMMARY_CONDENSE_TARGET_CHARS) die bisherige – in derselben einen Anfrage.
+        const SUMMARY_MAX_CHARS = 2000;              // ≈ 500 Tokens
+        const SUMMARY_CONDENSE_TARGET_CHARS = 1200;  // danach wieder Platz für einige angehängte Teile
+        const SUMMARY_PART_ESTIMATE_CHARS = 400;     // erwartete Länge eines angehängten Teils (höchstens 3 Sätze)
+        const SUMMARY_CONDENSE_MAX_TOKENS = 600;
+        const SUMMARY_NOTHING = "KEINE MELDUNG";     // Antwort, wenn nur Spaßmeldungen zusammenzufassen waren
+        // Spaßmeldungen kommen nicht ins Gedächtnis (Wortlaut und Beispiele vom Nutzer freigegeben, 08.11.2026)
+        const SUMMARY_FUN_RULE = `Lass Spaß- und Scherzmeldungen ohne Bezug zur laufenden Feindfahrt weg, ebenso die Antworten darauf. Beispiele: „Kaleu Fritz weigert sich, die Ziele zu rammen. Fordere die Enthebung seines Kommandos“, „Spargelvorräte sind leer, wir benötigen dringend mehr Spargel“, „Bier ist alle, wir brauchen Hilfe!“. Erwähne nicht, dass etwas weggelassen wurde.`;
 
         const MAX_HISTORY_ITEMS = 100;
 
@@ -1173,7 +1165,6 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             const sVolume = localStorage.getItem('bdu_sound_volume');
             const sApiType = localStorage.getItem('bdu_api_type');
             const sCustomUrl = localStorage.getItem('bdu_custom_base_url');
-            const sCaching = localStorage.getItem('bdu_caching_enabled');
             const sChatEnabled = localStorage.getItem('bdu_chat_enabled');
             const sChatServer = localStorage.getItem('bdu_chat_server_url');
 
@@ -1186,7 +1177,6 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             soundVolume = sVolume !== null ? parseFloat(sVolume) : DEFAULT_VOLUME;
             apiType = sApiType || "gemini";
             customBaseUrl = sCustomUrl || "";
-            cachingEnabled = sCaching !== null ? sCaching === 'true' : true;
             chatEnabled = sChatEnabled === 'true';
             chatServerUrl = sChatServer || DEFAULT_CHAT_SERVER;
             const sChatPersonality = localStorage.getItem('bdu_chat_personality');
@@ -1201,34 +1191,10 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             if (forcePromptUpdate) {
                 saveToLocalStorage('bdu_system_prompt', systemPrompt);
                 console.log("[INIT] ✅ Neuer System Prompt gespeichert (", systemPrompt.length, "Zeichen)");
-                
-                // Cache invalidieren
-                cachedContentName = null;
-                cacheExpiresAt = null;
-                localStorage.removeItem('bdu_cache_name');
-                localStorage.removeItem('bdu_cache_expires');
-                console.log("[INIT] 🗑️ Cache invalidiert wegen Prompt-Update");
             }
 
-            // Cache Info laden
-            const savedCacheName = localStorage.getItem('bdu_cache_name');
-            const savedCacheExpiry = localStorage.getItem('bdu_cache_expires');
-            
-            if (savedCacheName && savedCacheExpiry) {
-                const expiryDate = new Date(savedCacheExpiry);
-                const now = new Date();
-                
-                if (now < expiryDate) {
-                    cachedContentName = savedCacheName;
-                    cacheExpiresAt = savedCacheExpiry;
-                    const remaining = Math.floor((expiryDate - now) / 60000);
-                    console.log("[INIT] ✅ Cache noch gültig für", remaining, "Minuten");
-                } else {
-                    console.log("[INIT] ⏰ Cache abgelaufen, wird neu erstellt");
-                    localStorage.removeItem('bdu_cache_name');
-                    localStorage.removeItem('bdu_cache_expires');
-                }
-            }
+            // Reste des expliziten Cachings (bis 1.3.x) entfernen
+            LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
 
             // Conversation History laden
             try {
@@ -1288,11 +1254,9 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 
                 // Neue Felder
                 const customUrlInput = document.getElementById('custom-base-url-input');
-                const cachingCheckbox = document.getElementById('caching-enabled-checkbox');
                 const geminiRadio = document.getElementById('api-type-gemini');
                 const universalRadio = document.getElementById('api-type-universal');
                 if (customUrlInput) customUrlInput.value = customBaseUrl;
-                if (cachingCheckbox) cachingCheckbox.checked = cachingEnabled;
                 const chatCheckbox = document.getElementById('chat-enabled-checkbox');
                 const chatServerInput = document.getElementById('chat-server-input');
                 if (chatCheckbox) chatCheckbox.checked = chatEnabled;
@@ -1309,7 +1273,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 console.log("[INIT] 🎨 UI befüllt - System Prompt:", systemPrompt.length, "Zeichen");
             }, 100);
             
-            updateCacheStatus();
+            updateTokenEstimate();
         }
 
         // ==============================================
@@ -1458,19 +1422,13 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             localStorage.removeItem('bdu_history_summary');
             localStorage.removeItem('bdu_last_summary_index');
             
-            // Cache invalidieren
-            cachedContentName = null;
-            cacheExpiresAt = null;
-            localStorage.removeItem('bdu_cache_name');
-            localStorage.removeItem('bdu_cache_expires');
-            
             const log = document.getElementById('chat-log');
             log.innerHTML = '<div class="msg-bdu">--- FUNKVERBINDUNG ---<br>WARTEN AUF MELDUNG, HERR KALEU.</div>';
             
             updateHistoryDisplay();
-            updateCacheStatus();
+            updateTokenEstimate();
             
-            appendLog("Funkmaat", "HISTORY GELÖSCHT. CACHE INVALIDIERT.");
+            appendLog("Funkmaat", "HISTORY GELÖSCHT.");
         }
 
         // Löscht den letzten Funkspruch als Paar (Meldung des Kaleu + Antwort des BdU), damit der Verlauf
@@ -1507,7 +1465,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             }
 
             updateHistoryDisplay();
-            updateCacheStatus();
+            updateTokenEstimate();
 
             appendLog("Funkmaat", `Letzter Funkspruch aus der History gelöscht (${removeCount} Einträge).`);
         }
@@ -1515,6 +1473,54 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         // ==============================================
         // HISTORY SUMMARIZATION
         // ==============================================
+        // Fragt das aktuelle Modell nach einer Zusammenfassung (beide API-Typen). Abgeschnittene oder leere
+        // Ergebnisse gelten als Fehlschlag.
+        async function requestSummary(prompt, maxTokens) {
+            let summaryText = "";
+            if (apiType === "universal") {
+                const baseUrl = normalizeBaseUrl(customBaseUrl);
+                const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                    body: JSON.stringify({
+                        model: currentModel,
+                        messages: [{ role: "user", content: prompt }],
+                        max_tokens: maxTokens,
+                        temperature: SUMMARY_TEMPERATURE
+                    })
+                });
+                const d = await resp.json().catch(() => ({}));
+                if (!resp.ok || d.error) throw new Error(d.error?.message || `API Error ${resp.status}`);
+                if (d.choices?.[0]?.finish_reason === "length") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                summaryText = (d.choices?.[0]?.message?.content || "").trim();
+            } else {
+                let summaryModelName = currentModel;
+                if (!summaryModelName.startsWith('models/')) summaryModelName = 'models/' + summaryModelName;
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/${summaryModelName}:generateContent?key=${apiKey}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                maxOutputTokens: maxTokens,
+                                temperature: SUMMARY_TEMPERATURE
+                            }
+                        })
+                    }
+                );
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
+                summaryText = (data.candidates?.[0]?.content?.parts || [])
+                    .filter(p => typeof p.text === "string" && !p.thought)
+                    .map(p => p.text).join("").trim();
+            }
+            if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
+            return summaryText;
+        }
+
         async function summarizeHistory() {
             const messagesToSummarize = conversationHistory.slice(lastSummaryIndex, -4);
             
@@ -1523,7 +1529,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 return;
             }
             
-            let historyText = messagesToSummarize.map(msg => {
+            const historyText = messagesToSummarize.map(msg => {
                 const sender = msg.role === "user" ? "KALEU" : "BdU";
                 const time = new Date(msg.timestamp).toLocaleTimeString('de-DE', {
                     hour: '2-digit', 
@@ -1532,62 +1538,47 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                 return `[${time}] ${sender}: ${msg.text}`;
             }).join('\n');
             
-            console.log("[SUMMARY] 📝 Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
-            // ENTFERNT: appendLog() - nur Console-Logging
+            // Verdichten statt anhängen, wenn die Zusammenfassung sonst über SUMMARY_MAX_CHARS wüchse (seit 1.4.0)
+            const condense = !!historySummary && historySummary.length + SUMMARY_PART_ESTIMATE_CHARS > SUMMARY_MAX_CHARS;
+            console.log("[SUMMARY] 📝", condense ? "Verdichte Zusammenfassung mit" : "Fasse", messagesToSummarize.length, "Nachrichten zusammen...");
             
-            const summaryPrompt = `Fasse folgende Funksprüche SEHR KURZ zusammen (max. 3 Sätze, Telegrammstil):
+            const summaryPrompt = condense
+                ? `Du führst das Gedächtnis des BdU über den Funkverkehr mit einem U-Boot. Erstelle aus der bisherigen Zusammenfassung und den neuen Funksprüchen EINE neue Gesamtzusammenfassung im Telegrammstil, höchstens ${SUMMARY_CONDENSE_TARGET_CHARS} Zeichen.
+- Die laufende Feindfahrt ausführlicher, abgeschlossene frühere Fahrten und erledigte Episoden knapp (je höchstens ein Satz).
+- Behalten: Versenkungen und Erfolge, Schäden und Verluste, Befehle des BdU, Positionen und Ziele, wiederkehrende Personen.
+- Nichts wiederholen, was schon in den Boot-Informationen steht.
+- ${SUMMARY_FUN_RULE}
+
+=== BOOT-INFORMATIONEN (nur zur Einordnung, nicht wiederholen) ===
+${bootContext}
+
+=== BISHERIGE ZUSAMMENFASSUNG ===
+${historySummary}
+
+=== NEUE FUNKSPRÜCHE ===
+${historyText}
+
+Neue Gesamtzusammenfassung (nur Fakten):`
+                : `Fasse folgende Funksprüche SEHR KURZ zusammen (max. 3 Sätze, Telegrammstil):
+${SUMMARY_FUN_RULE} Bestehen die Funksprüche nur aus solchen Meldungen, antworte genau mit: ${SUMMARY_NOTHING}
 
 ${historyText}
 
 Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             try {
-                let summaryText = "";
+                const summaryText = await requestSummary(summaryPrompt, condense ? SUMMARY_CONDENSE_MAX_TOKENS : SUMMARY_MAX_TOKENS);
+                const nothing = summaryText.replace(/[.\s]+$/, "").toUpperCase() === SUMMARY_NOTHING;
                 
-                if (apiType === "universal") {
-                    // Universal API für Zusammenfassung
-                    const baseUrl = normalizeBaseUrl(customBaseUrl);
-                    const resp = await fetch(`${baseUrl}/v1/chat/completions`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                        body: JSON.stringify({
-                            model: currentModel,
-                            messages: [{ role: "user", content: summaryPrompt }],
-                            max_tokens: SUMMARY_MAX_TOKENS,
-                            temperature: SUMMARY_TEMPERATURE
-                        })
-                    });
-                    const d = await resp.json().catch(() => ({}));
-                    if (!resp.ok || d.error) throw new Error(d.error?.message || `API Error ${resp.status}`);
-                    if (d.choices?.[0]?.finish_reason === "length") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
-                    summaryText = (d.choices?.[0]?.message?.content || "").trim();
-                    if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
-                } else {
-                    // Gemini für Zusammenfassung – FIX: currentModel statt hardcodiertem gemini-2.0-flash-lite
-                    let summaryModelName = currentModel;
-                    if (!summaryModelName.startsWith('models/')) summaryModelName = 'models/' + summaryModelName;
-                    const response = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/${summaryModelName}:generateContent?key=${apiKey}`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: summaryPrompt }] }],
-                                generationConfig: {
-                                    maxOutputTokens: SUMMARY_MAX_TOKENS,
-                                    temperature: SUMMARY_TEMPERATURE
-                                }
-                            })
-                        }
-                    );
-                    const data = await response.json();
-                    if (data.error) throw new Error(data.error.message);
-                    if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error('Zusammenfassung abgeschnitten (Token-Budget).');
-                    summaryText = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-                    if (!summaryText) throw new Error('Leere Zusammenfassung vom Modell erhalten.');
-                }
-                
-                if (historySummary) {
+                if (condense) {
+                    if (nothing) throw new Error('Leere Gesamtzusammenfassung vom Modell erhalten.');
+                    historySummary = summaryText;
+                    if (historySummary.length > SUMMARY_MAX_CHARS) {
+                        console.warn("[SUMMARY] ⚠️ Verdichtete Zusammenfassung länger als", SUMMARY_MAX_CHARS, "Zeichen:", historySummary.length);
+                    }
+                } else if (nothing) {
+                    console.log("[SUMMARY] ⏭️ Nur Spaßmeldungen – nichts angehängt");
+                } else if (historySummary) {
                     historySummary += "\n\n" + summaryText;
                 } else {
                     historySummary = summaryText;
@@ -1600,16 +1591,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 saveToLocalStorage('bdu_history_summary', historySummary);
                 saveToLocalStorage('bdu_last_summary_index', lastSummaryIndex.toString());
                 
-                console.log("[SUMMARY] ✅ Zusammenfassung erstellt:", summaryText.substring(0, 60) + "...");
-                // ENTFERNT: appendLog() - nur Console-Logging
-                
-                // Cache invalidieren damit neue Summary eingebaut wird
-                cachedContentName = null;
-                cacheExpiresAt = null;
-                localStorage.removeItem('bdu_cache_name');
-                localStorage.removeItem('bdu_cache_expires');
+                console.log("[SUMMARY] ✅", condense ? "Zusammenfassung verdichtet (" + historySummary.length + " Zeichen):" : "Zusammenfassung erstellt:", summaryText.substring(0, 60) + "...");
                 
                 updateHistoryDisplay();
+                updateTokenEstimate();
                 
             } catch (error) {
                 console.error("[SUMMARY] ❌ Fehler:", error);
@@ -1624,7 +1609,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         }
 
         // ==============================================
-        // CACHE MANAGEMENT
+        // MODELL-ANZEIGE UND TOKEN-SCHÄTZUNG
         // ==============================================
         function updateModelBadge() {
             const display = document.getElementById('model-badge');
@@ -1637,50 +1622,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 display.textContent = "UNIVERSAL API · " + shortName.toUpperCase();
             }
             
-            updateCacheStatus();
-        }
-
-        function updateCacheStatus() {
-            const indicator = document.getElementById('cache-indicator');
-            if (!indicator) return;
-            
-            if (apiType === "universal") {
-                indicator.innerHTML = '⚫ Caching: Nicht verfügbar (Universal-Modus)';
-                indicator.style.color = '#666';
-                updateTokenEstimate();
-                return;
-            }
-            
-            if (!cachingEnabled) {
-                indicator.innerHTML = '🔴 Explizites Caching: Deaktiviert';
-                indicator.style.color = '#888';
-                updateTokenEstimate();
-                return;
-            }
-            
-            const modelLower = currentModel.toLowerCase();
-            const isGemini15 = modelLower.includes('1.5');
-            const isGemini25 = modelLower.includes('2.5');
-            const isGemini20 = modelLower.includes('2.0') || modelLower.includes('flash-latest') || modelLower.includes('pro-latest');
-            
-            if (isGemini15 || isGemini25) {
-                if (cachedContentName && cacheExpiresAt && new Date() < new Date(cacheExpiresAt)) {
-                    const remaining = Math.floor((new Date(cacheExpiresAt) - new Date()) / 60000);
-                    indicator.innerHTML = `🟢 Explizites Caching: Aktiv (${remaining} min)`;
-                    indicator.style.color = '#4dff4d';
-                } else {
-                    indicator.innerHTML = '🟡 Explizites Caching: Bereit (wird erstellt)';
-                    indicator.style.color = '#ffb84d';
-                }
-            } else if (isGemini20) {
-                indicator.innerHTML = '🔵 Implizites Caching: Automatisch (Gemini 2.0+)';
-                indicator.style.color = '#4d9fff';
-            } else {
-                indicator.innerHTML = '⚪ Context Caching: Nicht verfügbar';
-                indicator.style.color = '#888';
-            }
-            
-            // Update Token-Anzeige
             updateTokenEstimate();
         }
 
@@ -1716,133 +1657,14 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 const elem = document.getElementById(id);
                 if (elem) elem.textContent = value;
             });
-            
-            // Färbe Total-Tokens je nach Wert
-            const totalElem = document.getElementById('token-total-est');
-            if (totalElem) {
-                if (totalTokens < 2048) {
-                    totalElem.style.color = '#ff4d4d'; // Rot: Zu wenig
-                } else if (totalTokens < 4000) {
-                    totalElem.style.color = '#ffb84d'; // Orange: Knapp genug
-                } else {
-                    totalElem.style.color = '#4dff4d'; // Grün: Optimal
-                }
-            }
         }
 
-        async function createOrUpdateCache() {
-            if (!cachingEnabled) {
-                console.log("[CACHE] 🔴 Caching deaktiviert (Einstellung)");
-                return null;
-            }
-            
-            // Nach einem Fehlschlag nicht bei jeder Meldung erneut versuchen (kostet je einen API-Aufruf)
-            if (cacheCreationFailed) {
-                console.log("[CACHE] ⏭️ Cache-Erstellung zuvor fehlgeschlagen – erneuter Versuch nach Speichern der Einstellungen oder Neuladen");
-                return null;
-            }
-            
-            const modelLower = currentModel.toLowerCase();
-            const isGemini15 = modelLower.includes('1.5');
-            const isGemini25 = modelLower.includes('2.5');
-            const isCachingSupported = isGemini15 || isGemini25;
-            
-            if (!isCachingSupported) {
-                console.log("[CACHE] ℹ️ Modell unterstützt kein explizites Caching:", currentModel);
-                cachedContentName = null;
-                cacheExpiresAt = null;
-                return null;
-            }
-            
-            // Prüfe ob Cache noch gültig
-            if (cachedContentName && cacheExpiresAt && new Date() < new Date(cacheExpiresAt)) {
-                console.log("[CACHE] ✅ Nutze existierenden Cache (ID:", cachedContentName.split('/').pop() + ")");
-                console.log("[CACHE] ⏰ Gültig noch", Math.floor((new Date(cacheExpiresAt) - new Date()) / 60000), "Minuten");
-                return cachedContentName;
-            }
-            
-            console.log("[CACHE] 🔄 Erstelle neuen Cache für Modell:", currentModel);
-            
-            try {
-                // Summary Text einbauen
-                let summaryText = "";
-                if (historySummary) {
-                    summaryText = "\n\n=== BISHERIGE FUNKSPRÜCHE (Zusammenfassung) ===\n" 
-                                + historySummary 
-                                + "\n=== ENDE ZUSAMMENFASSUNG ===\n";
-                }
-                
-                const systemInstruction = {
-                    parts: [{
-                        // SAFETY_RULES immer voranstellen
-                    text: SAFETY_RULES + "\n" + systemPrompt + 
-                            "\n\n=== BOOT-INFORMATIONEN ===\n" + bootContext +
-                            "\n\n=== AKTUELLER STATUS ===\n" + currentStatus +
-                            summaryText +
-                            "\n\n=== ENDE INFORMATIONEN ==="
-                    }]
-                };
-                
-                let modelName = currentModel;
-                if (!modelName.startsWith("models/")) {
-                    modelName = "models/" + modelName;
-                }
-                
-                const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${apiKey}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            model: modelName,
-                            systemInstruction: systemInstruction,
-                            ttl: "3600s"
-                        })
-                    }
-                );
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    const errorMsg = error.error?.message || JSON.stringify(error);
-                    console.warn("[CACHE] ⚠️ Cache konnte nicht erstellt werden:", errorMsg);
-                    cacheCreationFailed = true;
-                    
-                    // Prüfe ob es am Minimum liegt
-                    if (errorMsg.includes("too small") || errorMsg.includes("min_total_token_count")) {
-                        console.warn("[CACHE] ℹ️ Kontext zu kurz für Caching (Minimum: 2.048 Tokens)");
-                        console.warn("[CACHE] 💡 Erweitere System Prompt, Boot-Kontext und Status auf insgesamt ~8.000 Zeichen");
-                        
-                        // Zeige im UI
-                        const indicator = document.getElementById('cache-indicator');
-                        if (indicator) {
-                            indicator.innerHTML = '🟠 Caching: Kontext zu kurz (min. 2.048 Tokens benötigt)';
-                            indicator.style.color = '#ffb84d';
-                        }
-                    }
-                    
-                    return null;
-                }
-                
-                const data = await response.json();
-                cachedContentName = data.name;
-                cacheExpiresAt = data.expireTime;
-                
-                // Speichern
-                saveToLocalStorage('bdu_cache_name', cachedContentName);
-                saveToLocalStorage('bdu_cache_expires', cacheExpiresAt);
-                
-                console.log("[CACHE] ✅ Cache erfolgreich erstellt!");
-                console.log("[CACHE] 📦 ID:", cachedContentName.split('/').pop());
-                console.log("[CACHE] ⏰ Gültig bis:", new Date(cacheExpiresAt).toLocaleString('de-DE'));
-                
-                updateCacheStatus();
-                return cachedContentName;
-                
-            } catch (error) {
-                console.warn("[CACHE] ❌ Fehler beim Erstellen:", error.message);
-                cacheCreationFailed = true;
-                return null;
-            }
+        // Zeigt den Token-Verbrauch der letzten Anfrage und den davon automatisch zwischengespeicherten Anteil
+        // (Gemini: cachedContentTokenCount, OpenAI-kompatibel: prompt_tokens_details.cached_tokens). Nur im RAM.
+        function updateLastUsage(promptTokens, cachedTokens) {
+            const el = document.getElementById('token-last-usage');
+            if (!el || !promptTokens) return;
+            el.textContent = `Letzte Anfrage: ${promptTokens.toLocaleString('de-DE')} Tokens, davon ${(cachedTokens || 0).toLocaleString('de-DE')} automatisch zwischengespeichert`;
         }
 
         // ==============================================
@@ -1917,6 +1739,11 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             console.log("[API-UNIVERSAL] 📥 Antwort erhalten");
             
             if (data.error) throw new Error(data.error.message);
+            if (data.usage) {
+                const cached = data.usage.prompt_tokens_details?.cached_tokens || 0;
+                console.log("📊 Token Verbrauch: Prompt", data.usage.prompt_tokens, "(davon automatisch zwischengespeichert:", cached + ")");
+                updateLastUsage(data.usage.prompt_tokens, cached);
+            }
             
             const text = data.choices?.[0]?.message?.content;
             if (!text) throw new Error("Leere Antwort vom Server.");
@@ -1933,60 +1760,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 modelName = modelName.replace("models/", "");
             }
             
-            const modelLower = currentModel.toLowerCase();
-            const isGemini15 = modelLower.includes('1.5');
-            const isGemini25 = modelLower.includes('2.5');
-            const isGemini20 = modelLower.includes('2.0') || modelLower.includes('flash-latest') || modelLower.includes('pro-latest');
-            const supportsCaching = isGemini15 || isGemini25;
-            
-            let payload;
-            
-            if (supportsCaching) {
-                console.log("[API] 🔍 Prüfe Cache-Verfügbarkeit für", currentModel);
-                const cacheName = await createOrUpdateCache();
-                
-                if (cacheName) {
-                    // Noch nicht zusammengefasste Funksprüche im Volltext (siehe getContextHistory)
-                    const recentHistory = getContextHistory().map(msg => ({
-                        role: msg.role === "user" ? "user" : "model",
-                        parts: [{ text: msg.text }]
-                    }));
-                    
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                    payload = {
-                        cachedContent: cacheName,
-                        contents: [
-                            ...recentHistory,
-                            {
-                                role: "user",
-                                parts: [{ text: opts.chat ? (getChatInstructions() + "\n\n" + chatUserText(userMessage)) : userMessage }]
-                            }
-                        ],
-                        safetySettings: [
-                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-                        ],
-                        generationConfig: {
-                            maxOutputTokens: opts.chat ? CHAT_MAX_OUTPUT_TOKENS : 450,
-                            temperature: 1.0 
-                        }
-                    };
-                    
-                    console.log("[API] 📦 Sende Request MIT Cache + letzte", recentHistory.length, "Nachrichten");
-                    
-                    const response = await fetch(url, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    return await handleGeminiResponse(response, true);
-                }
-            }
-            
-            // Gemini 2.0+ oder Fallback
+            // Kein explizites Caching mehr (ADR 0006). Reihenfolge für Googles automatisches Caching:
+            // Festes vorne (Sicherheitsregeln, Persönlichkeit, Boot-Kontext), Wechselndes hinten (Status, Zusammenfassung, Verlauf).
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             
             let summaryText = "";
@@ -2014,13 +1789,9 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 parts: [{ text: msg.text }]
             }));
             
-            if (isGemini20) {
-                console.log("[API] 🔷 Sende Request mit implizitem Caching (2.0+)");
-            } else {
-                console.log("[API] 📝 Sende Standard-Request (kein Caching)");
-            }
+            console.log("[API] 📝 Sende Request:", recentHistory.length, "Verlaufseinträge");
             
-            payload = {
+            const payload = {
                 systemInstruction: systemInstruction,
                 contents: [
                     ...recentHistory,
@@ -2047,10 +1818,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 body: JSON.stringify(payload)
             });
 
-            return await handleGeminiResponse(response, false);
+            return await handleGeminiResponse(response);
         }
         
-        async function handleGeminiResponse(response, usedCache = false) {
+        async function handleGeminiResponse(response) {
             const data = await response.json();
             
             console.log("[API] 📥 Antwort erhalten");
@@ -2064,19 +1835,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 const totalTokens = usage.totalTokenCount || 0;
                 
                 console.log("📊 Token Verbrauch:");
-                if (cachedTokens > 0) {
-                    console.log("   💾 Cached:", cachedTokens, "Tokens (75% günstiger)");
-                    console.log("   📝 Neu:", promptTokens - cachedTokens, "Tokens");
-                } else {
-                    console.log("   📝 Prompt:", promptTokens, "Tokens");
-                }
+                console.log("   📝 Prompt:", promptTokens, "Tokens, davon automatisch zwischengespeichert:", cachedTokens);
                 console.log("   💬 Antwort:", responseTokens, "Tokens");
                 console.log("   📊 Gesamt:", totalTokens, "Tokens");
-                
-                if (usedCache && cachedTokens > 0) {
-                    const savings = Math.round((cachedTokens * 0.75 / totalTokens) * 100);
-                    console.log("   💰 Einsparung: ~" + savings + "% der Kosten");
-                }
+                updateLastUsage(promptTokens, cachedTokens);
             }
             
             if (data.error) {
@@ -2140,12 +1902,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     saveToLocalStorage('bdu_current_status', currentStatus);
                     document.getElementById('current-status-input').value = currentStatus;
                     appendLog("System", "[STATUS AKTUALISIERT] " + newStatus);
-                    
-                    // Cache invalidieren
-                    cachedContentName = null;
-                    cacheExpiresAt = null;
-                    localStorage.removeItem('bdu_cache_name');
-                    localStorage.removeItem('bdu_cache_expires');
                 }
             }
 
@@ -2181,17 +1937,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     }
                 }
                 
-                // Cache-Update tracking
-                messagesSinceLastCache++;
-                if (messagesSinceLastCache >= 8) {
-                    console.log("[CACHE] 🔄 8 Nachrichten seit letztem Cache - wird beim nächsten Request erneuert");
-                    cachedContentName = null;
-                    cacheExpiresAt = null;
-                    localStorage.removeItem('bdu_cache_name');
-                    localStorage.removeItem('bdu_cache_expires');
-                    messagesSinceLastCache = 0;
-                }
-                
             } catch (error) {
                 console.error(error);
                 appendLog("Funkmaat", "FUNKSTÖRUNG: " + error.message);
@@ -2213,22 +1958,9 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         function toggleApiTypeUI() {
             const type = document.querySelector('input[name="api-type"]:checked')?.value || "gemini";
             const customUrlGroup = document.getElementById('custom-url-group');
-            const cachingGroup = document.getElementById('caching-group');
-            const cacheStatusGroup = document.getElementById('cache-status');
-            const tokenEstimateGroup = document.getElementById('token-estimate');
-            
-            if (type === "universal") {
-                if (customUrlGroup) customUrlGroup.style.display = 'block';
-                if (cachingGroup) cachingGroup.style.display = 'none';
-                if (cacheStatusGroup) cacheStatusGroup.style.display = 'none';
-                if (tokenEstimateGroup) tokenEstimateGroup.style.display = 'none';
-            } else {
-                if (customUrlGroup) customUrlGroup.style.display = 'none';
-                if (cachingGroup) cachingGroup.style.display = 'block';
-                if (cacheStatusGroup) cacheStatusGroup.style.display = 'block';
-                if (tokenEstimateGroup) tokenEstimateGroup.style.display = 'block';
-            }
-            updateCacheStatus();
+            // Token-Schätzung gilt für beide API-Typen (gleicher Systemtext), seit 1.4.0 auch im Universal-Modus sichtbar
+            if (customUrlGroup) customUrlGroup.style.display = (type === "universal") ? 'block' : 'none';
+            updateTokenEstimate();
         }
 
         function toggleSettings() {
@@ -2250,39 +1982,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             const newVolume = parseFloat(document.getElementById('volume-slider').value) / 100;
             const newApiType = document.querySelector('input[name="api-type"]:checked')?.value || "gemini";
             const newCustomUrl = document.getElementById('custom-base-url-input').value.trim();
-            const newCaching = document.getElementById('caching-enabled-checkbox').checked;
 
             if (!newKey) { flashButton('save-settings-btn', "❌ API-SCHLÜSSEL FEHLT"); return; }
-
-            // Prüfe welche Felder sich geändert haben
-            const keyChanged = apiKey !== newKey;
-            const modelChanged = currentModel !== newModel;
-            const promptChanged = systemPrompt !== newPrompt;
-            const contextChanged = bootContext !== newContext;
-            const statusChanged = currentStatus !== newStatus;
-            const apiTypeChanged = apiType !== newApiType;
-            const customUrlChanged = customBaseUrl !== newCustomUrl;
-            const cachingChanged = cachingEnabled !== newCaching;
-            
-            // Cache invalidieren wenn relevante Felder geändert wurden
-            if (keyChanged || modelChanged || promptChanged || contextChanged || statusChanged || apiTypeChanged || customUrlChanged || cachingChanged) {
-                console.log("[CACHE] 🗑️ Einstellungen geändert - Cache wird invalidiert");
-                if (keyChanged) console.log("  - API Key geändert");
-                if (modelChanged) console.log("  - Modell geändert:", currentModel, "→", newModel);
-                if (promptChanged) console.log("  - System Prompt geändert");
-                if (contextChanged) console.log("  - Boot Kontext geändert");
-                if (statusChanged) console.log("  - Status geändert");
-                if (apiTypeChanged) console.log("  - API-Typ geändert:", apiType, "→", newApiType);
-                if (customUrlChanged) console.log("  - Custom URL geändert");
-                if (cachingChanged) console.log("  - Caching-Einstellung geändert");
-
-                cachedContentName = null;
-                cacheExpiresAt = null;
-                localStorage.removeItem('bdu_cache_name');
-                localStorage.removeItem('bdu_cache_expires');
-            }
-            // Speichern erlaubt einen neuen Cache-Versuch (z. B. nach längerem Prompt oder anderem Modell)
-            cacheCreationFailed = false;
 
             saveToLocalStorage('bdu_api_key', newKey);
             saveToLocalStorage('bdu_system_prompt', newPrompt);
@@ -2293,7 +1994,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             saveToLocalStorage('bdu_sound_volume', newVolume);
             saveToLocalStorage('bdu_api_type', newApiType);
             saveToLocalStorage('bdu_custom_base_url', newCustomUrl);
-            saveToLocalStorage('bdu_caching_enabled', newCaching);
 
             apiKey = newKey;
             systemPrompt = newPrompt;
@@ -2304,7 +2004,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             soundVolume = newVolume;
             apiType = newApiType;
             customBaseUrl = newCustomUrl;
-            cachingEnabled = newCaching;
 
             // Chat-Modus (verbindet bzw. trennt sofort)
             chatEnabled = document.getElementById('chat-enabled-checkbox').checked;
@@ -2335,11 +2034,9 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             localStorage.removeItem('bdu_conversation_history');
             localStorage.removeItem('bdu_history_summary');
             localStorage.removeItem('bdu_last_summary_index');
-            localStorage.removeItem('bdu_cache_name');
-            localStorage.removeItem('bdu_cache_expires');
             localStorage.removeItem('bdu_api_type');
             localStorage.removeItem('bdu_custom_base_url');
-            localStorage.removeItem('bdu_caching_enabled');
+            LEGACY_CACHE_KEYS.forEach(k => localStorage.removeItem(k));
             localStorage.removeItem('bdu_system_prompt_backup');
             localStorage.removeItem('bdu_chat_enabled');
             localStorage.removeItem('bdu_chat_server_url');
@@ -2367,14 +2064,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             conversationHistory = [];
             historySummary = "";
             lastSummaryIndex = 0;
-            cachedContentName = null;
-            cacheExpiresAt = null;
-            cacheCreationFailed = false;
             summaryPauseEntries = 0;
             summaryFailureShown = false;
             apiType = "gemini";
             customBaseUrl = "";
-            cachingEnabled = true;
 
             // UI-Felder neu befüllen
             const apiInput = document.getElementById('api-key-input');
@@ -2398,14 +2091,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             }
             const geminiRadio = document.getElementById('api-type-gemini');
             const customUrlInput = document.getElementById('custom-base-url-input');
-            const cachingCheckbox = document.getElementById('caching-enabled-checkbox');
             const customUrlGroup = document.getElementById('custom-url-group');
-            const cachingGroup = document.getElementById('caching-group');
             if (geminiRadio) geminiRadio.checked = true;
             if (customUrlInput) customUrlInput.value = "";
-            if (cachingCheckbox) cachingCheckbox.checked = true;
             if (customUrlGroup) customUrlGroup.style.display = 'none';
-            if (cachingGroup) cachingGroup.style.display = 'block';
 
             // Chat-Log zurücksetzen
             const log = document.getElementById('chat-log');
@@ -2414,7 +2103,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             }
 
             updateHistoryDisplay();
-            updateModelBadge(); // aktualisiert auch den Cache-Status
+            updateModelBadge(); // aktualisiert auch die Token-Schätzung
             updatePromptBackupInfo();
 
             console.log("[SYSTEM] Alle Einstellungen zurückgesetzt");
@@ -2734,7 +2423,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     apiType: apiType,
                     customBaseUrl: customBaseUrl,
                     model: currentModel,
-                    cachingEnabled: cachingEnabled,
                     loopSound: loopIncomingSound,
                     volume: soundVolume,
                     systemPrompt: systemPrompt,
@@ -2832,7 +2520,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 apiType: st.apiType === "universal" ? "universal" : "gemini",
                 customBaseUrl: str(st.customBaseUrl) || "",
                 model: str(st.model),
-                cachingEnabled: typeof st.cachingEnabled === "boolean" ? st.cachingEnabled : true,
                 chatEnabled: typeof st.chatEnabled === "boolean" ? st.chatEnabled : null,
                 chatServerUrl: str(st.chatServerUrl),
                 chatPersonality: str(st.chatPersonality),
@@ -2868,7 +2555,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             set('bdu_api_type', d.apiType);
             set('bdu_custom_base_url', d.customBaseUrl);
             if (d.model) set('bdu_current_model', d.model);
-            set('bdu_caching_enabled', d.cachingEnabled);
             if (d.chatEnabled !== null) set('bdu_chat_enabled', d.chatEnabled);
             if (d.chatServerUrl) set('bdu_chat_server_url', normalizeChatServer(d.chatServerUrl));
             if (d.chatPersonality !== null) set('bdu_chat_personality', d.chatPersonality);
@@ -2883,10 +2569,6 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             saveToLocalStorage('bdu_conversation_history', JSON.stringify(d.history));
             set('bdu_history_summary', d.summary);
             set('bdu_last_summary_index', d.lastSummaryIndex);
-            // Gemini-Cache gehört zur alten Sitzung
-            localStorage.removeItem('bdu_cache_name');
-            localStorage.removeItem('bdu_cache_expires');
-
             console.log("[IMPORT] 📥 Import abgeschlossen:", d.history.length, "Verlaufseinträge – lade neu");
             setTransferStatus("✅ Importiert – Widget wird neu geladen …", '#4dff4d');
             setTimeout(() => location.reload(), 600);

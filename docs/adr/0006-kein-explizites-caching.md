@@ -1,7 +1,7 @@
 # ADR 0006: Kein explizites Gemini-Caching mehr
 
 ## Status
-Angenommen (Nutzer, 08.11.2026). Umsetzung geplant für 1.4.0 (`docs/specs/plan-1.4.0.md`).
+Angenommen (Nutzer, 08.11.2026). Umgesetzt in 1.4.0.
 
 ## Kontext
 Seit 1.0.0 legt das Widget bei Gemini-Modellen mit „1.5“ oder „2.5“ im Namen den Systemtext als `cachedContents` an (TTL 1 h) und verwendet ihn wieder. Befunde vom 08.11.2026:
@@ -15,7 +15,7 @@ Seit 1.0.0 legt das Widget bei Gemini-Modellen mit „1.5“ oder „2.5“ im N
 ## Entscheidung
 - Explizites Caching wird vollständig entfernt: kein Aufruf von `cachedContents`, kein Schalter, keine Cache-Statusanzeige, keine Speicherschlüssel `bdu_caching_enabled`, `bdu_cache_name`, `bdu_cache_expires` (beim Laden werden vorhandene entfernt).
 - Für das implizite Caching gilt als feste Regel im Kontextaufbau: **Was sich selten ändert, steht vorne; was sich oft ändert, hinten.** Reihenfolge wie heute: `SAFETY_RULES` → Persönlichkeit (mit vollständiger Chronologie) → Boot-Kontext → Status → Zusammenfassung → Verlauf → neue Meldung; im Chat-Modus `CHAT_RULES` und Chat-Persönlichkeit am Ende des Systemtexts.
-- Die Konsole meldet weiterhin `cachedContentTokenCount` aus der Antwort (bei Gemini „automatisch zwischengespeichert“).
+- Die Konsole und die Token-Schätzung in den Einstellungen zeigen den Verbrauch der letzten Anfrage und den davon automatisch zwischengespeicherten Anteil (Gemini `cachedContentTokenCount`, OpenAI-kompatibel `prompt_tokens_details.cached_tokens`; Entscheidung D1 des Nutzers, 08.11.2026).
 - Export enthält kein `cachingEnabled` mehr; der Import nimmt ältere Exporte mit dem Feld weiter an und ignoriert es. `formatVersion` bleibt 1.
 
 ## Verworfene Alternativen
@@ -27,4 +27,4 @@ Seit 1.0.0 legt das Widget bei Gemini-Modellen mit „1.5“ oder „2.5“ im N
 - B18 und der Punkt „Caching-Erkennung über Modellnamen“ in `docs/OFFEN.md` entfallen.
 - Bezahlte Gemini-Nutzer verlieren die garantierte Ersparnis des expliziten Caches und sind auf das implizite Caching angewiesen.
 - Wer den Kontextaufbau ändert, muss die Reihenfolge-Regel einhalten, sonst greift das implizite Caching nicht mehr.
-- Ab 1.4.0 verweisen Kontextaufbau und Generierungswerte nur noch auf einen Gemini-Weg (heute „ohne Cache“); `benchmark/bench.html` bleibt dadurch unverändert.
+- Es gibt nur noch einen Gemini-Weg (den früheren „ohne Cache“); `benchmark/bench.html` bleibt dadurch unverändert.
