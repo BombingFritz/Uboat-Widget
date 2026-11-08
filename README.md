@@ -129,7 +129,7 @@ Bei Fragen oder Problemen:
 •	Erstelle ein Issue auf GitHub
 •	Prüfe die Konsole des Browsers auf Fehlermeldungen
 •	Stelle sicher, dass dein API-Schlüssel korrekt ist
-Änderungen je Version stehen in CHANGELOG.md, technische Dokumentation und bekannte Fehler im Ordner docs/, automatische Tests im Ordner tests/.
+Änderungen je Version stehen in CHANGELOG.md, technische Dokumentation und bekannte Fehler im Ordner docs/, automatische Tests im Ordner tests/. Regeln für KI-Assistenten stehen in AGENTS.md (Claude Code liest sie über CLAUDE.md).
 
 12. Credits
 Entwickelt von BombingFritz mit umfangreicher historischer Recherche basierend u.a. auf authentischen U-Boot-Kriegstagebüchern aus dem U-Boot-Archiv.
