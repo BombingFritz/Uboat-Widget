@@ -94,20 +94,58 @@ with sync_playwright() as p:
     mode["summary"] = "Verdichtet, aber abgesch"; mode["finish"] = "MAX_TOKENS"
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
-    check("Abgeschnitten: alte Zusammenfassung und Index bleiben", pg.evaluate("historySummary") == long_summary and pg.evaluate("lastSummaryIndex") == 0)
+    check("Abgeschnitten: Rückfall kürzt auf 1.600 Zeichen, Index bleibt", pg.evaluate("historySummary") == pg.evaluate("t => trimSummaryBlocks(t, 1600)", long_summary) and len(pg.evaluate("historySummary")) <= 1600 and pg.evaluate("lastSummaryIndex") == 0)
     check("Abgeschnitten: Meldung im Display", "ZUSAMMENFASSUNG FEHLGESCHLAGEN" in pg.inner_text("#chat-log"))
     mode["finish"] = "STOP"; mode["summary"] = "KEINE MELDUNG"
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
-    check("Verdichten mit „KEINE MELDUNG“ gilt als Fehlschlag", pg.evaluate("historySummary") == long_summary and pg.evaluate("lastSummaryIndex") == 0)
+    check("Verdichten mit „KEINE MELDUNG“ gilt als Fehlschlag (Rückfall)", pg.evaluate("historySummary") == pg.evaluate("t => trimSummaryBlocks(t, 1600)", long_summary) and len(pg.evaluate("historySummary")) <= 1600 and pg.evaluate("lastSummaryIndex") == 0)
     mode["summary"] = "y" * (len(long_summary) + 10)
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
-    check("Verdichtung nicht kürzer als vorher: Fehlschlag, alte bleibt", pg.evaluate("historySummary") == long_summary and pg.evaluate("lastSummaryIndex") == 0)
+    check("Verdichtung nicht kürzer als vorher: Fehlschlag (Rückfall)", pg.evaluate("historySummary") == pg.evaluate("t => trimSummaryBlocks(t, 1600)", long_summary) and len(pg.evaluate("historySummary")) <= 1600 and pg.evaluate("lastSummaryIndex") == 0)
     mode["summary"] = "z" * 2500   # länger als die Obergrenze, aber kürzer als vorher: übernehmen
     prepare(pg, "w" * 5786)
     pg.evaluate("summarizeHistory()")
     check("Verdichtung über 2.000, aber kürzer als vorher (5.786): übernommen", pg.evaluate("historySummary") == "z" * 2500)
+
+    # 5b) Rückfall (Nutzerentscheidung 08.11.2026): Verdichtung unbrauchbar -> älteste Abschnitte fallen weg, ohne weiteren Aufruf
+    blocks = [f"Abschnitt {i}: " + "Lage gemeldet. " * 20 for i in range(8)]   # 8 Abschnitte à ~315 Zeichen
+    mode["summary"] = "abgeschnitten"; mode["finish"] = "MAX_TOKENS"
+    prepare(pg, "\n\n".join(blocks))
+    pg.evaluate("summarizeHistory()")
+    after = pg.evaluate("historySummary")
+    check("Rückfall: genau eine Anfrage", len(calls) == 1)
+    check("Rückfall: höchstens 1.600 Zeichen, neueste Abschnitte bleiben, älteste weg",
+          len(after) <= 1600 and after.endswith(blocks[-1].strip()) and "Abschnitt 0" not in after and "Abschnitt 7" in after, len(after))
+    check("Rückfall: gespeichert, Index unverändert", pg.evaluate("localStorage.getItem('bdu_history_summary')") == after and pg.evaluate("lastSummaryIndex") == 0)
+    check("Rückfall: Hinweis im Display", "älteste Abschnitte entfernt" in pg.inner_text("#chat-log"))
+    check("Rückfall: Anzeige nennt Kürzung", "gekürzt" in pg.inner_text("#last-summary-info"), pg.inner_text("#last-summary-info"))
+    mode["finish"] = "STOP"; mode["summary"] = "Teil."
+    pg.evaluate("summaryPauseEntries = 0")
+    calls.clear(); pg.evaluate("summarizeHistory()")
+    check("Nach dem Rückfall: nächster Versuch hängt normal an (kein Verdichten)",
+          "Fasse folgende Funksprüche" in last_gen()["contents"][0]["parts"][0]["text"] and pg.evaluate("historySummary").endswith("\n\nTeil."))
+    # Ein einzelner überlanger Abschnitt: Ende ab Satzanfang
+    trimmed = pg.evaluate("trimSummaryBlocks('Erster Satz. ' + 'x'.repeat(50) + '. Letzter Satz.', 30)")
+    check("Einzelner zu langer Abschnitt: Ende ab Satzanfang", trimmed == "Letzter Satz.", trimmed)
+    # API-Fehler (z. B. Kontingent): kein Kürzen
+    pg.route("**/*:generateContent*", lambda r: r.fulfill(status=429, content_type="application/json", body=json.dumps({"error": {"code": 429, "message": "Quota", "status": "RESOURCE_EXHAUSTED"}})))
+    prepare(pg, "\n\n".join(blocks))
+    pg.evaluate("summarizeHistory()")
+    check("API-Fehler beim Verdichten: Zusammenfassung bleibt vollständig", pg.evaluate("historySummary") == "\n\n".join(blocks))
+    pg.unroute("**/*:generateContent*")
+
+    # 5c) Anzeige „Letzte Zusammenfassung“: Zeitpunkt, Art, Länge, offene Funksprüche
+    mode["summary"] = "Teil."
+    prepare(pg, "Alte Lage.")
+    pg.evaluate("summarizeHistory()")
+    info = pg.inner_text("#last-summary-info")
+    check("Anzeige: Art, Länge, 2 Funksprüche offen", "(angehängt)" in info and f"{len('Alte Lage.') + 2 + len('Teil.')} Zeichen" in info and "2 Funksprüche noch nicht zusammengefasst" in info, info)
+    pg.evaluate("addToHistory('user','a'); addToHistory('assistant','b')")
+    check("Anzeige: nach einem weiteren Funkspruch 3 offen", "3 Funksprüche noch nicht" in pg.inner_text("#last-summary-info"), pg.inner_text("#last-summary-info"))
+    pg.evaluate("localStorage.removeItem('bdu_last_summary_meta'); updateHistoryDisplay()")
+    check("Anzeige ohne gespeicherten Zeitpunkt", "Zeitpunkt unbekannt" in pg.inner_text("#last-summary-info"))
 
     # 6) Anzeige: Token der letzten Anfrage, davon automatisch zwischengespeichert (D1)
     check("Anzeige vor der ersten Anfrage", "noch keine" in pg.inner_text("#token-last-usage"))

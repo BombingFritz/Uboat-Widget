@@ -25,7 +25,9 @@ Einzelne Tests: `python tests/<name>.py`.
 | `obs_dialogs.py` | Alles ohne Browser-Dialoge wie in OBS: Import, Reset, Verlauf löschen, Hinweise (BUGS B20) |
 | `gemini_parts.py` | Gemini-Antworten aus mehreren Teilen, Denk-Teile, Download-Name (BUGS B21) |
 | `chat_section.py` | Chat-Modus-Bereich ein- und ausklappen |
-| `summary_condense.py` | Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige automatisch zwischengespeicherter Tokens, fester Anfang des Systemtexts, Export ohne `cachingEnabled` |
+| `summary_condense.py` | Zusammenfassung verdichten, Rückfall (älteste Abschnitte entfernen), Anzeige „Letzte Zusammenfassung“, Spaßmeldungen weglassen, Anzeige automatisch zwischengespeicherter Tokens, fester Anfang des Systemtexts, Export ohne `cachingEnabled` |
+| `answer_header.py` | Eigene Kopfzeile des Modells am Antwortanfang wird entfernt (BUGS B23) |
+| `spassfilter.py` | Spaßfilter-Test (`benchmark/spassfilter.html`): Prompt-Funktionen wortgleich zum Widget, Anfrage identisch, Ablauf und Auswertung, Export ohne Schlüssel |
 | `history_pairs.py` | „LETZTEN FUNKSPRUCH LÖSCHEN“ entfernt Meldung und Antwort als Paar (BUGS B19) |
 | `benchmark_gemini.py` | Benchmark: Anfrage identisch zum Widget (Gemini), Kontingent, Fortsetzen, Blindbewertung, Export |
 | `benchmark_providers.py` | Benchmark: Groq, OpenRouter, Mistral, eigene Adresse; Anfrage identisch zu `callUniversal` |
