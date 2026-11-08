@@ -5,6 +5,11 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.3.2] - 2026-11-08
+
+### Fixed
+- Verlauf: „LETZTE 5 LÖSCHEN“ heißt jetzt „LETZTEN FUNKSPRUCH LÖSCHEN“ und entfernt die letzte Meldung samt Antwort. Vorher konnte der Verlauf mit einer unbeantworteten Meldung enden; die nächste Anfrage enthielt dann zwei Meldungen des Kaleu hintereinander (BUGS B19). Unbeantwortete Meldungen am Verlaufsende aus älteren Fassungen werden mit entfernt. Test `tests/history_pairs.py`. Prompt, `SAFETY_RULES`, Chat-Modus, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
 ## [1.3.1] - 2026-11-08
 
 Nur Lizenz und Dokumentation; `index.html`, Benchmark und Tests unverändert gegenüber 1.3.0.

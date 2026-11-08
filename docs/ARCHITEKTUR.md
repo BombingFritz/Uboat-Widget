@@ -20,7 +20,7 @@ Gehäuse 520×520 px, transparenter Body. DOM: `radio-device` mit Metallecken un
 | Senden | `sendMessage` | „Status:“ erkennen, Meldung anzeigen, Ton, API-Aufruf; nur bei Erfolg Meldung und Antwort speichern, Antwort ausgeben, Zusammenfassung und Cache-Erneuerung anstoßen |
 | API | `callApi`, `callGemini`, `callUniversal`, `handleGeminiResponse`, `normalizeBaseUrl` | Je nach `apiType` Gemini oder OpenAI-kompatibel aufrufen, Antwort und Token-Verbrauch auswerten |
 | Caching | `createOrUpdateCache`, `updateCacheStatus`, `updateTokenEstimate` | Explizites Gemini-Caching des Systemkontexts, Statusanzeige, Token-Schätzung (Zeichen ÷ 4) |
-| Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastFive` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
+| Gedächtnis | `addToHistory`, `trimHistory`, `getContextHistory`, `summarizeHistory`, `updateHistoryDisplay`, `clearHistory`, `clearLastExchange` | Verlauf speichern und kürzen (Zusammenfassungsstand wandert mit), ältere Funksprüche zusammenfassen |
 | Einstellungen | `toggleSettings`, `toggleApiTypeUI`, `saveSettings`, `clearSettings`, `fetchModels`, `updateModelBadge` | Overlay, Speichern mit Cache-Invalidierung, Zurücksetzen, Modellliste |
 | Chat-Bereich | `setChatSectionOpen`, `toggleChatSection` | Gruppe „Chat-Modus“ in den Einstellungen ein-/ausklappen; offen, wenn der Chat-Modus an ist (seit 1.3.0) |
 | Rückfragen | `confirmInWidget`, `cancelConfirm`, `flashButton` | Rückfragen und Hinweise im Widget statt `confirm()`/`alert()`, die eine OBS-Browserquelle nicht anzeigt (seit 1.2.1): erster Klick fragt auf dem Button, zweiter bestätigt |
@@ -60,7 +60,7 @@ Gleicher Kontextaufbau wie oben, zusätzlich `CHAT_RULES` (feste Konstante neben
 - Invalidiert wird bei geänderten Einstellungen, „Status:“-Meldung, neuer Zusammenfassung, gelöschtem Verlauf und nach 8 Antworten. Der alte Cache wird nicht gelöscht, er läuft bei Google aus.
 
 ## Gedächtnis
-- Verlauf: Einträge `{role: "user"|"assistant", text, timestamp}`, höchstens 100 (`MAX_HISTORY_ITEMS`). Kürzen läuft über `trimHistory`, das `lastSummaryIndex` um die Zahl entfernter Einträge verringert; „LETZTE 5 LÖSCHEN“ begrenzt den Index auf die Verlaufslänge.
+- Verlauf: Einträge `{role: "user"|"assistant", text, timestamp}`, höchstens 100 (`MAX_HISTORY_ITEMS`). Kürzen läuft über `trimHistory`, das `lastSummaryIndex` um die Zahl entfernter Einträge verringert; „LETZTEN FUNKSPRUCH LÖSCHEN“ (`clearLastExchange`, seit 1.3.2) entfernt Meldung und Antwort als Paar, so dass der Verlauf immer mit einer Antwort endet, und begrenzt den Index auf die Verlaufslänge.
 - Nach jeder Antwort: Sind seit `lastSummaryIndex` mindestens 8 Einträge dazugekommen, fasst `summarizeHistory` alles ab `lastSummaryIndex` bis auf die letzten 4 Einträge zusammen (gleiches Modell, `temperature` 0.3, Budget 300 Tokens; abgeschnittene oder leere Ergebnisse gelten als Fehlschlag) und hängt das Ergebnis an `historySummary` an. Die Zusammenfassung wächst damit unbegrenzt.
 - Schlägt die Zusammenfassung fehl, bleibt der Verlauf unverändert. Der nächste Versuch folgt erst nach 4 weiteren Einträgen (`summaryPauseEntries`, 2 Funksprüche); die Fehlermeldung erscheint einmal je Fehlerserie im Display. Bis dahin gehen bis zu 10 Einträge im Volltext mit; bei längerem Ausfall fallen die ältesten heraus. Pause und Meldungsmerker liegen nur im RAM.
 
