@@ -77,10 +77,10 @@ with sync_playwright() as p:
     pg.evaluate("summarizeHistory()")
     req = last_gen(); prompt = req["contents"][0]["parts"][0]["text"]
     boot = pg.evaluate("bootContext")
-    check("Verdichten: eine Anfrage, Budget 600", len(calls) == 1 and req["generationConfig"]["maxOutputTokens"] == 600, req.get("generationConfig"))
+    check("Verdichten: eine Anfrage, Budget 1500", len(calls) == 1 and req["generationConfig"]["maxOutputTokens"] == 1500, req.get("generationConfig"))
     check("Verdichten: bisherige Zusammenfassung und neue Funksprüche im Prompt", long_summary.strip() in prompt and "Eintrag 0" in prompt and "Eintrag 7" in prompt and "Eintrag 8" not in prompt)
     check("Verdichten: Boot-Kontext zur Einordnung, nicht wiederholen", boot in prompt and "nicht wiederholen" in prompt)
-    check("Verdichten: Ziel 1200 Zeichen, Spaß-Regel", "1200 Zeichen" in prompt and "Spargelvorräte" in prompt)
+    check("Verdichten: Ziel 1200 Zeichen, deutlich kürzer, Spaß-Regel", "1200 Zeichen" in prompt and "deutlich kürzer" in prompt and "Spargelvorräte" in prompt)
     check("Verdichten: Ergebnis ersetzt die Zusammenfassung", pg.evaluate("historySummary") == mode["summary"])
     check("Verdichten: gespeichert, Index weiter", pg.evaluate("localStorage.getItem('bdu_history_summary')") == mode["summary"] and pg.evaluate("lastSummaryIndex") == 8)
 
@@ -100,6 +100,14 @@ with sync_playwright() as p:
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
     check("Verdichten mit „KEINE MELDUNG“ gilt als Fehlschlag", pg.evaluate("historySummary") == long_summary and pg.evaluate("lastSummaryIndex") == 0)
+    mode["summary"] = "y" * (len(long_summary) + 10)
+    prepare(pg, long_summary)
+    pg.evaluate("summarizeHistory()")
+    check("Verdichtung nicht kürzer als vorher: Fehlschlag, alte bleibt", pg.evaluate("historySummary") == long_summary and pg.evaluate("lastSummaryIndex") == 0)
+    mode["summary"] = "z" * 2500   # länger als die Obergrenze, aber kürzer als vorher: übernehmen
+    prepare(pg, "w" * 5786)
+    pg.evaluate("summarizeHistory()")
+    check("Verdichtung über 2.000, aber kürzer als vorher (5.786): übernommen", pg.evaluate("historySummary") == "z" * 2500)
 
     # 6) Anzeige: Token der letzten Anfrage, davon automatisch zwischengespeichert (D1)
     check("Anzeige vor der ersten Anfrage", "noch keine" in pg.inner_text("#token-last-usage"))
@@ -126,7 +134,7 @@ with sync_playwright() as p:
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
     uc = [json.loads(c[1]) for c in calls if "chat/completions" in c[0]]
-    check("Universal: Verdichten mit max_tokens 600", len(uc) == 1 and uc[0]["max_tokens"] == 600 and "Gesamtzusammenfassung" in uc[0]["messages"][0]["content"])
+    check("Universal: Verdichten mit max_tokens 1500", len(uc) == 1 and uc[0]["max_tokens"] == 1500 and "Gesamtzusammenfassung" in uc[0]["messages"][0]["content"])
     check("Universal: Ergebnis ersetzt", pg.evaluate("historySummary") == "Universal verdichtet.")
     pg.evaluate("callApi('Meldung')")
     check("Anzeige Universal: 1.234 Tokens, davon 1.024", "1.234 Tokens, davon 1.024" in pg.inner_text("#token-last-usage"), pg.inner_text("#token-last-usage"))
