@@ -43,11 +43,12 @@ with sync_playwright() as p:
     check("Display: Zeilenumbruch im Text bleibt", pg.locator("#chat-log .msg-bdu").last.locator("br").count() == 1)
     stored = pg.evaluate("conversationHistory[conversationHistory.length - 1].text")
     check("Verlauf speichert die Antwort ohne eigene Kopfzeile", stored.startswith("Verstanden.") and "**" not in stored, stored)
-    # Alter Verlauf mit Kopfzeile: Anzeige nach Neuladen ohne doppelte Kopfzeile, gespeicherter Text unverändert
+    # Alter Verlauf mit Kopfzeile: Wiederherstellung (wie nach dem Neuladen) ohne doppelte Kopfzeile, gespeicherter Text unverändert.
+    # restoreChatLog() direkt statt reload(): In headless Chromium ging bei file://-Seiten nach einem Neuladen kurz nach
+    # abgespieltem Ton gelegentlich der gesamte localStorage verloren (Testumgebung, nicht das Widget; 08.11.2026).
     pg.evaluate("""conversationHistory.push({role:'user', text:'Alt', timestamp:new Date().toISOString()},
                    {role:'assistant', text:'**BdU an U-68:**\\n\\nAlte Antwort.', timestamp:new Date().toISOString()});
-                   localStorage.setItem('bdu_conversation_history', JSON.stringify(conversationHistory));""")
-    pg.reload(); pg.wait_for_timeout(400)
+                   restoreChatLog();""")
     last = pg.locator("#chat-log .msg-bdu").last.inner_text()
     check("Wiederherstellung: alte Antwort ohne doppelte Kopfzeile", last.count("BdU an") == 1 and "Alte Antwort." in last and "**" not in last, last)
     check("Gespeicherter alter Eintrag unverändert", pg.evaluate("conversationHistory[conversationHistory.length - 1].text").startswith("**BdU an U-68:**"))

@@ -1,7 +1,7 @@
 # Chat-Modus (Funksprüche aus dem Twitch-Chat)
 
 ## Ziel
-Funksprüche aus dem Twitch-Chat im Hintergrund vom BdU beantworten lassen, mit derselben KI und demselben Kontext wie die Meldungen des Kaleu, ohne den Verlauf zu verändern. Gegenstück im Server: `docs/specs/bdu-chat.md` im Repository `Twitch-Companion-JS-server`. Entscheidung: ADR 0004.
+Funksprüche aus dem Twitch-Chat im Hintergrund vom BdU beantworten lassen, mit derselben KI (seit 1.4.0 optional über ein zweites Modell mit eigenem Tageskontingent, Einstellung „Zweites Modell“) und demselben Kontext wie die Meldungen des Kaleu, ohne den Verlauf zu verändern. Gegenstück im Server: `docs/specs/bdu-chat.md` im Repository `Twitch-Companion-JS-server`. Entscheidung: ADR 0004.
 
 ## Verhalten
 ### Einstellungen

@@ -8,6 +8,7 @@ Antworten über Google Gemini (Standard) oder eine OpenAI-kompatible API erzeuge
 - „MODELLE SUCHEN“ listet bei Gemini die Modelle mit `generateContent`, im Universal-Modus die Einträge von `{base}/v1/models`; Klick übernimmt den Namen.
 - Kein explizites Caching (seit 1.4.0, ADR 0006). Der Systemtext ist so aufgebaut, dass sein langer, fester Anfang (Sicherheitsregeln, Persönlichkeit mit vollständiger Chronologie, Boot-Kontext) bei jeder Anfrage gleich bleibt; Gemini ab 2.5 und manche OpenAI-kompatiblen Anbieter speichern ihn dann automatisch zwischen.
 - Die Token-Schätzung in den Einstellungen (Zeichen ÷ 4, beide API-Typen) zeigt zusätzlich den Verbrauch der letzten Anfrage und den davon automatisch zwischengespeicherten Anteil (Gemini `usageMetadata.cachedContentTokenCount`, OpenAI-kompatibel `usage.prompt_tokens_details.cached_tokens`). Der Wert liegt nur im RAM; nach dem Neuladen steht dort „noch keine seit dem Laden“.
+- **Zweites Modell** (optional, seit 1.4.0; Nutzerentscheidung 08.11.2026): Chat-Antworten (`!BdU`) und Zusammenfassungen laufen über `bdu_secondary_model`, eigene Funksprüche immer über das aktive Modell. Bei Google hat jedes Modell ein eigenes Tageskontingent; so bleibt dem aktiven Modell mehr Luft. Leer = alles über das aktive Modell. Gilt für beide API-Typen (gleicher Schlüssel, gleiche Base-URL). Die Anzeige „Letzte Anfrage“ nennt das verwendete Modell.
 - Das Modell-Badge unten zeigt „POWERED BY GEMINI <Modell>“ bzw. „UNIVERSAL API · <Modell>“.
 
 ## Nicht-Ziele
@@ -21,7 +22,7 @@ Anthropic- oder andere nicht OpenAI-kompatible Formate; Abrechnung oder Kontinge
 - Universal mit OpenAI-kompatiblem Endpunkt antwortet (vom Autor nicht getestet).
 
 ## Berührte Dateien/Funktionen
-`index.html`: `callApi`, `callGemini`, `callUniversal`, `handleGeminiResponse`, `updateTokenEstimate`, `updateLastUsage`, `fetchModels`, `toggleApiTypeUI`, `updateModelBadge`, `normalizeBaseUrl`, `loadSettings` (`LEGACY_CACHE_KEYS`).
+`index.html`: `callApi`, `callGemini`, `callUniversal`, `handleGeminiResponse`, `updateTokenEstimate`, `updateLastUsage`, `modelFor`, `fetchModels`, `toggleApiTypeUI`, `updateModelBadge`, `normalizeBaseUrl`, `loadSettings` (`LEGACY_CACHE_KEYS`).
 
 ## Status
 umgesetzt (1.0.0), Fehlerbehebungen in 1.0.1; explizites Caching entfernt und Verbrauchsanzeige ergänzt in 1.4.0 (`tests/summary_condense.py`, `tests/widget_regression.py`). Universal-Modus nur mit simulierter API getestet. Ob Googles automatisches Caching im kostenlosen Kontingent greift, ist [UNGEKLÄRT]; die Anzeige in den Einstellungen macht es sichtbar.

@@ -7,7 +7,7 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 ## [1.4.0] - 2026-11-08
 
-Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 29, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Spaßfilter-Test 22, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.
+Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 30, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Spaßfilter-Test 23, zweites Modell 15, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.
 
 ### Added
 - **Zusammenfassung verdichten:** Wird die Zusammenfassung des Funkverlaufs länger als 2.000 Zeichen, fasst die KI sie zusammen mit den neuen Funksprüchen zu einer kürzeren Gesamtzusammenfassung (Ziel 1.200 Zeichen) zusammen, statt sie endlos zu verlängern. Übernommen wird sie nur, wenn sie vollständig und kürzer als die bisherige ist. Klappt das nicht, fallen stattdessen die ältesten Abschnitte der Zusammenfassung weg (ohne weiteren Aufruf), damit sie nicht unbegrenzt wächst. Die laufende Feindfahrt bleibt ausführlicher, frühere Fahrten werden knapp; was schon im Boot-Kontext steht, wird nicht wiederholt. Kein zusätzlicher API-Aufruf. Bestehende lange Zusammenfassungen werden beim nächsten Mal automatisch verdichtet.
@@ -17,6 +17,11 @@ Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `py
 - Einstellungen, „Letzte Zusammenfassung“: zeigt jetzt Zeitpunkt, Art (angehängt, verdichtet, gekürzt), Länge und wie viele Funksprüche noch nicht zusammengefasst sind. Vorher stand dort „Vor 4 Nachrichten (4 neue)“, was sich scheinbar nie änderte.
 
 - Spaßfilter-Test `benchmark/spassfilter.html` (nicht Teil des Widgets): fasst einen festen Testsatz aus ernsten Funksprüchen, Spaßmeldungen und Grenzfällen mit genau den Anweisungen des Widgets zusammen (Gemini, echte API) und zeigt, ob Fakten bleiben und Spaß verschwindet, auch nach dem Verdichten.
+
+- **Zweites Modell (optional)** für Chat-Antworten (`!BdU`) und Zusammenfassungen, z. B. `gemini-3.5-flash-lite`, während die eigenen Funksprüche beim aktiven Modell bleiben. Jedes Gemini-Modell hat ein eigenes Tageskontingent; so bleibt mehr Luft. Leer gelassen ändert sich nichts. Wird mit exportiert und importiert.
+
+### Changed
+- Der Funkverlauf wird nur noch alle 3 statt alle 2 Funksprüche zusammengefasst. Das spart einen Teil der zusätzlichen Aufrufe; im kostenlosen Kontingent ist die Zahl der Anfragen pro Tag die eigentliche Grenze.
 
 ### Fixed
 - Antworten zeigten teils eine doppelte Kopfzeile („FT von BdU an U-68: **BdU an U-68:**“). Eine eigene Kopfzeile des Modells am Antwortanfang wird jetzt entfernt, auch bei älteren Antworten im Display (BUGS B23).

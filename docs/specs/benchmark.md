@@ -57,8 +57,8 @@ umgesetzt (Werkzeug, Gemini/Groq/OpenRouter/Mistral/eigene Adresse), Teil von 1.
 Einmalig mit echter API prüfen, ob die Zusammenfassung des Widgets ernste Meldungen behält und Spaßmeldungen weglässt, und ob die Verdichtung dabei Fakten verliert (Nutzerentscheidung 08.11.2026: „einmalig bauen und testen“).
 
 ### Verhalten
-- Fester, erfundener Testsatz zum Beispielboot U-68: 12 Funkspruch-Paare (Kaleu und BdU), davon 5 ernst (mit Fakten, die bleiben müssen: Planquadrate, Schiffsname und Tonnage, Schäden, Verwundeter, Versorger, Geleitzug), 5 Spaß (die drei Beispiele des Nutzers und zwei neue, deren Begriffe fehlen müssen) und 2 Grenzfälle (Humor in der Rolle mit Bezug zur Fahrt; nur angezeigt, nicht bewertet). Block 5 besteht nur aus Spaß und sollte „KEINE MELDUNG“ ergeben.
-- Je Lauf wie im Normalbetrieb des Widgets: 6 Zusammenfassungen à 2 Funksprüche, angehängt; dazu eine Verdichtung (Zusammenfassung bis Block 5 und Block 6 als neue Funksprüche, mit Test-Boot-Kontext). 7 Aufrufe je Lauf, Standard 3 Läufe, Pause 5 s, Minutenlimit mit einer Wiederholung nach 60 s.
+- Fester, erfundener Testsatz zum Beispielboot U-68: 12 Funkspruch-Paare (Kaleu und BdU), davon 5 ernst (mit Fakten, die bleiben müssen: Planquadrate, Schiffsname und Tonnage, Schäden, Verwundeter, Versorger, Geleitzug), 5 Spaß (die drei Beispiele des Nutzers und zwei neue, deren Begriffe fehlen müssen) und 2 Grenzfälle (Humor in der Rolle mit Bezug zur Fahrt; nur angezeigt, nicht bewertet). Block 3 (S3, S4, S5) besteht nur aus Spaß und sollte „KEINE MELDUNG“ ergeben.
+- Je Lauf wie im Normalbetrieb des Widgets: 4 Zusammenfassungen à 3 Funksprüche, angehängt; dazu eine Verdichtung (Zusammenfassung bis Block 3 und Block 4 als neue Funksprüche, mit Test-Boot-Kontext). 5 Aufrufe je Lauf, Standard 2 Läufe (10 Aufrufe, wegen der knappen Tageskontingente), Pause 5 s, Minutenlimit mit einer Wiederholung nach 60 s.
 - Auswertung über alle Läufe: Fakten behalten, Spaß entfernt, Grenzfälle behalten (je angehängt und verdichtet), „KEINE MELDUNG“ beim Spaß-Block, Fehlschläge; je Funkspruch aufklappbar; alle Zusammenfassungen im Wortlaut. Export als JSON ohne Schlüssel. Der Schlüssel wird nicht gespeichert.
 - Nur Gemini (wie beim Nutzer).
 
@@ -66,4 +66,4 @@ Einmalig mit echter API prüfen, ob die Zusammenfassung des Widgets ernste Meldu
 `formatSummaryHistory`, `buildSummaryPrompt` und die Konstanten `SUMMARY_MAX_TOKENS`, `SUMMARY_TEMPERATURE`, `SUMMARY_CONDENSE_TARGET_CHARS`, `SUMMARY_CONDENSE_MAX_TOKENS`, `SUMMARY_NOTHING`, `SUMMARY_FUN_RULE` stehen wortgleich zwischen den Markierungen KOPIE-ANFANG/-ENDE. `tests/spassfilter.py` prüft den Wortlaut und dass die Anfrage für denselben Block gleich der von `summarizeHistory()` ist (normal und verdichtet). Wer die Zusammenfassung im Widget ändert, kopiert die Stellen neu.
 
 ### Status
-umgesetzt (1.4.0), Headless-Test mit simulierter API 22/22. Echter Durchlauf durch den Nutzer steht aus; Ergebnis bitte in `docs/OFFEN.md` festhalten.
+umgesetzt (1.4.0), Headless-Test mit simulierter API 23/23. Erster echter Durchlauf (08.11.2026) brach am Tageskontingent von `gemini-2.5-flash-lite` ab; neuer Versuch steht aus; Ergebnis bitte in `docs/OFFEN.md` festhalten.
