@@ -10,15 +10,12 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 30, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Spaßfilter-Test 23, zweites Modell 15, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.
 
 ### Added
-- **Zusammenfassung verdichten:** Wird die Zusammenfassung des Funkverlaufs länger als 2.000 Zeichen, fasst die KI sie zusammen mit den neuen Funksprüchen zu einer kürzeren Gesamtzusammenfassung (Ziel 1.200 Zeichen) zusammen, statt sie endlos zu verlängern. Übernommen wird sie nur, wenn sie vollständig und kürzer als die bisherige ist. Klappt das nicht, fallen stattdessen die ältesten Abschnitte der Zusammenfassung weg (ohne weiteren Aufruf), damit sie nicht unbegrenzt wächst. Die laufende Feindfahrt bleibt ausführlicher, frühere Fahrten werden knapp; was schon im Boot-Kontext steht, wird nicht wiederholt. Kein zusätzlicher API-Aufruf. Bestehende lange Zusammenfassungen werden beim nächsten Mal automatisch verdichtet.
+- **Zweites Modell (optional)** für Chat-Antworten (`!BdU`) und Zusammenfassungen, z. B. `gemini-3.5-flash-lite`, während die eigenen Funksprüche beim aktiven Modell bleiben. Kostenlose Modelle dürfen nur eine begrenzte Zahl von Anfragen pro Tag beantworten (`gemini-2.5-flash-lite` im November 2026 nur 20), und jedes Modell hat sein eigenes Kontingent; so bleibt mehr Luft. Leer gelassen ändert sich nichts. Wird mit exportiert und importiert.
+- **Zusammenfassung verdichten:** Wird die Zusammenfassung des Funkverlaufs länger als 2.000 Zeichen, fasst die KI sie mit den neuen Funksprüchen zu einer kürzeren Gesamtzusammenfassung zusammen (Ziel 1.200 Zeichen), statt sie endlos zu verlängern – ohne zusätzlichen API-Aufruf. Die laufende Feindfahrt bleibt ausführlicher, frühere Fahrten werden knapp; was schon im Boot-Kontext steht, wird nicht wiederholt. Übernommen wird sie nur, wenn sie vollständig und kürzer als die bisherige ist; klappt das nicht, fallen stattdessen die ältesten Abschnitte weg. Bestehende lange Zusammenfassungen werden beim nächsten Mal automatisch verdichtet.
 - **Spaßmeldungen** ohne Bezug zur Feindfahrt (z. B. leere Spargel- oder Biervorräte) und die Antworten darauf kommen nicht mehr in die Zusammenfassung. Der Verlauf selbst bleibt unverändert.
-- Einstellungen, Token-Schätzung: neue Zeile „Letzte Anfrage: … Tokens, davon … automatisch zwischengespeichert“. Zeigt, ob der Anbieter den festen Teil der Anfrage automatisch zwischenspeichert. Die Token-Schätzung ist jetzt auch im Universal-Modus sichtbar.
-
+- Einstellungen, Token-Schätzung: neue Zeile „Letzte Anfrage (Modell): … Tokens, davon … automatisch zwischengespeichert“. Zeigt, welches Modell zuletzt gearbeitet hat und ob der Anbieter den festen Teil der Anfrage automatisch zwischenspeichert. Die Token-Schätzung ist jetzt auch im Universal-Modus sichtbar.
 - Einstellungen, „Letzte Zusammenfassung“: zeigt jetzt Zeitpunkt, Art (angehängt, verdichtet, gekürzt), Länge und wie viele Funksprüche noch nicht zusammengefasst sind. Vorher stand dort „Vor 4 Nachrichten (4 neue)“, was sich scheinbar nie änderte.
-
 - Spaßfilter-Test `benchmark/spassfilter.html` (nicht Teil des Widgets): fasst einen festen Testsatz aus ernsten Funksprüchen, Spaßmeldungen und Grenzfällen mit genau den Anweisungen des Widgets zusammen (Gemini, echte API) und zeigt, ob Fakten bleiben und Spaß verschwindet, auch nach dem Verdichten.
-
-- **Zweites Modell (optional)** für Chat-Antworten (`!BdU`) und Zusammenfassungen, z. B. `gemini-3.5-flash-lite`, während die eigenen Funksprüche beim aktiven Modell bleiben. Jedes Gemini-Modell hat ein eigenes Tageskontingent; so bleibt mehr Luft. Leer gelassen ändert sich nichts. Wird mit exportiert und importiert.
 
 ### Changed
 - Der Funkverlauf wird nur noch alle 3 statt alle 2 Funksprüche zusammengefasst. Das spart einen Teil der zusätzlichen Aufrufe; im kostenlosen Kontingent ist die Zahl der Anfragen pro Tag die eigentliche Grenze.
@@ -29,6 +26,10 @@ Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `py
 ### Removed
 - **Explizites Gemini-Caching** samt Schalter und Statusanzeige (ADR 0006). Es war im kostenlosen Kontingent nicht verfügbar, kostete dort nach jedem Neuladen einen erfolglosen Aufruf und wurde vom Standardmodell nicht genutzt. Ersatz ist das automatische Caching der Anbieter; der feste Teil der Anfrage (Sicherheitsregeln, Persönlichkeit, Boot-Kontext) steht dafür immer vorne. Alte Einstellungen dazu werden beim Laden entfernt; Exporte älterer Versionen lassen sich weiter importieren.
 - Fehler B18 (Cache wurde zu oft neu angelegt) entfällt damit.
+
+### Documentation
+- Neue Schritt-für-Schritt-Anleitung `ANLEITUNG.md` für Neulinge: Herunterladen, Einbindung in OBS, API-Schlüssel, Einstellungen, Gedächtnis, Export/Import, Tageskontingente und warum ein zweites Modell hilft, wofür Benchmark und Spaßfilter-Test gut sind, Hilfe bei Fehlermeldungen.
+- README verweist darauf und erklärt zweites Modell und Spaßfilter-Test.
 
 ## [1.3.2] - 2026-11-08
 

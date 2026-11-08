@@ -1,7 +1,9 @@
 Enigma BdU Funk - U-Boot Funkverkehr Simulator
 Ein authentischer Funkverkehr-Simulator für U-Boot-Spiele
 
-Kurz gesagt: index.html aus dem neuesten Release herunterladen, im Browser öffnen, über das Zahnrad ⚙️ einen kostenlosen Gemini-API-Schlüssel eintragen (Google AI Studio) und die erste Meldung an den BdU senden. Mehr braucht es nicht. Alles Weitere – Benchmark zur Modellwahl und Chat-Modus für Twitch-Streamer – ist optional und steht weiter unten.
+Kurz gesagt: index.html aus dem neuesten Release herunterladen, im Browser öffnen, über das Zahnrad ⚙️ einen kostenlosen Gemini-API-Schlüssel eintragen (Google AI Studio) und die erste Meldung an den BdU senden. Mehr braucht es nicht. Alles Weitere – zweites Modell, Benchmark zur Modellwahl und Chat-Modus für Twitch-Streamer – ist optional und steht weiter unten.
+
+Neu hier? Die Schritt-für-Schritt-Anleitung mit Einbindung in OBS, Erklärung der Tageskontingente und Hilfe bei Fehlern steht in ANLEITUNG.md.
 
 1. Was ist das?
 Dieses HTML-Widget simuliert den Funkverkehr zwischen dem Befehlshaber der Uboote und einem U-Boot auf Feindfahrt. Es ist gedacht, um das Gameplay von Uboootsimulationen zu bereichern – kostenlos und einfach einzusetzen. Die Antworten sind KI-generiert, die KI wird aber mit ausführlichem Kontext aus realen Funkkladden der Zeit sowie mit Marine-Begriffen und technischen Details gefüttert, was sie deutlich authentischer antworten lässt. Dazu wird eine (beliebige) KI-API benötigt. Grundsätzlich geht das mit jeder KI, entwickelt und zugeschnitten wurde es aber für die kostenlosen Modelle der Google Gemini API (Flash-Lite).
@@ -34,7 +36,7 @@ Google Gemini (Kostenlos)
 •	Gehe zu Google AI Studio
 •	Erstelle einen kostenlosen API-Schlüssel
 •	Wähle über "MODELLE SUCHEN" ein aktuelles Flash-Lite-Modell, z. B. gemini-3.5-flash-lite (Standard). Ob es im kostenlosen Kontingent enthalten ist, legt Google fest.
-•	Optional: „Zweites Modell für Chat-Antworten und Zusammenfassungen“. Jedes Gemini-Modell hat ein eigenes Tageskontingent; trägst du dort z. B. gemini-3.5-flash-lite ein, bleiben dem aktiven Modell mehr Anfragen für deine eigenen Funksprüche.
+•	Optional: „Zweites Modell für Chat-Antworten und Zusammenfassungen“. Kostenlose Modelle dürfen nur eine begrenzte Zahl von Anfragen pro Tag beantworten (Beispiel November 2026: gemini-2.5-flash-lite nur 20), und jedes Modell hat sein eigenes Kontingent. Das Widget fasst den Funkverlauf alle 3 Funksprüche im Hintergrund zusammen; läuft das über ein zweites Modell (z. B. ein anderes Flash-Lite-Modell), bleiben dem aktiven Modell mehr Anfragen für deine eigenen Funksprüche. Im Chat-Modus laufen auch die Antworten an den Twitch-Chat darüber. Erklärung: ANLEITUNG.md, Abschnitt „Modelle und Tageskontingent“.
 •	Die Modelle entwickeln sich stetig weiter, probiere ruhig andere textbasierte Modelle aus. Falls keine Antwort kommt, öffne die Konsole in deinem Browser und checke den Log. Nicht alle Modelle haben kostenlose Kontingente und diese Kontingente können sich natürlich ändern.
 Alternative Optionen (Zahnrad → API-Typ „Universal“, Base-URL eintragen, dann „MODELLE SUCHEN“)
 •	Groq (kostenloses Kontingent): Base-URL https://api.groq.com/openai
@@ -51,6 +53,7 @@ Kostenlos oder lokal?
 
 Welches Modell passt? – Benchmark
 Im Ordner benchmark/ liegt eine eigene Seite (bench.html, gehört nicht zum Widget), mit der man mehrere Modelle (Gemini, Groq, OpenRouter, Mistral oder jede andere OpenAI-kompatible Adresse) mit denselben 10 Testfragen und demselben Kontext vergleicht und die Antworten blind bewertet. Als Kontext dient ein Export aus dem Widget; wer noch keinen eigenen Funkverlauf hat, lädt den Beispielkontext beispiel-kontext.json aus demselben Ordner. Anleitung: benchmark/README.md. Erster Vergleich (Nov. 2026): gemini-2.5-flash-lite klang deutlich authentischer als gemini-3.5-flash-lite; 2.5 bietet Google aber nur noch bisherigen Nutzern an.
+Daneben liegt der Spaßfilter-Test (spassfilter.html): Er prüft, ob ein Modell beim Zusammenfassen die wichtigen Fakten behält und Spaßmeldungen weglässt – nützlich, um das zweite Modell auszuwählen. Beide Werkzeuge verbrauchen Anfragen aus demselben Tageskontingent wie das Widget.
 
 5. Verwendung
 Während des Spiels
