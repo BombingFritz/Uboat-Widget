@@ -1,7 +1,7 @@
 """1.4.0: Zweites Modell für Chat-Antworten und Zusammenfassungen (Nutzerentscheidung 08.11.2026)."""
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _common import WIDGET, BEEP, OUT, Checks
+from _common import WIDGET, BEEP, OUT, Checks, reload_keeping_storage
 from playwright.sync_api import sync_playwright
 
 check = Checks()
@@ -61,6 +61,7 @@ with sync_playwright() as p:
     check("Eigene Funksprüche: aktives Modell", got.get("main") == "gemini-2.5-flash-lite", got)
     check("Chat-Antworten: zweites Modell", got.get("chat") == "gemini-3.5-flash-lite", got)
     check("Zusammenfassungen: zweites Modell", got.get("summary") == "gemini-3.5-flash-lite", got)
+    check("Anzeige „Letzte Zusammenfassung“ nennt das zweite Modell (1.4.1)", "· gemini-3.5-flash-lite)" in pg.inner_text("#last-summary-info"), pg.inner_text("#last-summary-info"))
     pg.evaluate("callApi('Hallo BdU', {chat: true})")
     pg.evaluate("toggleSettings()")
     check("Anzeige „Letzte Anfrage“ nennt das Modell", "(gemini-3.5-flash-lite)" in pg.inner_text("#token-last-usage"), pg.inner_text("#token-last-usage"))
@@ -70,7 +71,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(OUT, "secondary_model.png"))
 
     # Neuladen
-    pg.reload(); pg.wait_for_timeout(400)
+    reload_keeping_storage(pg)
     check("Nach Neuladen: Feld und Wert erhalten", pg.input_value("#secondary-model-input") == "gemini-3.5-flash-lite" and pg.evaluate("secondaryModel") == "gemini-3.5-flash-lite")
 
     # Export / Import

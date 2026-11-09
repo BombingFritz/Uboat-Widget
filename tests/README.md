@@ -36,3 +36,5 @@ Einzelne Tests: `python tests/<name>.py`.
 Nicht enthalten: der Ende-zu-Ende-Test mit dem Companion-Server (braucht dessen Repository; Server-Tests liegen dort in `test/`).
 
 Neue Funktionen bekommen einen eigenen Test hier und einen Eintrag in `run_all.py`.
+
+Hinweis: Headless Chromium verliert bei `file://`-Seiten gelegentlich den gesamten `localStorage` beim Neuladen (Testumgebung, nicht das Widget). Tests, die das Neuladen prüfen, nutzen `reload_keeping_storage` aus `_common.py` (erkennt den Verlust über einen Merker und lädt erneut) oder prüfen die Wiederherstellung direkt.

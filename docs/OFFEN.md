@@ -1,7 +1,9 @@
 # Offene Punkte
 
 ## Nächste Schritte (Stand 08.11.2026)
-**1.4.0 umgesetzt** (Branch, noch nicht veröffentlicht): explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nutzertest in OBS (08.11.2026, `gemini-2.5-flash-lite`, kostenloses Kontingent):
+**Release `v1.4.0` veröffentlicht** (09.11.2026, regulär, „Latest“; Anhänge `index.html`, `bench.html`, `spassfilter.html`, `beispiel-kontext.json` bytegleich mit `main`, Tag auf dem Merge von PR #22). Nutzertest am 09.11.2026: Zusammenfassungen laufen alle 3 Funksprüche („nichts angehängt“ 15:40, „angehängt“ 15:43 und 15:45); welches Modell sie schrieb, war nicht sichtbar (seit 1.4.1 in der Anzeige). Spaßfilter-Test brach an „high demand“ ab (1.4.1: Wiederholung) und lief versehentlich mit 2.5 (1.4.1: Standard 3.5).
+
+Davor: **1.4.0 umgesetzt**: explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nutzertest in OBS (08.11.2026, `gemini-2.5-flash-lite`, kostenloses Kontingent):
 - Anzeige: „Letzte Anfrage: 5.628 Tokens, davon 0 automatisch zwischengespeichert“ (Zusammenfassung 5.786 Zeichen). Googles automatisches Caching griff bei dieser Anfrage nicht; weitere Beobachtungen bei mehreren Anfragen kurz hintereinander nötig.
 - Erste Verdichtung der alten Zusammenfassung scheiterte: „Zusammenfassung abgeschnitten (Token-Budget)“ bei 600 Tokens. Behoben im selben Branch: Budget 1.500, Vorgabe „etwa 10 kurze Sätze“, Übernahme nur, wenn kürzer; Konsole meldet Abschlussgrund und Verbrauch. Erneuter Nutzertest offen.
 - Doppelte Kopfzeile in einer Antwort (BUGS B23), nicht durch 1.4.0 verursacht.
@@ -43,6 +45,17 @@ Detailentscheidungen zum Plan 1.4.0 (Nutzer, 08.11.2026), umgesetzt in 1.4.0:
 - D2: Obergrenze der Zusammenfassung 2.000 Zeichen, Ziel nach dem Verdichten 1.200 Zeichen.
 - D3: Verdichtung bekommt den Boot-Kontext zur Einordnung; die Zusammenfassung wiederholt nichts, was dort schon steht.
 - D4: Wortlaut der Spaß-Regel wie vorgeschlagen.
+
+## Funkmaat statt [SYS] und Zweitfrequenz (Idee des Nutzers, 09.11.2026, für später)
+Wunsch des Nutzers:
+1. **Automatisch auf das zweite Modell ausweichen:** Meldet das aktive Modell „Kontingent erschöpft“ (HTTP 429 / `RESOURCE_EXHAUSTED`), laufen auch die eigenen Funksprüche bis zum Neuladen über das zweite Modell. Meldung im Display in der Rolle, z. B. „Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“
+2. **Systemmeldungen ohne Immersionsbruch:** statt „[SYS] …“ als „Funkmaat: …“ und in der Sprache der Zeit; die technische Fehlermeldung nur in den Einstellungen (und der Konsole).
+
+Zu klären vor der Umsetzung (Plan als Spec, dann Entscheidung des Nutzers):
+- Soll der gescheiterte Funkspruch nach dem Wechsel sofort automatisch erneut gesendet werden (1 Anfrage beim zweiten Modell) oder erst beim nächsten Senden?
+- Was passiert ohne eingetragenes zweites Modell (nur Meldung „Funkverbindung abgerissen“) und wenn auch das zweite Modell erschöpft ist?
+- Liste aller Systemmeldungen mit neuem Wortlaut (Vorschläge vom Assistenten, Wortlaut entscheidet der Nutzer); Ort und Form der technischen Meldung in den Einstellungen (z. B. Zeile „Letzte Störung: Uhrzeit, Modell, Meldung“).
+- Andere Fehler (Überlastung 503, ungültiger Schlüssel, Modell nicht gefunden) ebenfalls in der Rolle, aber ohne Modellwechsel.
 
 ## Kontingent und Token-Verbrauch (Stand 08.11.2026)
 **Automatisches Caching (Entscheidung des Nutzers, 08.11.2026: festhalten):** Bei allen bisher gemessenen Anfragen mit `gemini-2.5-flash-lite` im kostenlosen Kontingent 0 automatisch zwischengespeicherte Tokens (5 Anfragen, 3.986–5.742 Tokens). Google bietet das implizite Caching dort offenbar nicht an. Kosten entstehen dadurch nicht.
