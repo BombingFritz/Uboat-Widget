@@ -5,6 +5,14 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.4.1] - 2026-11-09
+
+Kleine Verbesserungen nach dem ersten Einsatz von 1.4.0. Tests: `python tests/run_all.py`, alle bestanden (zweites Modell 16, Spaßfilter-Test 25, übrige unverändert). Prompt, Gedächtnis-Logik, Design, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Changed
+- Einstellungen, „Letzte Zusammenfassung“: nennt jetzt auch das Modell, das zusammengefasst hat (z. B. „09.11., 15:45 (angehängt · gemini-3.5-flash-lite), 1389 Zeichen“). So ist sichtbar, ob das zweite Modell arbeitet.
+- Spaßfilter-Test: Standardmodell `gemini-3.5-flash-lite` mit Hinweis, das Modell der Zusammenfassungen einzutragen; bei Überlastung von Google („high demand“) wartet er 30 s und versucht es bis zu zweimal erneut, statt den Lauf abzubrechen.
+
 ## [1.4.0] - 2026-11-08
 
 Weniger Ballast im Gedächtnis und kein überflüssiges Caching mehr. Tests: `python tests/run_all.py`, alle bestanden (Regression 30, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Spaßfilter-Test 23, zweites Modell 15, Benchmark Gemini 50, Benchmark andere Anbieter 52). Persönlichkeits-Prompt, Chronologie, `SAFETY_RULES`, `CHAT_RULES`, Chat-Modus, Audiodateien, Benchmark und `WIDGET_VERSION` („3.0“) unverändert.

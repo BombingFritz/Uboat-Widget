@@ -64,7 +64,7 @@ Zahnrad ⚙️ unten rechts am Funkgerät anklicken.
 - Die letzten Funksprüche bekommt die KI wörtlich mit. Ältere fasst das Widget **alle 3 Funksprüche** in einer kurzen **Zusammenfassung** zusammen – so erinnert sich der BdU an frühere Versenkungen, Schäden und Befehle, ohne dass jede Anfrage immer größer wird.
 - Wird die Zusammenfassung zu lang (über 2.000 Zeichen), **verdichtet** die KI sie zu einer kürzeren Gesamtzusammenfassung: die laufende Feindfahrt ausführlich, frühere Fahrten knapp.
 - **Spaßmeldungen** ohne Bezug zur Feindfahrt („Bier ist alle!“) beantwortet der BdU zwar, sie kommen aber nicht ins Gedächtnis.
-- Unter **History-Verwaltung** siehst du, wann zuletzt zusammengefasst wurde. „LETZTEN FUNKSPRUCH LÖSCHEN“ nimmt den letzten Funkspruch samt Antwort zurück, „HISTORY LÖSCHEN“ beginnt eine neue Feindfahrt mit leerem Gedächtnis.
+- Unter **History-Verwaltung** siehst du, wann und mit welchem Modell zuletzt zusammengefasst wurde und wie viele Funksprüche noch nicht zusammengefasst sind (eine Meldung samt Antwort zählt als ein Funkspruch; die Zahl pendelt zwischen 2 und 4). Die Zusammenfassung läuft erst nach der Antwort im Hintergrund und erscheint nicht im Display. „LETZTEN FUNKSPRUCH LÖSCHEN“ nimmt den letzten Funkspruch samt Antwort zurück, „HISTORY LÖSCHEN“ beginnt eine neue Feindfahrt mit leerem Gedächtnis.
 
 ## Schritt 7: Sichern und umziehen (Export/Import)
 Unter **„Sichern & Übertragen“** in den Einstellungen:

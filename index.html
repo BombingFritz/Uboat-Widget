@@ -1361,7 +1361,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
                     let meta = null;
                     try { meta = JSON.parse(localStorage.getItem(SUMMARY_META_KEY) || "null"); } catch (e) { meta = null; }
                     const when = meta && meta.at
-                        ? new Date(meta.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + " (" + meta.type + ")"
+                        ? new Date(meta.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + " (" + meta.type + (meta.model ? " · " + meta.model : "") + ")"
                         : "Zeitpunkt unbekannt";
                     summaryDisplay.textContent = `${when}, ${historySummary.length} Zeichen; ${open} Funkspr${open === 1 ? "uch" : "üche"} noch nicht zusammengefasst`;
                     summaryDisplay.style.color = unsummarized >= SUMMARY_TRIGGER_ENTRIES ? '#ffb84d' : '#4dff4d';
@@ -1683,7 +1683,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         }
 
         function saveSummaryMeta(type) {
-            saveToLocalStorage(SUMMARY_META_KEY, JSON.stringify({ at: new Date().toISOString(), type }));
+            // Modell seit 1.4.1: zeigt, ob die Zusammenfassung über das zweite Modell lief
+            saveToLocalStorage(SUMMARY_META_KEY, JSON.stringify({ at: new Date().toISOString(), type, model: modelFor("summary") }));
         }
 
         // ==============================================

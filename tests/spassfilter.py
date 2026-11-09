@@ -46,6 +46,9 @@ def tool_route(route):
     if state["fail_first"]:
         state["fail_first"] = False
         return route.fulfill(status=429, content_type="application/json", body=json.dumps({"error": {"code": 429, "status": "RESOURCE_EXHAUSTED", "message": "Rate limit per minute"}}))
+    if state.get("overload", 0) > 0:
+        state["overload"] -= 1
+        return route.fulfill(status=503, content_type="application/json", body=json.dumps({"error": {"code": 503, "status": "UNAVAILABLE", "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."}}))
     prompt = body["contents"][0]["parts"][0]["text"]
     items = [it for it in state["set"] if it["kaleu"] in prompt]
     if "Gesamtzusammenfassung" in prompt:
@@ -96,7 +99,7 @@ with sync_playwright() as p:
     tool.click("#btn-run")
     tool.wait_for_function("document.getElementById('run-status').textContent === 'Fertig.'", timeout=60000)
     check("2 Läufe × 5 Aufrufe + 1 Wiederholung", len(tool_bodies) == 11, len(tool_bodies))
-    check("Modell und Schlüssel in der Adresse", "models/gemini-2.5-flash-lite:generateContent" in tool_bodies[0][0] and "key=GEHEIM-TESTKEY" in tool_bodies[0][0])
+    check("Modell und Schlüssel in der Adresse", "models/gemini-3.5-flash-lite:generateContent" in tool_bodies[0][0] and "key=GEHEIM-TESTKEY" in tool_bodies[0][0])
     check("Budgets: 4 × 300, 1 × 1500 je Lauf", [bd["generationConfig"]["maxOutputTokens"] for _, bd in tool_bodies[1:6]] == [300] * 4 + [1500])
     res = tool.evaluate("results")
     check("Angehängt: Fakten 5/5, Spaß 5/5, Grenzfälle 2/2",
@@ -107,6 +110,19 @@ with sync_playwright() as p:
     ev = tool.inner_text("#eval")
     check("Auswertung zeigt Summen über beide Läufe", "10/10" in ev and "8/10" in ev and "2/2 Läufe" in ev, ev[:300])
     tool.screenshot(path=os.path.join(OUT, "spassfilter.png"), full_page=True)
+
+    # 3b) Überlastung (503, „high demand“): zwei Wiederholungen, dann weiter; bei dreimal hintereinander Abbruch des Laufs
+    tool.fill("#runs", "1"); tool_bodies.clear(); state["overload"] = 2
+    tool.click("#btn-run")
+    tool.wait_for_function("document.getElementById('run-status').textContent === 'Fertig.'", timeout=60000)
+    check("Überlastung: 2 Wiederholungen, Lauf vollständig", len(tool_bodies) == 7 and not tool.evaluate("results[0].error"), len(tool_bodies))
+    tool_bodies.clear(); state["overload"] = 3
+    tool.click("#btn-run")
+    tool.wait_for_function("document.getElementById('run-status').textContent === 'Fertig.'", timeout=60000)
+    check("Dreimal überlastet: Lauf mit Fehlermeldung beendet", len(tool_bodies) == 3 and "high demand" in (tool.evaluate("results[0].error") or ""))
+    tool.fill("#runs", "2")
+    tool.click("#btn-run")
+    tool.wait_for_function("document.getElementById('run-status').textContent === 'Fertig.'", timeout=60000)
 
     # 4) Export ohne Schlüssel, nichts gespeichert
     with tool.expect_download() as dl:

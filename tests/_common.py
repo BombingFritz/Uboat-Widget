@@ -60,3 +60,18 @@ class Checks:
         failed = [n for n, ok in self.results if not ok]
         print(f"\n{len(self.results) - len(failed)}/{len(self.results)} bestanden")
         raise SystemExit(1 if failed else 0)
+
+
+def reload_keeping_storage(page, tries=3, wait_ms=400):
+    """Neu laden; headless Chromium verliert bei file://-Seiten gelegentlich den gesamten localStorage beim Neuladen
+    (Testumgebung, nicht das Widget; beobachtet 08./09.11.2026). Ein Merker erkennt das: Fehlt er nach dem Neuladen,
+    wird der Speicher wiederhergestellt und erneut geladen. Gibt die Zahl der Versuche zurück."""
+    snapshot = page.evaluate("JSON.stringify(Object.assign({}, localStorage))")
+    for attempt in range(1, tries + 1):
+        page.evaluate("localStorage.setItem('__test_sentinel', '1')")
+        page.reload(); page.wait_for_timeout(wait_ms)
+        if page.evaluate("localStorage.getItem('__test_sentinel')") == "1":
+            page.evaluate("localStorage.removeItem('__test_sentinel')")
+            return attempt
+        page.evaluate("s => { const o = JSON.parse(s); for (const k in o) localStorage.setItem(k, o[k]); }", snapshot)
+    raise RuntimeError("localStorage ging bei jedem Neuladen verloren")

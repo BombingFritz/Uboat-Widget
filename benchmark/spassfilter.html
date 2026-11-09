@@ -49,10 +49,11 @@
   <h2>1. Einstellungen</h2>
   <div class="row"><label class="grow">Gemini-API-Schlüssel<br><input type="password" id="key" class="grow" style="width:100%" autocomplete="off"></label></div>
   <div class="row">
-    <label>Modell<br><input type="text" id="model" value="gemini-2.5-flash-lite"></label>
+    <label>Modell<br><input type="text" id="model" value="gemini-3.5-flash-lite"></label>
     <label>Läufe<br><input type="number" id="runs" value="2" min="1" max="10" style="width:80px"></label>
     <label>Pause zwischen Aufrufen (s)<br><input type="number" id="pause" value="5" min="0" step="0.5" style="width:80px"></label>
   </div>
+  <small>Modell: das Modell, das im Widget die Zusammenfassungen schreibt – das „zweite Modell“, falls eingetragen, sonst das aktive Modell.</small><br>
   <small>Je Lauf 5 Aufrufe (4 Zusammenfassungen à 3 Funksprüche, 1 Verdichtung); 2 Läufe = 10 Aufrufe, etwa 1 Minute. Die Aufrufe zählen gegen dein Tageskontingent bei Google, wie die des Widgets.</small>
 </section>
 
@@ -185,16 +186,25 @@ async function callSummary(prompt, maxTokens) {
     const text = (cand?.content?.parts || []).filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("").trim();
     return { text, finishReason: cand?.finishReason || "UNBEKANNT", promptTokens: u.promptTokenCount || 0, outTokens: u.candidatesTokenCount || 0 };
 }
+// Überlastung bei Google („high demand“, HTTP 503) ist meist kurz: bis zu 2 Wiederholungen nach 30 s (seit 1.4.1;
+// am 09.11.2026 brach ein echter Lauf daran ab)
+function isOverloaded(e) { return e.httpStatus === 503 || e.apiStatus === "UNAVAILABLE" || /high demand|overloaded/i.test(e.message || ""); }
 async function callWithRetry(prompt, maxTokens) {
-    try { return await callSummary(prompt, maxTokens); }
-    catch (e) {
-        if (e.httpStatus === 429 || e.apiStatus === "RESOURCE_EXHAUSTED") {
-            if (/per ?day|daily|RPD/i.test(e.message)) throw e;
-            log("⏳ Minutenlimit – warte 60 s und versuche es einmal erneut");
-            await sleep(60000);
-            return await callSummary(prompt, maxTokens);
+    for (let attempt = 0; ; attempt++) {
+        try { return await callSummary(prompt, maxTokens); }
+        catch (e) {
+            if (e.httpStatus === 429 || e.apiStatus === "RESOURCE_EXHAUSTED") {
+                if (/per ?day|daily|RPD/i.test(e.message) || attempt >= 1) throw e;
+                log("⏳ Minutenlimit – warte 60 s und versuche es einmal erneut");
+                await sleep(60000);
+            } else if (isOverloaded(e) && attempt < 2) {
+                log("⏳ Modell überlastet – warte 30 s und versuche es erneut");
+                await sleep(30000);
+            } else {
+                throw e;
+            }
+            if (stopRequested) throw new Error("abgebrochen");
         }
-        throw e;
     }
 }
 function isNothing(text) { return text.replace(/[.\s]+$/, "").toUpperCase() === SUMMARY_NOTHING; }

@@ -141,7 +141,7 @@ with sync_playwright() as p:
     prepare(pg, "Alte Lage.")
     pg.evaluate("summarizeHistory()")
     info = pg.inner_text("#last-summary-info")
-    check("Anzeige: Art, Länge, 2 Funksprüche offen", "(angehängt)" in info and f"{len('Alte Lage.') + 2 + len('Teil.')} Zeichen" in info and "2 Funksprüche noch nicht zusammengefasst" in info, info)
+    check("Anzeige: Art, Modell, Länge, 2 Funksprüche offen", "(angehängt · gemini-2.5-flash-lite)" in info and f"{len('Alte Lage.') + 2 + len('Teil.')} Zeichen" in info and "2 Funksprüche noch nicht zusammengefasst" in info, info)
     pg.evaluate("addToHistory('user','a'); addToHistory('assistant','b')")
     check("Anzeige: nach einem weiteren Funkspruch 3 offen", "3 Funksprüche noch nicht" in pg.inner_text("#last-summary-info"), pg.inner_text("#last-summary-info"))
     pg.evaluate("localStorage.removeItem('bdu_last_summary_meta'); updateHistoryDisplay()")
