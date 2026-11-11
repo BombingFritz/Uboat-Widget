@@ -57,7 +57,7 @@ Zahnrad ⚙️ unten rechts am Funkgerät anklicken.
 - Meldung ins Feld „NACHRICHT …“ tippen und **SENDEN**. Nach dem Morse-Ton antwortet der BdU zeichenweise im Display.
 - Beispiele: „Geleitzug gesichtet, 8 Dampfer mit Bewachern, erbitte Befehle“, „Torpedoversager, zwei Aale verloren“.
 - **Status-Meldung:** Beginnt eine Meldung mit `Status:`, übernimmt das Widget den Rest als aktuellen Status, z. B. `Status: Brennstoff 60 %, 4 Aale, leichte Schäden am Sehrohr`. Der BdU kennt ihn ab dann bei jeder Antwort.
-- Erscheint statt einer Antwort „FUNKSTÖRUNG: …“, hilft der Abschnitt „Wenn etwas nicht klappt“.
+- Hinweise und Störungen meldet der **Funkmaat** im Display, z. B. „Funkmaat: Funkfrequenz gestört …“. Die technische Ursache steht in den Einstellungen unter „Letzte Störung“; was zu tun ist, steht im Abschnitt „Wenn etwas nicht klappt“.
 
 ## Schritt 6: Das Gedächtnis des BdU
 - Jeder Funkspruch und jede Antwort kommen in den **Verlauf** (bis 100 Einträge). Er bleibt nach dem Neuladen erhalten.
@@ -93,6 +93,7 @@ Unter **„Sichern & Übertragen“** in den Einstellungen:
 - Weil jedes Modell sein eigenes Tageskontingent hat, bleiben dem aktiven Modell so mehr Anfragen. Schon ohne Chat-Modus spart das ein Viertel der Anfragen beim aktiven Modell.
 - Leer gelassen läuft alles über das aktive Modell – das ist völlig in Ordnung, wenn dein Kontingent reicht.
 - Welches Modell gerade gearbeitet hat, zeigt die Zeile „Letzte Anfrage (Modell): …“ in der Token-Schätzung.
+- **Zweitfrequenz:** Ist das Tageskontingent des aktiven Modells aufgebraucht, wechselt das Widget von selbst auf das zweite Modell und schickt den Funkspruch dort noch einmal („Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“). Bis zum Neuladen oder SPEICHERN bleibt es dabei.
 
 ## Benchmark und Spaßfilter-Test – wofür?
 Beide liegen im Ordner `benchmark/` (im Release als eigene Dateien oder über „Code → Download ZIP“), werden per Doppelklick im Browser geöffnet und gehören nicht zum Widget. Ihre Aufrufe zählen gegen dasselbe Tageskontingent – am besten nicht direkt vor dem Spielen oder Streamen starten.
@@ -107,13 +108,19 @@ Mit dem separaten **Companion-Server** des Autors können Zuschauer dem BdU übe
 ## Wenn etwas nicht klappt
 | Meldung oder Verhalten | Ursache und Lösung |
 |---|---|
-| „FUNKSTÖRUNG: … requests per day limit exceeded …“ oder „You exceeded your current quota“ | Tageskontingent des Modells aufgebraucht. Ab etwa 9 Uhr geht es wieder. Bis dahin ein anderes Modell als aktives Modell wählen; künftig das zweite Modell nutzen. |
-| „FUNKSTÖRUNG: … not found“ / „HINWEIS: Modell nicht gefunden“ | Modellname falsch oder von Google abgeschaltet: „MODELLE SUCHEN“ und ein Modell aus der Liste wählen. |
-| „FUNKSTÖRUNG: API key not valid“ | Schlüssel falsch kopiert oder gelöscht: in AI Studio prüfen, neu einfügen, SPEICHERN. |
+| „Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“ | Tageskontingent des aktiven Modells aufgebraucht. Das Widget funkt automatisch über das zweite Modell weiter und schickt deinen Funkspruch dort noch einmal. Das gilt bis zum Neuladen oder SPEICHERN; die Anzeige unten am Funkgerät zeigt das genutzte Modell. |
+| „Funkmaat: Funkfrequenz gestört, Meldung nicht durchgekommen. Später erneut versuchen.“ | Tageskontingent aufgebraucht, kein zweites Modell eingetragen. Ab etwa 9 Uhr geht es wieder; für die Zukunft ein zweites Modell eintragen. |
+| „Funkmaat: Sendeanlage unklar, Meldung wiederholt nicht durchgekommen und unbestätigt.“ | Auch das zweite Modell hat sein Tageskontingent verbraucht. Ab etwa 9 Uhr geht es wieder. |
+| „Funkmaat: Starke atmosphärische Störungen …“ oder „Frequenz nicht sicher … Feind peilt vermutlich ein …“ | Google ist gerade überlastet („high demand“). Meist nach wenigen Minuten vorbei; Meldung später erneut senden. |
+| „Funkmaat: Frequenz nicht besetzt …“ | Modellname falsch oder von Google abgeschaltet: „MODELLE SUCHEN“ und ein Modell aus der Liste wählen. |
+| „Funkmaat: Code-Schlüssel passt nicht …“ | API-Schlüssel ungültig, falsch kopiert oder gelöscht: in AI Studio prüfen, neu einfügen, SPEICHERN. |
+| „Funkmaat: Keine Verbindung zur Sendeanlage …“ | Keine Internetverbindung. |
+| „Funkmaat: Schlüsselmaschine nicht eingestellt …“ | Noch kein API-Schlüssel eingetragen (Schritt 3 und 4). |
+| „Funkmaat: Funkspruch nicht durchgekommen. Einzelheiten in den Einstellungen.“ | Anderer Fehler: die technische Meldung steht in den Einstellungen unter „Letzte Störung“. |
+| „Funkmaat: Kladde konnte nicht abgeschrieben werden …“ | Die Zusammenfassung im Hintergrund ist gescheitert, meist am Kontingent des zweiten bzw. aktiven Modells. Das Widget versucht es nach 2 weiteren Funksprüchen erneut; der Verlauf geht nicht verloren. |
 | „SPEICHERN“ zeigt „API-SCHLÜSSEL FEHLT“ | Ohne Schlüssel lässt sich nicht speichern. Für lokale KI (Universal-Modus) einen Platzhalter wie `lokal` eintragen. |
 | Einstellungen und Verlauf sind plötzlich leer | Datei verschoben, umbenannt, anderer Browser oder andere OBS-Einbindung („Lokale Datei“ ↔ `file:///`). Datei an den alten Ort zurück oder Export importieren. |
 | Kein Ton | Lautstärke in den Einstellungen und am Rechner prüfen. Ohne Internet fehlen die Töne; funken geht trotzdem. |
-| „⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN“ | Meist Kontingent des zweiten bzw. aktiven Modells. Das Widget versucht es nach 2 weiteren Funksprüchen erneut; der Verlauf geht nicht verloren. |
 | Antworten zu lang oder albern | Anderes Modell probieren (Benchmark) oder die Persönlichkeit anpassen. |
 
 Genauere Hinweise stehen in der Browser-Konsole (F12 → „Konsole“; in OBS nur mit Zusatzaufwand erreichbar – im Zweifel die Datei zum Testen im normalen Browser öffnen). Fragen und Fehler gern als Issue auf GitHub.

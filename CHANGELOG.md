@@ -5,6 +5,20 @@ Frühere lokale Dateistände (u. a. `enigma_radio_wood.html`, `Stable3-uboat-wid
 
 **Zur Zählung:** Die Release-Version (Git-Tag) und die Konstante `WIDGET_VERSION` im Code sind verschiedene Dinge. Das Release `v1.0` enthält `WIDGET_VERSION = "3.0"`. `WIDGET_VERSION` steuert, wann der gespeicherte Persönlichkeits-Prompt durch den neuen Standard ersetzt wird (siehe `docs/ARCHITEKTUR.md`).
 
+## [1.5.0] - 2026-11-11
+
+Mehr Rollenspiel bei Störungen und automatisches Weiterfunken, wenn das Tageskontingent aufgebraucht ist. Tests: `python tests/run_all.py`, alle bestanden (neu Funkmaat 28; Regression 30, Export/Import 25, ohne Browser-Dialoge 22, Gemini-Teile 9, Chat-Bereich 7, Funkspruch-Paare 15, Verdichten 42, Kopfzeile 13, Spaßfilter-Test 25, zweites Modell 16, Benchmark 50 und 52). Prompt, Gedächtnis, Design, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.
+
+### Added
+- **Zweitfrequenz:** Ist das Tageskontingent des aktiven Modells aufgebraucht, wechselt das Widget von selbst auf das zweite Modell und schickt den Funkspruch dort sofort noch einmal – im Display steht nur „Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“ und danach die Antwort. Das gilt bis zum Neuladen oder SPEICHERN; die Anzeige unten am Funkgerät zeigt so lange das genutzte Modell. Ist auch das zweite Modell erschöpft: „Funkmaat: Sendeanlage unklar, Meldung wiederholt nicht durchgekommen und unbestätigt.“
+- Einstellungen, Token-Schätzung: neue Zeile „Letzte Störung“ mit Uhrzeit, Modell und technischer Meldung, bei aktiver Zweitfrequenz mit Hinweis darauf.
+
+### Changed
+- Hinweise und Störungen im Display kommen vom **Funkmaat** in der Sprache der Zeit statt als „[SYS] …“ mit englischer Fehlermeldung, z. B. „Funkmaat: In KTB notiert, Lagemeldung weitergegeben: …“, „Funkmaat: Code-Schlüssel passt nicht, bitte Codebuch und Einstellungen der Funkanlage überprüfen!“ oder bei Überlastung von Google „Funkmaat: Frequenz nicht sicher, verdächtige Aktivitäten, Feind peilt vermutlich ein …“. Die technische Ursache steht in den Einstellungen unter „Letzte Störung“. Wortlaut: `docs/specs/funkmaat-zweitfrequenz.md`.
+
+### Documentation
+- `ANLEITUNG.md`: Fehlertabelle mit den neuen Funkmaat-Meldungen, Abschnitt Zweitfrequenz.
+
 ## [1.4.1] - 2026-11-09
 
 Kleine Verbesserungen nach dem ersten Einsatz von 1.4.0. Tests: `python tests/run_all.py`, alle bestanden (zweites Modell 16, Spaßfilter-Test 25, übrige unverändert). Prompt, Gedächtnis-Logik, Design, Audiodateien und `WIDGET_VERSION` („3.0“) unverändert.

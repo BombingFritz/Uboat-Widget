@@ -95,7 +95,7 @@ with sync_playwright() as p:
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
     check("Abgeschnitten: Rückfall kürzt auf 1.600 Zeichen, Index bleibt", pg.evaluate("historySummary") == pg.evaluate("t => trimSummaryBlocks(t, 1600)", long_summary) and len(pg.evaluate("historySummary")) <= 1600 and pg.evaluate("lastSummaryIndex") == 0)
-    check("Abgeschnitten: Meldung im Display", "ZUSAMMENFASSUNG FEHLGESCHLAGEN" in pg.inner_text("#chat-log"))
+    check("Abgeschnitten: Meldung im Display", "Funkmaat: Kladde konnte nicht abgeschrieben werden" in pg.inner_text("#chat-log"))
     mode["finish"] = "STOP"; mode["summary"] = "KEINE MELDUNG"
     prepare(pg, long_summary)
     pg.evaluate("summarizeHistory()")
@@ -119,7 +119,7 @@ with sync_playwright() as p:
     check("Rückfall: höchstens 1.600 Zeichen, neueste Abschnitte bleiben, älteste weg",
           len(after) <= 1600 and after.endswith(blocks[-1].strip()) and "Abschnitt 0" not in after and "Abschnitt 7" in after, len(after))
     check("Rückfall: gespeichert, Index unverändert", pg.evaluate("localStorage.getItem('bdu_history_summary')") == after and pg.evaluate("lastSummaryIndex") == 0)
-    check("Rückfall: Hinweis im Display", "älteste Abschnitte entfernt" in pg.inner_text("#chat-log"))
+    check("Rückfall: Hinweis im Display", "älteste Seiten ausgeheftet" in pg.inner_text("#chat-log") and "älteste Abschnitte entfernt" in pg.inner_text("#incident-info"))
     check("Rückfall: Anzeige nennt Kürzung", "gekürzt" in pg.inner_text("#last-summary-info"), pg.inner_text("#last-summary-info"))
     mode["finish"] = "STOP"; mode["summary"] = "Teil."
     pg.evaluate("summaryPauseEntries = 0")

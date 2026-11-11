@@ -103,7 +103,7 @@ with sync_playwright() as p:
     mode["gemini_fail"] = True
     send(page, "Aal läuft")
     sys_txt = page.locator("#chat-log .msg-sys").all_inner_texts()
-    check("B1: FUNKSTÖRUNG sichtbar", any("FUNKSTÖRUNG" in t and "Quota" in t for t in sys_txt), str(sys_txt))
+    check("B1: Störung sichtbar (seit 1.5.0 als Funkmaat)", any(t.startswith("Funkmaat: Funkfrequenz gestört") for t in sys_txt), str(sys_txt))
     hist = page.evaluate("JSON.parse(localStorage.getItem('bdu_conversation_history'))")
     check("B3: Fehlgeschlagene Meldung nicht im Verlauf", len(hist) == 4 and all(h["text"] != "Aal läuft" for h in hist), str(len(hist)))
     mode["gemini_fail"] = False
@@ -138,7 +138,7 @@ with sync_playwright() as p:
     # 8) Einstellungen speichern zeigt Bestätigung
     page.evaluate("toggleSettings()")
     page.evaluate("saveSettings()")
-    check("B1: KONFIGURATION GESPEICHERT sichtbar", page.locator("#chat-log .msg-sys", has_text="KONFIGURATION GESPEICHERT").count() == 1)
+    check("B1: Speichern bestätigt (seit 1.5.0 „Funkgerät neu eingestellt“)", page.locator("#chat-log .msg-sys", has_text="Funkgerät neu eingestellt").count() == 1)
     check("Kein Caching-Schalter mehr in den Einstellungen", page.locator("#caching-enabled-checkbox").count() == 0 and page.locator("#cache-indicator").count() == 0)
 
     # 9) RESET
