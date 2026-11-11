@@ -1,6 +1,8 @@
 # Offene Punkte
 
 ## Nächste Schritte (Stand 08.11.2026)
+**Release `v1.4.1` veröffentlicht** (geprüft 11.11.2026: regulär, „Latest“, Tag auf dem Merge von PR #23, Anhänge `index.html` und `spassfilter.html` bytegleich mit `main`). Spaßfilter-Test mit `gemini-3.5-flash-lite` steht aus.
+
 **Release `v1.4.0` veröffentlicht** (09.11.2026, regulär, „Latest“; Anhänge `index.html`, `bench.html`, `spassfilter.html`, `beispiel-kontext.json` bytegleich mit `main`, Tag auf dem Merge von PR #22). Nutzertest am 09.11.2026: Zusammenfassungen laufen alle 3 Funksprüche („nichts angehängt“ 15:40, „angehängt“ 15:43 und 15:45); welches Modell sie schrieb, war nicht sichtbar (seit 1.4.1 in der Anzeige). Spaßfilter-Test brach an „high demand“ ab (1.4.1: Wiederholung) und lief versehentlich mit 2.5 (1.4.1: Standard 3.5).
 
 Davor: **1.4.0 umgesetzt**: explizites Caching entfernt (ADR 0006), Zusammenfassung verdichten, Spaßmeldungen weglassen, Anzeige des automatisch zwischengespeicherten Anteils. Nutzertest in OBS (08.11.2026, `gemini-2.5-flash-lite`, kostenloses Kontingent):
@@ -46,16 +48,12 @@ Detailentscheidungen zum Plan 1.4.0 (Nutzer, 08.11.2026), umgesetzt in 1.4.0:
 - D3: Verdichtung bekommt den Boot-Kontext zur Einordnung; die Zusammenfassung wiederholt nichts, was dort schon steht.
 - D4: Wortlaut der Spaß-Regel wie vorgeschlagen.
 
-## Funkmaat statt [SYS] und Zweitfrequenz (Idee des Nutzers, 09.11.2026, für später)
-Wunsch des Nutzers:
-1. **Automatisch auf das zweite Modell ausweichen:** Meldet das aktive Modell „Kontingent erschöpft“ (HTTP 429 / `RESOURCE_EXHAUSTED`), laufen auch die eigenen Funksprüche bis zum Neuladen über das zweite Modell. Meldung im Display in der Rolle, z. B. „Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“
-2. **Systemmeldungen ohne Immersionsbruch:** statt „[SYS] …“ als „Funkmaat: …“ und in der Sprache der Zeit; die technische Fehlermeldung nur in den Einstellungen (und der Konsole).
+## Funkmaat statt [SYS] und Zweitfrequenz (geplant für 1.5.0)
+Wunsch des Nutzers (09.11.2026), Entscheidungen vom 11.11.2026: gescheiterter Funkspruch nach dem Wechsel sofort im Hintergrund erneut senden; ist auch das zweite Modell erschöpft, „Funkmaat: Sendeanlage unklar, Meldung wiederholt nicht durchgekommen und unbestätigt.“ Entwurf mit Wortlaut aller Meldungen und offenen Fragen: `docs/specs/funkmaat-zweitfrequenz.md` (Prüfung durch den Nutzer ausstehend).
 
-Zu klären vor der Umsetzung (Plan als Spec, dann Entscheidung des Nutzers):
-- Soll der gescheiterte Funkspruch nach dem Wechsel sofort automatisch erneut gesendet werden (1 Anfrage beim zweiten Modell) oder erst beim nächsten Senden?
-- Was passiert ohne eingetragenes zweites Modell (nur Meldung „Funkverbindung abgerissen“) und wenn auch das zweite Modell erschöpft ist?
-- Liste aller Systemmeldungen mit neuem Wortlaut (Vorschläge vom Assistenten, Wortlaut entscheidet der Nutzer); Ort und Form der technischen Meldung in den Einstellungen (z. B. Zeile „Letzte Störung: Uhrzeit, Modell, Meldung“).
-- Andere Fehler (Überlastung 503, ungültiger Schlüssel, Modell nicht gefunden) ebenfalls in der Rolle, aber ohne Modellwechsel.
+## Ideen für später (Nutzer, 11.11.2026)
+1. **Landurlaub-Antwort im Chat** (Server und Widget): Läuft das Enigma-Widget nicht oder wird kein Spiel aus einer hinterlegten Kategorie gespielt (z. B. UBOAT, Wolfpack, Sonar; Namen [UNGEKLÄRT]), antwortet `!BdU` anders, mit Hinweis auf Freiwache bzw. Landurlaub („Schön, dass du dich bei mir sogar aus deinem Landurlaub meldest, Soldat, aber …“). Der Server kennt Kategorie und Widget-Verbindung bereits (UBOAT-Soldbuch, BdU-Chat). Zu klären: Ohne laufendes Widget gibt es keine KI (ADR 0004: der Server ruft keine KI auf), also feste Texte im Server; mit laufendem Widget außerhalb der Kategorie Antwort per KI mit Landurlaub-Hinweis. Eintrag auch in `docs/OFFEN.md` des Servers.
+2. **Enigma dauerhaft als Quelle, Ein- und Ausblenden per Stream Deck:** Die Browserquelle bleibt immer geöffnet; ein Stream-Deck-Knopf schaltet das Funkgerät sichtbar bzw. unsichtbar (das Widget blendet sich selbst ein und aus, statt es in OBS auszublenden). Vorteil: Andere Ereignisse können die Funkkonsole öffnen und ein „unaufgefordertes“ Funktelegramm eingehen lassen, z. B. verknüpft mit Chat-Ereignissen. Zu klären: Weg Stream Deck → Server → Widget (die Server-Sent-Events des Chat-Modus bieten sich an), welche Ereignisse, wie das Ein- und Ausblenden aussieht (Design, nur auf Auftrag), Verhalten ohne Server (ADR 0002: abschaltbar, standardmäßig aus). Eintrag auch in `docs/OFFEN.md` des Servers.
 
 ## Kontingent und Token-Verbrauch (Stand 08.11.2026)
 **Automatisches Caching (Entscheidung des Nutzers, 08.11.2026: festhalten):** Bei allen bisher gemessenen Anfragen mit `gemini-2.5-flash-lite` im kostenlosen Kontingent 0 automatisch zwischengespeicherte Tokens (5 Anfragen, 3.986–5.742 Tokens). Google bietet das implizite Caching dort offenbar nicht an. Kosten entstehen dadurch nicht.
