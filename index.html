@@ -456,7 +456,8 @@
                         Summary: <span id="token-summary">0</span> Zeichen (~<span id="token-summary-est">0</span> Tokens)<br>
                         <span style="border-top: 1px dashed #444; display: block; margin: 4px 0;"></span>
                         <strong>GESAMT: <span id="token-total">0</span> Zeichen (~<span id="token-total-est" style="color: #ccc;">0</span> Tokens)</strong><br>
-                        <span id="token-last-usage" style="color: #888;">Letzte Anfrage: noch keine seit dem Laden</span>
+                        <span id="token-last-usage" style="color: #888;">Letzte Anfrage: noch keine seit dem Laden</span><br>
+                        <span id="incident-info" style="color: #888;">Letzte Störung: keine seit dem Laden</span>
                     </div>
                 </div>
                 <small style="color:#666;">Der Kontext ist frei editierbar. Ergänzt gerne und teilt eure besten Ergänzungen.</small>
@@ -1024,6 +1025,10 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
         // Leer = aktives Modell. Eigene Funksprüche laufen immer über currentModel.
         let secondaryModel = "";
         let lastRequestModel = "";
+        // Zweitfrequenz (seit 1.5.0): Nach erschöpftem Kontingent des aktiven Modells laufen auch eigene Funksprüche
+        // über das zweite Modell, bis zum Neuladen oder SPEICHERN. Nur im Arbeitsspeicher.
+        let fallbackActive = false;
+        let lastIncident = null;   // {at, model, kind, message} – technische Meldung nur für die Einstellungen
         
         // API-Typ & URL
         let apiType = "gemini";      // "gemini" | "universal"
@@ -1110,7 +1115,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             } catch (e) {
                 if (e.name === 'QuotaExceededError') {
                     console.error("[STORAGE] 💾 LocalStorage voll!");
-                    appendLog("Funkmaat", "SPEICHER VOLL. ÄLTERE FUNKSPRÜCHE WERDEN GELÖSCHT.");
+                    funkmaat(FUNKMAAT_TEXTS.storageFull);
                     
                     // Lösche älteste History-Hälfte
                     trimHistory(50);
@@ -1452,7 +1457,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             updateHistoryDisplay();
             updateTokenEstimate();
             
-            appendLog("Funkmaat", "HISTORY GELÖSCHT.");
+            funkmaat(FUNKMAAT_TEXTS.historyCleared);
         }
 
         // Löscht den letzten Funkspruch als Paar (Meldung des Kaleu + Antwort des BdU), damit der Verlauf
@@ -1462,7 +1467,7 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             if (!confirmInWidget('clear-last-exchange-btn', "❓ SICHER? NOCHMAL KLICKEN")) return;
 
             if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
-                appendLog("Funkmaat", "Keine History zum Kürzen vorhanden.");
+                funkmaat(FUNKMAAT_TEXTS.nothingToDelete);
                 return;
             }
 
@@ -1491,7 +1496,8 @@ Bleib dabei der BdU und in der Zeit: kein Rumblödeln, keine Witze auf Kosten ei
             updateHistoryDisplay();
             updateTokenEstimate();
 
-            appendLog("Funkmaat", `Letzter Funkspruch aus der History gelöscht (${removeCount} Einträge).`);
+            console.log("[HISTORY] ➖ Letzter Funkspruch gelöscht:", removeCount, "Einträge");
+            funkmaat(FUNKMAAT_TEXTS.lastDeleted);
         }
 
         // ==============================================
@@ -1660,8 +1666,11 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 // Nicht nach jeder Antwort erneut versuchen (kostet je einen Aufruf), sondern erst nach 2 weiteren Funksprüchen
                 summaryPauseEntries = SUMMARY_RETRY_AFTER_ENTRIES;
                 // Im Display nur einmal je Fehlerserie melden, danach nur Konsole
+                recordIncident(error, modelFor("summary"));
+                if (lastIncident) lastIncident.message = "Zusammenfassung: " + lastIncident.message + trimmedNote;
+                updateIncidentInfo();
                 if (!summaryFailureShown) {
-                    appendLog('sys', `⚠️ ZUSAMMENFASSUNG FEHLGESCHLAGEN: ${error.message}${trimmedNote}`);
+                    funkmaat(trimmedNote ? FUNKMAAT_TEXTS.summaryTrimmed : FUNKMAAT_TEXTS.summaryFailed);
                     summaryFailureShown = true;
                 }
                 updateHistoryDisplay();
@@ -1692,7 +1701,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         // ==============================================
         function updateModelBadge() {
             const display = document.getElementById('model-badge');
-            let shortName = currentModel || "NONE";
+            // Bei aktiver Zweitfrequenz das tatsächlich genutzte Modell (seit 1.5.0)
+            let shortName = (fallbackActive ? modelFor("main") : currentModel) || "NONE";
             if(shortName.includes("/")) shortName = shortName.split('/').pop();
             if (apiType === "gemini") {
                 shortName = shortName.replace("models/", "").replace("gemini-", "").replace("1.5-", "").replace("2.0-", "").replace("tunedModels/", "");
@@ -1749,8 +1759,69 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
         // Modell je Zweck: eigene Funksprüche über das aktive Modell, Chat-Antworten und Zusammenfassungen
         // über das zweite Modell, falls eingetragen (seit 1.4.0)
         function modelFor(purpose) {
-            const m = (purpose === "chat" || purpose === "summary") && secondaryModel ? secondaryModel : currentModel;
+            const useSecondary = secondaryModel && (purpose === "chat" || purpose === "summary" || fallbackActive);
+            const m = useSecondary ? secondaryModel : currentModel;
             return m.replace(/^models\//, "");
+        }
+
+        // ==============================================
+        // FUNKMAAT: Meldungen im Display in der Rolle (seit 1.5.0, Spec funkmaat-zweitfrequenz.md);
+        // technische Einzelheiten nur in den Einstellungen ("Letzte Störung") und in der Konsole
+        // ==============================================
+        const FUNKMAAT_TEXTS = {
+            quotaSwitch: "Funkfrequenz gestört, wechsele auf Zweitfrequenz.",
+            quotaBoth: "Sendeanlage unklar, Meldung wiederholt nicht durchgekommen und unbestätigt.",
+            quotaNoSecondary: "Funkfrequenz gestört, Meldung nicht durchgekommen. Später erneut versuchen.",
+            overload: [
+                "Starke atmosphärische Störungen, BdU nicht erreichbar. Meldung später wiederholen.",
+                "Frequenz nicht sicher, verdächtige Aktivitäten, Feind peilt vermutlich ein. Meldung später absetzen, möglichst kurz halten!"
+            ],
+            key: "Code-Schlüssel passt nicht, bitte Codebuch und Einstellungen der Funkanlage überprüfen!",
+            model: "Frequenz nicht besetzt. Modell in den Einstellungen prüfen („MODELLE SUCHEN“).",
+            network: "Keine Verbindung zur Sendeanlage. Internetverbindung prüfen.",
+            other: "Funkspruch nicht durchgekommen. Einzelheiten in den Einstellungen.",
+            noKey: "Schlüsselmaschine nicht eingestellt. Bitte Zahnrad öffnen und API-Schlüssel eintragen.",
+            status: "In KTB notiert, Lagemeldung weitergegeben: ",
+            saved: "Funkgerät neu eingestellt.",
+            historyCleared: "Funkkladde geleert. Bereit für die neue Feindfahrt.",
+            lastDeleted: "Letzter Funkspruch aus der Kladde gestrichen.",
+            nothingToDelete: "Die Funkkladde ist leer.",
+            summaryFailed: "Kladde konnte nicht abgeschrieben werden, neuer Versuch später.",
+            summaryTrimmed: "Kladde konnte nicht abgeschrieben werden, älteste Seiten ausgeheftet.",
+            storageFull: "Kladde voll, älteste Seiten ausgeheftet."
+        };
+
+        function funkmaat(text) {
+            appendLog("Funkmaat", Array.isArray(text) ? text[Math.floor(Math.random() * text.length)] : text);
+        }
+
+        // Fehlerart einer gescheiterten Anfrage
+        function errorKind(err) {
+            const msg = String(err?.message || "");
+            if (isQuotaError(err)) return "quota";
+            if (err?.httpStatus === 503 || err?.apiStatus === "UNAVAILABLE" || /high demand|overloaded/i.test(msg)) return "overload";
+            if (err?.httpStatus === 401 || err?.apiStatus === "UNAUTHENTICATED" || /API_KEY_INVALID|API key not valid|invalid api key|incorrect api key/i.test(msg)) return "key";
+            if (err?.httpStatus === 404 || /not found/i.test(msg)) return "model";
+            if (err instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)) return "network";
+            return "other";
+        }
+
+        function recordIncident(err, model) {
+            lastIncident = { at: new Date().toISOString(), model: model || "", kind: errorKind(err), message: String(err?.message || err).slice(0, 300) };
+            updateIncidentInfo();
+        }
+
+        function updateIncidentInfo() {
+            const el = document.getElementById('incident-info');
+            if (!el) return;
+            let text = "Letzte Störung: keine seit dem Laden";
+            if (lastIncident) {
+                const when = new Date(lastIncident.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                text = `Letzte Störung: ${when}${lastIncident.model ? " · " + lastIncident.model : ""} · ${lastIncident.message}`;
+            }
+            if (fallbackActive && secondaryModel) text += ` · Zweitfrequenz aktiv: ${modelFor("main")} (bis Neuladen oder SPEICHERN)`;
+            el.textContent = text;
+            el.style.color = fallbackActive ? '#ffb84d' : '#888';
         }
 
         // ==============================================
@@ -1975,7 +2046,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
 
             if (!text) return;
             if (!apiKey) {
-                appendLog("Funkmaat", "KEIN API-SCHLÜSSEL. BITTE ZAHNRAD ÖFFNEN UND SCHLÜSSEL EINTRAGEN.");
+                funkmaat(FUNKMAAT_TEXTS.noKey);
                 return;
             }
 
@@ -1986,7 +2057,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                     currentStatus = newStatus;
                     saveToLocalStorage('bdu_current_status', currentStatus);
                     document.getElementById('current-status-input').value = currentStatus;
-                    appendLog("System", "[STATUS AKTUALISIERT] " + newStatus);
+                    funkmaat(FUNKMAAT_TEXTS.status + newStatus);
                 }
             }
 
@@ -2004,7 +2075,37 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             try {
                 // Meldung erst NACH dem Aufruf in den Verlauf: callApi hängt sie selbst an
                 // (vorher doppelt gesendet), und bei Fehlern bleibt keine unbeantwortete Meldung stehen.
-                const responseText = stripAnswerHeader(await callApi(text));
+                let responseText;
+                try {
+                    responseText = await callApi(text);
+                } catch (error) {
+                    console.error(error);
+                    recordIncident(error, lastRequestModel);
+                    const kind = errorKind(error);
+                    const canSwitch = kind === "quota" && !fallbackActive && secondaryModel && modelFor("main") !== secondaryModel.replace(/^models\//, "");
+                    if (!canSwitch) {
+                        // Ohne Wechselmöglichkeit: Meldung des Funkmaats je Fehlerart, Funkspruch nicht im Verlauf
+                        if (kind === "quota") funkmaat(fallbackActive ? FUNKMAAT_TEXTS.quotaBoth : FUNKMAAT_TEXTS.quotaNoSecondary);
+                        else funkmaat(FUNKMAAT_TEXTS[kind] || FUNKMAAT_TEXTS.other);
+                        return;
+                    }
+                    // Zweitfrequenz: auf das zweite Modell wechseln und denselben Funkspruch sofort erneut senden
+                    fallbackActive = true;
+                    console.warn("[FUNK] 🔀 Kontingent erschöpft – Zweitfrequenz:", modelFor("main"));
+                    funkmaat(FUNKMAAT_TEXTS.quotaSwitch);
+                    updateModelBadge();
+                    updateIncidentInfo();
+                    try {
+                        responseText = await callApi(text);
+                    } catch (error2) {
+                        console.error(error2);
+                        recordIncident(error2, lastRequestModel);
+                        const kind2 = errorKind(error2);
+                        funkmaat(kind2 === "quota" ? FUNKMAAT_TEXTS.quotaBoth : (FUNKMAAT_TEXTS[kind2] || FUNKMAAT_TEXTS.other));
+                        return;
+                    }
+                }
+                responseText = stripAnswerHeader(responseText);
                 addToHistory("user", text);
                 addToHistory("assistant", responseText);
                 
@@ -2023,12 +2124,10 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
                 }
                 
             } catch (error) {
+                // Unerwartete Fehler nach der Antwort (Anzeige, Ton, Zusammenfassung fängt selbst ab)
                 console.error(error);
-                appendLog("Funkmaat", "FUNKSTÖRUNG: " + error.message);
-                
-                if(error.message.includes("not found")) {
-                    appendLog("Funkmaat", "HINWEIS: Modell nicht gefunden. Bitte 'Modelle suchen' im Menü nutzen.");
-                }
+                recordIncident(error, lastRequestModel);
+                funkmaat(FUNKMAAT_TEXTS.other);
             } finally {
                 statusLight.classList.remove('transmitting');
                 ownSendActive = false;
@@ -2090,6 +2189,8 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             currentStatus = newStatus;
             currentModel = newModel;
             secondaryModel = newSecondary;
+            fallbackActive = false;   // Zweitfrequenz endet beim SPEICHERN (Nutzerentscheidung 11.11.2026)
+            updateIncidentInfo();
             loopIncomingSound = newLoop;
             soundVolume = newVolume;
             apiType = newApiType;
@@ -2107,7 +2208,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             toggleSettings();
             updateModelBadge();
             updateTokenEstimate(); // ← NEU: Update Token-Anzeige
-            appendLog("Funkmaat", "KONFIGURATION GESPEICHERT.", true);
+            funkmaat(FUNKMAAT_TEXTS.saved);
         }
 
         function clearSettings() {
@@ -2293,7 +2394,7 @@ Zusammenfassung (nur Fakten: Sichtungen, Befehle, Ergebnisse):`;
             } else if (sender === "System" || sender === "Funkmaat" || sender === "sys") {
                 // Systemmeldungen (Fehler, Bestätigungen) – vorher fielen "Funkmaat" und "sys" ohne Text durch
                 msgDiv.className = "msg-sys";
-                msgDiv.textContent = "[SYS] " + text;
+                msgDiv.textContent = "Funkmaat: " + text;   // seit 1.5.0 statt "[SYS] "
             } else {
                 msgDiv.className = "msg-bdu";
                 msgDiv.textContent = text;

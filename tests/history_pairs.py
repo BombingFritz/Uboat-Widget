@@ -57,7 +57,7 @@ with sync_playwright() as p:
     check("Zusammenfassungsstand auf Verlaufslänge begrenzt und gespeichert",
           pg.evaluate("lastSummaryIndex") == 8 and pg.evaluate("localStorage.getItem('bdu_last_summary_index')") == "8")
     check("Gekürzter Verlauf gespeichert", len(json.loads(pg.evaluate("localStorage.getItem('bdu_conversation_history')"))) == 8)
-    check("Meldung im Display", "Letzter Funkspruch aus der History gelöscht (2 Einträge)" in pg.inner_text("#chat-log"))
+    check("Meldung im Display", "Funkmaat: Letzter Funkspruch aus der Kladde gestrichen." in pg.inner_text("#chat-log"))
     check("Zähler aktualisiert", pg.inner_text("#history-count").strip() == "8")
 
     # Nächste Anfrage: keine zwei Kaleu-Meldungen hintereinander
@@ -88,7 +88,7 @@ with sync_playwright() as p:
     delete(pg)
     check("Letztes Paar: Verlauf leer, Index 0", roles(pg) == [] and pg.evaluate("lastSummaryIndex") == 0)
     delete(pg)
-    check("Leerer Verlauf: Hinweis statt Fehler", "Keine History zum Kürzen vorhanden" in pg.inner_text("#chat-log"))
+    check("Leerer Verlauf: Hinweis statt Fehler", "Funkmaat: Die Funkkladde ist leer." in pg.inner_text("#chat-log"))
 
     pg.evaluate("document.getElementById('clear-last-exchange-btn').scrollIntoView()")
     pg.screenshot(path=os.path.join(OUT, "history_pairs.png"))
