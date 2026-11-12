@@ -103,6 +103,9 @@ Beide liegen im Ordner `benchmark/` (im Release als eigene Dateien oder über �
 ## Für Streamer: Chat-Modus (optional)
 Mit dem separaten **Companion-Server** des Autors können Zuschauer dem BdU über `!BdU <Meldung>` im Twitch-Chat funken; die Antwort erscheint im Chat, nicht im Widget. Das braucht deutlich mehr Einrichtung (Node.js, eigene Twitch-Anwendung) – Details in der [README](README.md) unter „Für Twitch-Streamer“. Im Widget: Zahnrad → „Für Streamer: Chat-Modus“, in OBS per `file:///` einbinden und „Quelle herunterfahren, wenn nicht sichtbar“ ausschalten. Für den Chat lohnt das zweite Modell besonders.
 
+- **Datenschutzhinweis:** `!BdU` gibt Nachrichten deiner Zuschauer (ohne Nutzernamen) an den KI-Anbieter weiter, bei Gemini im kostenlosen Zugang ggf. auch zur Verbesserung von Googles Diensten. Sag deinen Zuschauern das, z. B. in den Chat-Regeln, im Infobereich unter dem Stream oder über einen Hilfebefehl. Beispieltext: „Hinweis: Nachrichten mit !BdU werden ohne euren Namen an eine KI (Google Gemini) geschickt, damit der BdU antworten kann. Google kann solche Eingaben zur Verbesserung seiner Dienste nutzen. Bitte keine persönlichen Daten schreiben.“ (Keine Rechtsberatung; ob ein Hinweis rechtlich nötig ist, ist hier nicht geprüft.)
+- **Bot-Konto absichern:** Antwortet ein eigenes Bot-Konto mit Moderatorrechten, dafür Zwei-Faktor-Authentifizierung und ein eigenes starkes Passwort einschalten.
+
 ---
 
 ## Wenn etwas nicht klappt

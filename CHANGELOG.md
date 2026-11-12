@@ -18,6 +18,7 @@ Mehr Rollenspiel bei Störungen und automatisches Weiterfunken, wenn das Tagesko
 
 ### Documentation
 - `ANLEITUNG.md`: Fehlertabelle mit den neuen Funkmaat-Meldungen, Abschnitt Zweitfrequenz.
+- Chat-Modus (README, ANLEITUNG, Spec): Empfehlung eines Datenschutzhinweises für Zuschauer mit Beispieltext, weil `!BdU` Zuschauertexte an den KI-Anbieter weitergibt; Zwei-Faktor-Authentifizierung für ein antwortendes Bot-Konto mit Moderatorrechten.
 
 ## [1.4.1] - 2026-11-09
 
