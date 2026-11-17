@@ -26,6 +26,9 @@ Funksprüche aus dem Twitch-Chat im Hintergrund vom BdU beantworten lassen, mit 
 6. Fehler: `{id, status: "quota"}` bei HTTP 429 bzw. `RESOURCE_EXHAUSTED` der KI (mit Fehlertext, damit der Server Tages- und Minutenlimit unterscheiden kann), sonst `{id, status: "error"}`. Keine Meldung im Display.
 7. Chat-Anfrage und Antwort kommen nicht in den Verlauf, lösen keine Zusammenfassung aus, ändern den Status nicht; „Status:“-Erkennung gilt nur für eigene Meldungen.
 
+### Datenschutz (Empfehlung, Nutzer 12.11.2026)
+Chat-Anfragen enthalten Text fremder Personen, den das Widget (ohne Absendernamen) an den eingestellten KI-Anbieter schickt. Streamern wird ein Hinweis an die Zuschauer empfohlen (Chat-Regeln, Infobereich oder Hilfebefehl, Idee `!bduHilfe` im Server); Beispieltext in `README.md` und im Server-Repository (`docs/specs/bdu-chat.md`). Rechtliche Pflichten sind nicht geprüft [UNGEKLÄRT]. Für ein antwortendes Bot-Konto mit Moderatorrechten: Zwei-Faktor-Authentifizierung.
+
 ## Nicht-Ziele
 - Anzeige von Chat-Funksprüchen im Widget, Ton oder Statuslicht.
 - Twitch-Token, Twitch-API oder Limits im Widget (alles im Server).

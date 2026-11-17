@@ -73,7 +73,7 @@ with sync_playwright() as p:
     # Senden ohne Schlüssel
     pg.evaluate("toggleSettings()")
     pg.fill("#user-input", "Test"); pg.evaluate("sendMessage()")
-    check("Senden ohne Schlüssel: Hinweis im Display", pg.locator("#chat-log .msg-sys", has_text="KEIN API-SCHLÜSSEL").count() == 1)
+    check("Senden ohne Schlüssel: Hinweis im Display", pg.locator("#chat-log .msg-sys", has_text="Schlüsselmaschine nicht eingestellt").count() == 1)
     check("Kein einziger Browser-Dialog", not dialogs, dialogs)
     check("Keine JS-Fehler", not errs, errs)
     # Screenshot der Einstellungen mit aktiver Rückfrage

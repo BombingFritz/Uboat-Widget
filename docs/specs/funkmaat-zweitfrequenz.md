@@ -1,7 +1,7 @@
 # Funkmaat-Meldungen und Zweitfrequenz
 
 ## Status
-Entwurf zur Prüfung durch den Nutzer (11.11.2026), noch kein Code. Geplant für 1.5.0 (neue Funktion). Grundlage: Wunsch des Nutzers vom 09.11.2026, Entscheidungen vom 11.11.2026 (siehe unten).
+Umgesetzt in 1.5.0 (Test `tests/funkmaat.py`, nur mit simulierter API). Wortlaut und offene Fragen vom Nutzer entschieden (11.11.2026). Grundlage: Wunsch des Nutzers vom 09.11.2026, Entscheidungen vom 11.11.2026 (siehe unten).
 
 ## Ziel
 1. Ist das Tageskontingent des aktiven Modells erschöpft, funkt das Widget ohne Zutun über das zweite Modell weiter („Zweitfrequenz“).
@@ -34,13 +34,13 @@ Entwurf zur Prüfung durch den Nutzer (11.11.2026), noch kein Code. Geplant für
 | Kontingent erschöpft, Wechsel | „FUNKSTÖRUNG: You exceeded your current quota …“ | „Funkmaat: Funkfrequenz gestört, wechsele auf Zweitfrequenz.“ (entschieden) |
 | Auch Zweitfrequenz erschöpft | wie oben | „Funkmaat: Sendeanlage unklar, Meldung wiederholt nicht durchgekommen und unbestätigt.“ (entschieden) |
 | Kontingent erschöpft, kein zweites Modell | wie oben | „Funkmaat: Funkfrequenz gestört, Meldung nicht durchgekommen. Später erneut versuchen.“ |
-| Überlastung bei Google („high demand“, 503) | „FUNKSTÖRUNG: This model is currently experiencing high demand …“ | „Funkmaat: Starke atmosphärische Störungen, BdU nicht erreichbar. Meldung später wiederholen.“ |
-| Ungültiger Schlüssel | „FUNKSTÖRUNG: API key not valid …“ | „Funkmaat: Schlüssel passt nicht, Funkspruch nicht entzifferbar. API-Schlüssel in den Einstellungen prüfen.“ |
+| Überlastung bei Google („high demand“, 503) | „FUNKSTÖRUNG: This model is currently experiencing high demand …“ | zufällig eine von zwei Fassungen: „Funkmaat: Starke atmosphärische Störungen, BdU nicht erreichbar. Meldung später wiederholen.“ oder „Funkmaat: Frequenz nicht sicher, verdächtige Aktivitäten, Feind peilt vermutlich ein. Meldung später absetzen, möglichst kurz halten!“ (Nutzer) |
+| Ungültiger Schlüssel | „FUNKSTÖRUNG: API key not valid …“ | „Funkmaat: Code-Schlüssel passt nicht, bitte Codebuch und Einstellungen der Funkanlage überprüfen!“ (Nutzer) |
 | Modell nicht gefunden | „FUNKSTÖRUNG: … not found“ + „HINWEIS: Modell nicht gefunden …“ | „Funkmaat: Frequenz nicht besetzt. Modell in den Einstellungen prüfen („MODELLE SUCHEN“).“ |
 | Keine Internetverbindung | „FUNKSTÖRUNG: Failed to fetch“ | „Funkmaat: Keine Verbindung zur Sendeanlage. Internetverbindung prüfen.“ |
 | Sonstiger Fehler | „FUNKSTÖRUNG: …“ | „Funkmaat: Funkspruch nicht durchgekommen. Einzelheiten in den Einstellungen.“ |
 | Kein API-Schlüssel beim Senden | „KEIN API-SCHLÜSSEL. BITTE ZAHNRAD ÖFFNEN …“ | „Funkmaat: Schlüsselmaschine nicht eingestellt. Bitte Zahnrad öffnen und API-Schlüssel eintragen.“ |
-| Status-Meldung | „[SYS] [STATUS AKTUALISIERT] …“ | „Funkmaat: Lagemeldung übernommen: …“ |
+| Status-Meldung | „[SYS] [STATUS AKTUALISIERT] …“ | „Funkmaat: In KTB notiert, Lagemeldung weitergegeben: …“ (Nutzer) |
 | Einstellungen gespeichert | „KONFIGURATION GESPEICHERT.“ | „Funkmaat: Funkgerät neu eingestellt.“ |
 | Verlauf gelöscht | „HISTORY GELÖSCHT.“ | „Funkmaat: Funkkladde geleert. Bereit für die neue Feindfahrt.“ |
 | Letzten Funkspruch gelöscht | „Letzter Funkspruch aus der History gelöscht (2 Einträge).“ | „Funkmaat: Letzter Funkspruch aus der Kladde gestrichen.“ |
@@ -50,10 +50,10 @@ Entwurf zur Prüfung durch den Nutzer (11.11.2026), noch kein Code. Geplant für
 
 Meldungen beim Einrichten (Schlüssel, Modell, Internet) nennen weiterhin, was zu tun ist; sie erscheinen vor allem bei Neulingen und selten im Stream.
 
-## Offene Fragen an den Nutzer
-1. Wortlaut der Tabelle so übernehmen oder ändern?
-2. Modell-Badge unten („POWERED BY GEMINI …“): bei aktiver Zweitfrequenz das tatsächlich genutzte Modell zeigen? Vorschlag: ja.
-3. Endet die Zweitfrequenz auch beim „SPEICHERN“ der Einstellungen (z. B. nach Modellwechsel)? Vorschlag: ja, zusätzlich zum Neuladen.
+## Entscheidungen zu den offenen Fragen (Nutzer, 11.11.2026)
+1. Wortlaut: wie in der Tabelle, mit den drei Änderungen des Nutzers (Überlastung zweite Fassung, Status-Meldung, ungültiger Schlüssel). Meldungen beim Einrichten nennen weiterhin, was zu tun ist.
+2. Modell-Badge zeigt bei aktiver Zweitfrequenz das tatsächlich genutzte Modell: ja.
+3. Die Zweitfrequenz endet auch beim SPEICHERN: ja.
 
 ## Nicht-Ziele
 Automatischer Wechsel bei anderen Fehlern als „Kontingent erschöpft“; Wechsel des Chat-Modells; Zählen der verbleibenden Anfragen (Google liefert die Zahl nicht mit).
