@@ -4,7 +4,7 @@
 - Bei Konflikt mit einem ADR erst nachfragen.
 - Referenz ist immer `index.html` im aktuellen Stand von `main`. Lokale Arbeitskopien mit anderem Stand sind keine Referenz.
 - Das Widget ist öffentlich und wird von anderen genutzt (ADR 0002). Der eigenständige Betrieb ohne Server bleibt immer der Standard; Server-Funktionen nur als abschaltbarer, standardmäßig ausgeschalteter Modus.
-- Versionen nur über `CHANGELOG.md` und Git-Tags (`vX.Y.Z`), nie über den Dateinamen. Tags und Releases legt der Nutzer in der GitHub-Oberfläche an.
+- Versionen über `CHANGELOG.md`, Git-Tags (`vX.Y.Z`) und die Konstante `APP_VERSION` in `index.html` (bei jedem Release auf die neue Version setzen; `tests/app_version.py` prüft den Gleichstand mit dem CHANGELOG), nie über den Dateinamen. Tags und Releases legt der Nutzer in der GitHub-Oberfläche an.
 - `WIDGET_VERSION` ist im aktuellen Code faktisch eine Prompt-Version: Jede Änderung überschreibt beim Nutzer den gespeicherten Persönlichkeits-Prompt. Nur bewusst und mit Eintrag im Changelog ändern (siehe `docs/OFFEN.md`).
 - Dateipfade im Wurzelverzeichnis nicht verändern: `index.html`, `morse_Fritz_an_BdU_outgoing.wav`, `morse_BDU_anFritz_1930s_far.wav`. Heruntergeladene Widgets laden die WAVs direkt aus diesem Repository (ADR 0001).
 - `SAFETY_RULES` bleibt fest im Code, wird jedem Aufruf vorangestellt und ist nicht über die Oberfläche änderbar (ADR 0003).

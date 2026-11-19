@@ -93,6 +93,8 @@ Der Speicher hängt an der Herkunft der Seite. In OBS sind „Lokale Datei“ (`
 `DEFAULT_PROMPT`, `DEFAULT_CONTEXT`, `DEFAULT_STATUS`, `DEFAULT_MODEL` (`gemini-3.5-flash-lite`), `DEFAULT_LOOP_SOUND` (an) und `DEFAULT_VOLUME` (0,5) gelten für den Erststart und für „RESET“ gleichermaßen.
 
 ## Versionierung im Code
+`APP_VERSION` (seit 1.5.0) ist die Programmversion, gleich der neuesten Version in `CHANGELOG.md` und dem Git-Tag; sie steht in der Startmeldung der Konsole und im Export (`appVersion`) und wird bei jedem Release mitgepflegt (`tests/app_version.py`). Geplant ist, sie im Chat-Modus an den Companion-Server zu melden (Server-Issue #70). Davon getrennt:
+
 `loadSettings` vergleicht `bdu_widget_version` mit `WIDGET_VERSION`. Bei Abweichung wird der gespeicherte Persönlichkeits-Prompt durch `DEFAULT_PROMPT` ersetzt. Seit 1.1.0 wird ein eigener Prompt vorher in `bdu_system_prompt_backup` gesichert und lässt sich in den Einstellungen zurückholen. Ein Import setzt `bdu_widget_version` auf die aktuelle Version, damit der importierte Prompt bleibt.
 
 ## Schnittstellen
